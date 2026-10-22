@@ -426,6 +426,7 @@ function applyBootstrap(data) {
   $('#app').classList.remove('hidden');
   $('#splash').classList.add('out');
   renderMe();
+  checkVersion(data.version);
 
   const params = new URLSearchParams(location.search);
   const invite = params.get('invite');
@@ -1583,6 +1584,52 @@ function openPalette() {
   render();
 }
 
+/* ---------- version & changelog ---------- */
+
+const versionReady = fetch('/api/version', { cache: 'no-store' })
+  .then((r) => r.json())
+  .then((d) => {
+    state.version = d.version;
+    state.changelog = d.changelog;
+    $$('[data-version]').forEach((el) => {
+      el.textContent = d.version;
+      el.hidden = false;
+    });
+  })
+  .catch(() => {});
+
+const dateOnlyFmt = new Intl.DateTimeFormat('de-DE', { day: 'numeric', month: 'long', year: 'numeric' });
+
+function openChangelog() {
+  if (!state.changelog) return;
+  store('seenVersion', state.version);
+  const entries = state.changelog.map((e, i) => `<section class="cl-entry">
+    <div class="cl-head"><span class="cl-version ${i === 0 ? 'current' : ''}">${esc(e.version)}</span><span class="cl-date">${esc(dateOnlyFmt.format(new Date(e.date + 'T12:00:00')))}</span></div>
+    <h4>${esc(e.title)}</h4>
+    <ul>${e.changes.map((c) => `<li><span class="cl-ico">${esc(c.icon)}</span><span>${formatMessage(c.text)}</span></li>`).join('')}</ul>
+  </section>`).join('');
+  openModal(`
+    <div class="cl-hero"><div class="logo-mark"><span>N</span></div><div><h3>Was ist neu?</h3><p class="sub">Du nutzt Nexora <b>${esc(state.version)}</b></p></div></div>
+    <div class="cl-list">${entries}</div>
+    <div class="modal-actions"><button class="btn primary" data-close>Los geht's</button></div>`, { className: 'changelog' });
+}
+
+// Runs after every (re)connect. A different server version means a new patch was
+// deployed while this tab was open: reload to get it, unless the user is typing.
+async function checkVersion(serverVersion) {
+  await versionReady;
+  if (!state.version) return;
+  if (serverVersion && serverVersion !== state.version) {
+    if (!input.value.trim() && !$('.modal') && !state.editingId) return location.reload();
+    if ($('.update-banner')) return;
+    const banner = h(`<div class="update-banner"><span>🔥 <b>${esc(serverVersion)}</b> ist da!</span><button class="btn primary">Jetzt laden</button></div>`);
+    banner.querySelector('button').onclick = () => location.reload();
+    document.body.append(banner);
+    return;
+  }
+  if (store('seenVersion') !== state.version && !$('.modal')) openChangelog();
+}
+
 /* =========================================================================
    Global wiring
    ========================================================================= */
@@ -1591,6 +1638,8 @@ $('#home-btn').onclick = openHome;
 $('#create-hub-btn').onclick = openCreateHub;
 $('#join-hub-btn').onclick = openJoinHub;
 $('#palette-btn').onclick = openPalette;
+$('#version-btn').onclick = openChangelog;
+$('#auth-version').onclick = openChangelog;
 $('#toggle-members').onclick = () => {
   if (window.matchMedia('(max-width: 1100px)').matches) {
     $('#app').classList.toggle('show-members');

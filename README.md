@@ -26,6 +26,15 @@ Accounts mit dem Benutzernamen `nexora` sind **offiziell**: Sie bekommen ein ora
 
 Weitere offizielle Accounts per Umgebungsvariable, kommagetrennt: `NEXORA_OFFICIAL=nexora,dom`
 
+## Versionen & Updates
+
+Aktuelle Version: **V0.1 Beta**. Alle Änderungen stehen in [`changelog.json`](changelog.json) – der oberste Eintrag ist die laufende Version.
+
+- Nach dem Login (und nach jedem Update) zeigt Nexora einmal das Fenster **„Was ist neu?“**. Über die Versionsanzeige unten in der Hub-Leiste lässt es sich jederzeit wieder öffnen.
+- Geht eine neue Version live, während jemand Nexora offen hat, lädt die Seite automatisch neu. Tippt die Person gerade etwas, erscheint stattdessen ein „Jetzt laden“-Hinweis.
+
+Neue Version veröffentlichen: oben in `changelog.json` einen Eintrag mit `version`, `date`, `title` und `changes` ergänzen und deployen.
+
 ## Starten
 
 Voraussetzung: [Node.js](https://nodejs.org) 18 oder neuer.

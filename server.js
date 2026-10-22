@@ -12,6 +12,9 @@ const DATA_DIR = process.env.NEXORA_DATA_DIR || path.join(__dirname, 'data');
 const DB_FILE = path.join(DATA_DIR, 'db.json');
 const PAGE_SIZE = 50;
 const MAX_MESSAGE = 2000;
+// The newest changelog entry is the running version; clients compare it to reload on updates.
+const CHANGELOG = require('./changelog.json');
+const VERSION = CHANGELOG[0].version;
 const ACCENTS = ['#ff7a18', '#ff9f1c', '#ff5e3a', '#ffb347', '#ff6b00', '#f9a03f', '#ff8c42', '#e85d04'];
 
 // ---------------------------------------------------------------------------
@@ -295,7 +298,15 @@ app.disable('x-powered-by');
 // Hosting providers like Render sit behind a proxy; trust it so req.ip is the real client.
 app.set('trust proxy', 1);
 app.use(express.json({ limit: '32kb' }));
-app.use(express.static(path.join(__dirname, 'public')));
+// "no-cache" makes browsers revalidate on every visit, so everyone gets the latest patch.
+app.use(express.static(path.join(__dirname, 'public'), {
+  setHeaders: (res) => res.setHeader('Cache-Control', 'no-cache'),
+}));
+
+app.get('/api/version', (_req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  res.json({ version: VERSION, changelog: CHANGELOG });
+});
 
 const USERNAME_RE = /^[a-zA-Z0-9_.]{3,20}$/;
 const authAttempts = new Map();
@@ -437,6 +448,7 @@ io.on('connection', (socket) => {
       presence[uid] = presenceOf(u);
     }
     return {
+      version: VERSION,
       me: publicUser(me()),
       hubs: Object.values(db.hubs).filter((h) => h.members.includes(userId)).map(hubView),
       dms: Object.values(db.dms).filter((d) => d.members.includes(userId)).map(dmView),
