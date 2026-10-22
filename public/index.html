@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0a0705" />
+  <title>Nexora</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23ffb347'/%3E%3Cstop offset='1' stop-color='%23ff5e1a'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M32 4 56 18v28L32 60 8 46V18z' fill='url(%23g)'/%3E%3Cpath d='M22 44V20h4l12 16V20h4v24h-4L26 28v16z' fill='%23120a05'/%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/app.css" />
+</head>
+<body>
+  <div class="backdrop" aria-hidden="true">
+    <div class="blob b1"></div>
+    <div class="blob b2"></div>
+    <div class="blob b3"></div>
+    <div class="grid"></div>
+  </div>
+
+  <!-- ===================== AUTH ===================== -->
+  <section id="auth" class="auth hidden">
+    <div class="auth-hero">
+      <div class="logo-mark big"><span>N</span></div>
+      <h1 class="brand">NEXORA</h1>
+      <p class="tagline">Deine Crew. Deine Hubs. In Echtzeit.</p>
+      <ul class="features">
+        <li><span>⚡</span> Nachrichten ohne Verzögerung</li>
+        <li><span>🛰️</span> Eigene Hubs mit Kanälen</li>
+        <li><span>💬</span> Direktnachrichten & Reaktionen</li>
+        <li><span>⌘</span> Schnellsprung mit <kbd>Strg</kbd>+<kbd>K</kbd></li>
+      </ul>
+    </div>
+    <div class="auth-card glass">
+      <div class="auth-tabs" role="tablist">
+        <button class="auth-tab active" data-mode="login" role="tab">Einloggen</button>
+        <button class="auth-tab" data-mode="register" role="tab">Registrieren</button>
+        <span class="auth-tab-indicator"></span>
+      </div>
+      <form id="auth-form" autocomplete="on" novalidate>
+        <label class="field">
+          <span>Benutzername</span>
+          <input name="username" autocomplete="username" required minlength="3" maxlength="20" placeholder="z. B. nova_rider" />
+        </label>
+        <label class="field register-only">
+          <span>Anzeigename <em>(optional)</em></span>
+          <input name="displayName" maxlength="32" placeholder="So sehen dich andere" />
+        </label>
+        <label class="field">
+          <span>Passwort</span>
+          <input name="password" type="password" autocomplete="current-password" required minlength="6" placeholder="Mindestens 6 Zeichen" />
+        </label>
+        <p class="form-error" id="auth-error" role="alert"></p>
+        <button class="btn primary block" type="submit" id="auth-submit">Los geht's</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- ===================== APP ===================== -->
+  <div id="app" class="app hidden">
+    <!-- Hub rail -->
+    <nav class="rail" aria-label="Hubs">
+      <button class="rail-item home" id="home-btn" title="Direktnachrichten">
+        <div class="logo-mark"><span>N</span></div>
+      </button>
+      <div class="rail-sep"></div>
+      <div class="rail-hubs" id="hub-list"></div>
+      <button class="rail-item action" id="create-hub-btn" title="Hub erstellen">
+        <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+      </button>
+      <button class="rail-item action" id="join-hub-btn" title="Hub beitreten">
+        <svg viewBox="0 0 24 24"><path d="M10 14 21 3M15 3h6v6M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5"/></svg>
+      </button>
+    </nav>
+
+    <!-- Sidebar -->
+    <aside class="sidebar glass" id="sidebar">
+      <header class="sidebar-head" id="sidebar-head"></header>
+      <div class="sidebar-body" id="sidebar-body"></div>
+      <footer class="me-card" id="me-card"></footer>
+    </aside>
+
+    <!-- Chat -->
+    <main class="chat glass" id="chat">
+      <header class="chat-head">
+        <button class="icon-btn mobile-only" id="open-sidebar" title="Menü">
+          <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
+        <div class="chat-title" id="chat-title"></div>
+        <div class="chat-actions">
+          <button class="search-pill" id="palette-btn" title="Schnellsprung">
+            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            <span>Springen…</span><kbd>Strg K</kbd>
+          </button>
+          <button class="icon-btn" id="toggle-members" title="Mitglieder">
+            <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </button>
+        </div>
+      </header>
+
+      <div class="messages" id="messages" aria-live="polite"></div>
+
+      <div class="composer-wrap">
+        <div class="reply-bar hidden" id="reply-bar"></div>
+        <form class="composer" id="composer">
+          <textarea id="composer-input" rows="1" maxlength="2000" placeholder="Nachricht…" autocomplete="off"></textarea>
+          <button type="button" class="icon-btn" id="emoji-btn" title="Emoji">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/></svg>
+          </button>
+          <button type="submit" class="send-btn" id="send-btn" title="Senden">
+            <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </button>
+        </form>
+        <div class="typing" id="typing"></div>
+      </div>
+    </main>
+
+    <!-- Members -->
+    <aside class="members glass" id="members"></aside>
+    <div class="scrim" id="scrim"></div>
+  </div>
+
+  <div id="splash" class="splash">
+    <div class="logo-mark big pulse"><span>N</span></div>
+  </div>
+
+  <div id="modal-root"></div>
+  <div id="popover-root"></div>
+  <div id="toast-root" class="toast-root"></div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/app.js"></script>
+</body>
+</html>
