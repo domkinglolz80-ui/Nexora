@@ -19,7 +19,29 @@ const ACCENTS = ['#ff7a18', '#ff9f1c', '#ff5e3a', '#ffb347', '#ff6b00', '#f9a03f
 // The whole state lives in memory; writes are debounced.
 // ---------------------------------------------------------------------------
 
-const MONGODB_URI = process.env.MONGODB_URI;
+// Trim whitespace and stray quotes that easily sneak in when pasting on a phone.
+const MONGODB_URI = (process.env.MONGODB_URI || '').trim().replace(/^["']|["']$/g, '').trim();
+
+// Explains a MongoDB problem in plain words for the hosting log (never prints the URI itself).
+function mongoHint(err) {
+  const msg = String(err && err.message);
+  if (!/^mongodb(\+srv)?:\/\//.test(MONGODB_URI)) {
+    return 'MONGODB_URI muss mit "mongodb+srv://" beginnen. Steht der Connection String wirklich unter Value (nicht unter Key)?';
+  }
+  if (/[<>]/.test(MONGODB_URI)) {
+    return 'Im Connection String steht noch <db_password> oder spitze Klammern. Ersetze <db_password> komplett durch dein Passwort.';
+  }
+  if (/auth|authentication|bad auth/i.test(msg)) {
+    return 'Benutzername oder Passwort falsch. In Atlas unter "Database Access" das Passwort neu setzen und in MONGODB_URI eintragen.';
+  }
+  if (/querySrv|ENOTFOUND|EBADNAME|Invalid scheme|URI|hostname/i.test(msg)) {
+    return 'Der Connection String ist kaputt (Adresse ungültig). Kopiere ihn neu aus Atlas: Connect -> Drivers. Sonderzeichen im Passwort (@ : / # %) vermeiden.';
+  }
+  if (/Server selection timed out|ETIMEDOUT|ECONNREFUSED|timed out/i.test(msg)) {
+    return 'Atlas lässt die Verbindung nicht zu. In Atlas unter "Network Access" -> "Add IP Address" -> "Allow Access from Anywhere" (0.0.0.0/0) eintragen.';
+  }
+  return 'Unbekannter Fehler – Logzeile oben prüfen.';
+}
 
 function emptyDb() {
   return { users: {}, sessions: {}, hubs: {}, dms: {}, messages: {} };
@@ -709,6 +731,7 @@ async function main() {
 }
 
 main().catch((err) => {
-  console.error('[nexora] Start fehlgeschlagen:', err.message);
+  console.error('[nexora] Start fehlgeschlagen:', String(err && err.message).replace(MONGODB_URI || '\0', '<MONGODB_URI>'));
+  if (MONGODB_URI) console.error('[nexora] TIPP: ' + mongoHint(err));
   process.exit(1);
 });
