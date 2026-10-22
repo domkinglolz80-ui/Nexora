@@ -118,6 +118,14 @@ function statusOf(id) {
   return state.presence.get(id) || 'offline';
 }
 
+function isAdmin(hub, userId) {
+  return hub.ownerId === userId || Boolean(hub.admins?.includes(userId));
+}
+
+function verified(user) {
+  return user.official ? '<span class="verified" title="Offizieller Nexora-Account">✓</span>' : '';
+}
+
 function avatar(user, { dot = false, size } = {}) {
   const s = size ? `--size:${size}px;` : '';
   const d = dot ? `<span class="dot ${statusOf(user.id)}"></span>` : '';
@@ -564,7 +572,7 @@ function renderSidebar() {
   const hub = currentHub();
 
   if (hub) {
-    const isOwner = hub.ownerId === state.me.id;
+    const isOwner = isAdmin(hub, state.me.id);
     head.className = 'sidebar-head hub-banner';
     head.style.setProperty('--hub-color', hub.color);
     head.innerHTML = `
@@ -612,7 +620,7 @@ function renderSidebar() {
       const p = dmPartner(dm);
       const u = state.unread.get(dm.id);
       const item = h(`<button class="nav-item ${dm.id === state.view.channelId ? 'active' : ''} ${u ? 'unread' : ''}">
-        ${avatar(p, { dot: true, size: 32 })}<span class="label">${esc(p.displayName)}</span>
+        ${avatar(p, { dot: true, size: 32 })}<span class="label">${esc(p.displayName)}${verified(p)}</span>
         ${u ? `<span class="badge">${u.count}</span>` : ''}
       </button>`);
       item.onclick = () => openDm(dm.id);
@@ -627,7 +635,7 @@ function renderMe() {
   const card = $('#me-card');
   card.innerHTML = `
     ${avatar(me, { dot: true })}
-    <div class="who"><div class="name">${esc(me.displayName)}</div><div class="handle">${esc(STATUS_LABEL[me.status] || '')} · @${esc(me.username)}</div></div>
+    <div class="who"><div class="name">${esc(me.displayName)}${verified(me)}</div><div class="handle">${esc(STATUS_LABEL[me.status] || '')} · @${esc(me.username)}</div></div>
     <button class="icon-btn" title="Einstellungen">${ICONS.gear}</button>`;
   card.querySelector('.icon-btn').onclick = openSettings;
   card.querySelector('.who').onclick = openSettings;
@@ -646,7 +654,7 @@ function renderChatHeader() {
     composer.placeholder = `Nachricht an #${channel.name}`;
   } else if (dm) {
     const p = dmPartner(dm);
-    title.innerHTML = `${avatar(p, { dot: true })}<h1>${esc(p.displayName)}</h1><div class="topic">@${esc(p.username)}</div>`;
+    title.innerHTML = `${avatar(p, { dot: true })}<h1>${esc(p.displayName)}${verified(p)}</h1><div class="topic">@${esc(p.username)}</div>`;
     title.querySelector('.avatar').onclick = (e) => showProfile(p.id, e.currentTarget);
     composer.placeholder = `Nachricht an @${p.displayName}`;
   } else {
@@ -668,7 +676,7 @@ function renderMembers() {
     panel.innerHTML = `<div class="profile-banner" style="--c:${esc(p.color)};border-radius:14px"></div>
       <div class="profile-body" style="padding:0 6px">
         ${avatar(p, { dot: true })}
-        <h4>${esc(p.displayName)}</h4>
+        <h4>${esc(p.displayName)}${verified(p)}</h4>
         <div class="handle">@${esc(p.username)} · ${STATUS_LABEL[statusOf(p.id)]}</div>
         ${p.bio ? `<div class="bio">${esc(p.bio)}</div>` : ''}
         <div class="meta">Dabei seit ${fullFmt.format(p.createdAt).split(',')[0]}</div>
@@ -691,7 +699,7 @@ function renderMembers() {
       const st = statusOf(m.id);
       const row = h(`<button class="member ${st === 'offline' ? 'offline' : ''}" style="--c:${esc(m.color)}">
         ${avatar(m, { dot: true })}
-        <div class="info"><div class="name">${esc(m.displayName)}${m.id === hub.ownerId ? '<span class="crown" title="Besitzer">👑</span>' : ''}</div>
+        <div class="info"><div class="name">${esc(m.displayName)}${verified(m)}${m.id === hub.ownerId ? '<span class="crown" title="Besitzer">👑</span>' : ''}</div>
         <div class="bio">${esc(m.bio || STATUS_LABEL[st])}</div></div>
       </button>`);
       row.onclick = () => showProfile(m.id, row);
@@ -783,7 +791,7 @@ function channelIntro() {
   }
   const p = dmPartner(dm);
   const node = h(`<div class="channel-intro">${avatar(p, { size: 72 })}
-    <h2 style="margin-top:16px">${esc(p.displayName)}</h2>
+    <h2 style="margin-top:16px">${esc(p.displayName)}${verified(p)}</h2>
     <p>Das ist der Anfang deiner Unterhaltung mit <b>@${esc(p.username)}</b>.</p></div>`);
   return node;
 }
@@ -824,7 +832,7 @@ function messageNode(m, prev) {
   const hub = currentHub();
   const cont = isContinuation(m, prev);
   const mine = m.authorId === state.me.id;
-  const canDelete = mine || (hub && hub.ownerId === state.me.id);
+  const canDelete = mine || (hub && isAdmin(hub, state.me.id));
   const ch = state.channels.get(m.channelId);
   const ref = m.replyTo && ch?.list.find((x) => x.id === m.replyTo);
 
@@ -837,7 +845,7 @@ function messageNode(m, prev) {
     ${cont ? `<div class="gutter-time" title="${esc(stamp(m.createdAt))}">${timeFmt.format(m.createdAt)}</div>` : avatar(author)}
     <div class="msg-main">
       ${m.replyTo ? `<div class="msg-reply" data-ref="${esc(m.replyTo)}">${ref ? `<b>${esc(userOf(ref.authorId).displayName)}</b><span>${esc(ref.content)}</span>` : '<span><i>Ursprüngliche Nachricht nicht geladen oder gelöscht</i></span>'}</div>` : ''}
-      ${cont ? '' : `<div class="msg-head"><span class="msg-author" style="--c:${esc(author.color)}">${esc(author.displayName)}</span>${hub && hub.ownerId === author.id ? '<span class="owner-tag">OWNER</span>' : ''}<span class="msg-time" title="${esc(fullFmt.format(m.createdAt))}">${esc(stamp(m.createdAt))}</span></div>`}
+      ${cont ? '' : `<div class="msg-head"><span class="msg-author" style="--c:${esc(author.color)}">${esc(author.displayName)}</span>${verified(author)}${hub && hub.ownerId === author.id ? '<span class="owner-tag">OWNER</span>' : ''}<span class="msg-time" title="${esc(fullFmt.format(m.createdAt))}">${esc(stamp(m.createdAt))}</span></div>`}
       <div class="msg-body ${isJumbo(m.content) ? 'jumbo' : ''}">${formatMessage(m.content)}${m.editedAt ? `<span class="edited" title="${esc(fullFmt.format(m.editedAt))}">(bearbeitet)</span>` : ''}</div>
       ${reactions ? `<div class="reactions">${reactions}</div>` : ''}
     </div>
@@ -1139,7 +1147,7 @@ function showProfile(userId, anchor) {
     <div class="profile-banner"></div>
     <div class="profile-body">
       ${avatar(u, { dot: true })}
-      <h4>${esc(u.displayName)}</h4>
+      <h4>${esc(u.displayName)}${verified(u)}</h4>
       <div class="handle">@${esc(u.username)} · ${STATUS_LABEL[st]}</div>
       ${u.bio ? `<div class="bio">${esc(u.bio)}</div>` : '<div style="height:12px"></div>'}
       <div class="meta">Dabei seit ${u.createdAt ? esc(fullFmt.format(u.createdAt).split(',')[0]) : '–'}</div>
@@ -1307,7 +1315,7 @@ function openInvite(hubId) {
 function openHubSettings(hubId) {
   const hub = state.hubs.get(hubId);
   if (!hub) return;
-  const isOwner = hub.ownerId === state.me.id;
+  const isOwner = isAdmin(hub, state.me.id);
   if (!isOwner) {
     const { modal, close } = openModal(`
       <h3>${hub.icon ? esc(hub.icon) + ' ' : ''}${esc(hub.name)}</h3>
@@ -1325,7 +1333,7 @@ function openHubSettings(hubId) {
 
   const { modal, close } = openModal(`
     <h3>Hub-Einstellungen</h3>
-    <p class="sub">Nur du als Besitzer siehst diese Optionen.</p>
+    <p class="sub">Nur ${hub.isLounge ? 'offizielle Accounts' : 'du als Besitzer'} ${hub.isLounge ? 'sehen' : 'siehst'} diese Optionen.</p>
     <form>
       <label class="field"><span>Name</span><input name="name" maxlength="40" required /></label>
       <div class="field"><span>Symbol</span></div>
@@ -1339,7 +1347,7 @@ function openHubSettings(hubId) {
       <button class="btn" data-act="copy" title="Link kopieren">${ICONS.copy}</button>
       <button class="btn" data-act="regen">Neu</button></div>
     <hr />
-    <div class="modal-actions"><button class="btn danger" data-act="delete">${ICONS.trash} Hub löschen</button><span class="spacer"></span><button class="btn" data-close>Schließen</button></div>`);
+    <div class="modal-actions">${hub.isLounge ? '' : `<button class="btn danger" data-act="delete">${ICONS.trash} Hub löschen</button>`}<span class="spacer"></span><button class="btn" data-close>Schließen</button></div>`);
   const form = modal.querySelector('form');
   form.name.value = hub.name;
   const getIcon = bindIconPicker(modal);
@@ -1360,7 +1368,8 @@ function openHubSettings(hubId) {
       toast(ex.message, 'error');
     }
   };
-  modal.querySelector('[data-act=delete]').onclick = async () => {
+  const deleteBtn = modal.querySelector('[data-act=delete]');
+  if (deleteBtn) deleteBtn.onclick = async () => {
     close();
     if (!(await confirmDialog('Hub endgültig löschen?', `„${hub.name}“ und alle Nachrichten werden für alle Mitglieder gelöscht. Das kann nicht rückgängig gemacht werden.`, 'Endgültig löschen'))) return;
     req('hub:delete', { hubId }).catch((ex) => toast(ex.message, 'error'));
@@ -1426,7 +1435,7 @@ function openNewDm() {
   const render = (users) => {
     list.innerHTML = users.length ? '' : '<div class="empty-hint">Niemand gefunden.</div>';
     for (const u of users) {
-      const row = h(`<button class="member" style="--c:${esc(u.color)}">${avatar(u, { dot: true })}<div class="info"><div class="name">${esc(u.displayName)}</div><div class="bio">@${esc(u.username)}</div></div></button>`);
+      const row = h(`<button class="member" style="--c:${esc(u.color)}">${avatar(u, { dot: true })}<div class="info"><div class="name">${esc(u.displayName)}${verified(u)}</div><div class="bio">@${esc(u.username)}</div></div></button>`);
       row.onclick = () => { close(); openDmWith(u.id); };
       list.append(row);
     }

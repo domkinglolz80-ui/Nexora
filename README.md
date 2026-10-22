@@ -20,6 +20,12 @@ Nexora ist eine Echtzeit-Chat-Plattform mit eigenem Look: dunkles Glas-Design mi
 
 Neue Nutzer landen automatisch in der **Nexora Lounge** (Code `NEXORA`).
 
+## Offizieller Nexora-Account
+
+Accounts mit dem Benutzernamen `nexora` sind **offiziell**: Sie bekommen ein orangenes ✓-Abzeichen und dürfen die **Nexora Lounge** verwalten (Kanäle anlegen, bearbeiten, löschen, Nachrichten entfernen). Andere Namen mit „Nexora“ (z. B. `NexoraFan`) sind gesperrt, damit sich niemand als offiziell ausgeben kann.
+
+Weitere offizielle Accounts per Umgebungsvariable, kommagetrennt: `NEXORA_OFFICIAL=nexora,dom`
+
 ## Starten
 
 Voraussetzung: [Node.js](https://nodejs.org) 18 oder neuer.
@@ -39,6 +45,7 @@ Dann <http://localhost:3000> öffnen. Zum Testen mit mehreren Leuten einfach ein
 | `NEXORA_DATA_DIR`  | `./data`  | Ordner, in dem `db.json` liegt    |
 | `MONGODB_URI`      | –         | Wenn gesetzt: Daten in MongoDB statt in `db.json` |
 | `MONGODB_DB`       | `nexora`  | Name der MongoDB-Datenbank        |
+| `NEXORA_OFFICIAL`  | `nexora`  | Offizielle Accounts (Benutzernamen, kommagetrennt) |
 
 ## Online stellen (Render.com, kostenlos)
 

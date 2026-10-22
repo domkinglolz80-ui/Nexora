@@ -164,10 +164,26 @@ function inviteCode() {
   return code;
 }
 
+// Official accounts get a verified badge and run the Nexora Lounge.
+// Usernames containing "nexora" are reserved for them.
+const OFFICIAL = new Set(
+  (process.env.NEXORA_OFFICIAL || 'nexora').split(',').map((n) => n.trim().toLowerCase()).filter(Boolean),
+);
+
+function isOfficial(u) {
+  return Boolean(u) && OFFICIAL.has(u.username.toLowerCase());
+}
+
+// Who may manage a hub: its owner, and official accounts in the Lounge.
+function canManage(hub, userId) {
+  return hub.ownerId === userId || (hub.isLounge && isOfficial(db.users[userId]));
+}
+
 function publicUser(u) {
   return {
     id: u.id,
     username: u.username,
+    official: isOfficial(u),
     displayName: u.displayName,
     color: u.color,
     status: u.status,
@@ -245,6 +261,7 @@ function hubView(hub) {
     icon: hub.icon,
     color: hub.color,
     ownerId: hub.ownerId,
+    admins: hub.members.filter((m) => canManage(hub, m)),
     inviteCode: hub.inviteCode,
     isLounge: !!hub.isLounge,
     members: hub.members,
@@ -302,6 +319,9 @@ app.post('/api/register', (req, res) => {
   }
   if (password.length < 6 || password.length > 128) {
     return res.status(400).json({ error: 'Passwort muss 6–128 Zeichen lang sein.' });
+  }
+  if (/nexora/i.test(username) && !OFFICIAL.has(username.toLowerCase())) {
+    return res.status(400).json({ error: 'Namen mit „Nexora“ sind für offizielle Accounts reserviert.' });
   }
   if (findUserByName(username)) return res.status(409).json({ error: 'Benutzername ist schon vergeben.' });
 
@@ -457,7 +477,7 @@ io.on('connection', (socket) => {
 
   on('hub:update', ({ hubId, name, icon }) => {
     const hub = db.hubs[hubId];
-    if (!hub || hub.ownerId !== userId) return { error: 'Nur der Besitzer kann den Hub bearbeiten.' };
+    if (!hub || !canManage(hub, userId)) return { error: 'Nur der Besitzer kann den Hub bearbeiten.' };
     const hubName = str(name, 40);
     if (hubName.length < 2) return { error: 'Der Hub-Name braucht mindestens 2 Zeichen.' };
     hub.name = hubName;
@@ -469,7 +489,7 @@ io.on('connection', (socket) => {
 
   on('hub:regenerateInvite', ({ hubId }) => {
     const hub = db.hubs[hubId];
-    if (!hub || hub.ownerId !== userId) return { error: 'Nur der Besitzer kann das.' };
+    if (!hub || !canManage(hub, userId)) return { error: 'Nur der Besitzer kann das.' };
     hub.inviteCode = inviteCode();
     save();
     io.to(`hub:${hub.id}`).emit('hub:update', hubView(hub));
@@ -501,7 +521,7 @@ io.on('connection', (socket) => {
 
   on('channel:create', ({ hubId, name, topic }) => {
     const hub = db.hubs[hubId];
-    if (!hub || hub.ownerId !== userId) return { error: 'Nur der Besitzer kann Kanäle erstellen.' };
+    if (!hub || !canManage(hub, userId)) return { error: 'Nur der Besitzer kann Kanäle erstellen.' };
     const channelName = str(name, 32).toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9äöüß_-]/g, '');
     if (!channelName) return { error: 'Ungültiger Kanalname.' };
     if (hub.channels.length >= 50) return { error: 'Maximal 50 Kanäle pro Hub.' };
@@ -514,7 +534,7 @@ io.on('connection', (socket) => {
 
   on('channel:update', ({ channelId, name, topic }) => {
     const hub = hubForChannel(channelId);
-    if (!hub || hub.ownerId !== userId) return { error: 'Nur der Besitzer kann Kanäle bearbeiten.' };
+    if (!hub || !canManage(hub, userId)) return { error: 'Nur der Besitzer kann Kanäle bearbeiten.' };
     const channel = hub.channels.find((c) => c.id === channelId);
     const channelName = str(name, 32).toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9äöüß_-]/g, '');
     if (!channelName) return { error: 'Ungültiger Kanalname.' };
@@ -527,7 +547,7 @@ io.on('connection', (socket) => {
 
   on('channel:delete', ({ channelId }) => {
     const hub = hubForChannel(channelId);
-    if (!hub || hub.ownerId !== userId) return { error: 'Nur der Besitzer kann Kanäle löschen.' };
+    if (!hub || !canManage(hub, userId)) return { error: 'Nur der Besitzer kann Kanäle löschen.' };
     if (hub.channels.length <= 1) return { error: 'Ein Hub braucht mindestens einen Kanal.' };
     hub.channels = hub.channels.filter((c) => c.id !== channelId);
     delete db.messages[channelId];
@@ -611,7 +631,7 @@ io.on('connection', (socket) => {
   on('message:delete', ({ channelId, messageId }) => {
     const { access, message } = findMessage(channelId, messageId);
     if (!message) return { error: 'Nachricht nicht gefunden.' };
-    const isHubOwner = access.type === 'hub' && access.hub.ownerId === userId;
+    const isHubOwner = access.type === 'hub' && canManage(access.hub, userId);
     if (message.authorId !== userId && !isHubOwner) return { error: 'Nicht erlaubt.' };
     db.messages[channelId] = db.messages[channelId].filter((m) => m.id !== messageId);
     save();
