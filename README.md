@@ -12,6 +12,7 @@ Nexora ist eine Echtzeit-Chat-Plattform mit eigenem Look: dunkles Glas-Design mi
 - **Nachrichten in Echtzeit** – Antworten, Bearbeiten (auch mit ↑), Löschen, Emoji-Reaktionen
 - **Formatierung** – `**fett**`, `*kursiv*`, `~~durch~~`, `` `code` ``, Codeblöcke, `> Zitat`, `||Spoiler||`, Links, `@erwähnungen`
 - **Direktnachrichten** – privat mit jedem Mitglied schreiben
+- **Sprachkanäle** – in Echtzeit reden, mit Sprech-Anzeige, Stummschalten, Ton aus und Sprachleiste
 - **Präsenz** – Online / Abwesend / Nicht stören / Unsichtbar, Tipp-Anzeige
 - **Ungelesen-Markierungen** – Badges für Erwähnungen und DMs, Ton bei Erwähnung
 - **Befehlspalette** – `Strg`+`K` springt zu jedem Hub, Kanal oder Menschen
@@ -26,9 +27,22 @@ Accounts mit dem Benutzernamen `nexora` sind **offiziell**: Sie bekommen ein ora
 
 Weitere offizielle Accounts per Umgebungsvariable, kommagetrennt: `NEXORA_OFFICIAL=nexora,dom`
 
+## Sprachkanäle
+
+Die Stimmen laufen per **WebRTC direkt zwischen den Geräten**; der Server vermittelt nur den Verbindungsaufbau. Das belastet den Server kaum, ist aber für kleine Runden gedacht (max. 10 Personen pro Kanal).
+
+- Funktioniert nur über **HTTPS** (auf Render automatisch) oder `localhost`.
+- Für den Verbindungsaufbau werden die öffentlichen STUN-Server von Google genutzt. In manchen Netzen (oft Mobilfunk oder strenge Firmen-/Schul-WLANs) reicht das nicht – dann hilft ein **TURN-Server**, z. B. der kostenlose von [Metered](https://www.metered.ca/stun-turn). Zugangsdaten als Umgebungsvariablen eintragen:
+
+| Variable           | Beispiel                                   |
+| ------------------ | ------------------------------------------ |
+| `TURN_URL`         | `turn:global.relay.metered.ca:80,turns:global.relay.metered.ca:443?transport=tcp` |
+| `TURN_USERNAME`    | Benutzername vom TURN-Anbieter             |
+| `TURN_CREDENTIAL`  | Passwort vom TURN-Anbieter                 |
+
 ## Versionen & Updates
 
-Aktuelle Version: **V0.1 Beta**. Alle Änderungen stehen in [`changelog.json`](changelog.json) – der oberste Eintrag ist die laufende Version.
+Aktuelle Version: **V0.1.1 Beta**. Alle Änderungen stehen in [`changelog.json`](changelog.json) – der oberste Eintrag ist die laufende Version.
 
 - Nach dem Login (und nach jedem Update) zeigt Nexora einmal das Fenster **„Was ist neu?“**. Über die Versionsanzeige unten in der Hub-Leiste lässt es sich jederzeit wieder öffnen.
 - Geht eine neue Version live, während jemand Nexora offen hat, lädt die Seite automatisch neu. Tippt die Person gerade etwas, erscheint stattdessen ein „Jetzt laden“-Hinweis.

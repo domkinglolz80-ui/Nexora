@@ -224,6 +224,7 @@ function createHub({ name, icon, ownerId, inviteCode: code }) {
       newChannel('willkommen', 'Sag hallo und stell dich vor 👋'),
       newChannel('allgemein', 'Alles, was gerade los ist'),
       newChannel('medien', 'Links, Clips & Screenshots'),
+      newChannel('Treffpunkt', '', 'voice'),
     ],
     createdAt: Date.now(),
   };
@@ -241,7 +242,29 @@ function ensureLounge() {
     lounge.channels.push(newChannel('feedback', 'Wünsche & Ideen für Nexora'));
     save();
   }
+  // Lounges created before voice channels existed get one too.
+  if (!lounge.channels.some((c) => c.kind === 'voice')) {
+    lounge.channels.push(newChannel('Treffpunkt', '', 'voice'), newChannel('Gaming', '', 'voice'));
+    save();
+  }
   return lounge;
+}
+
+function channelById(channelId) {
+  const hub = hubForChannel(channelId);
+  return hub && hub.channels.find((c) => c.id === channelId);
+}
+
+function isVoice(channelId) {
+  return channelById(channelId)?.kind === 'voice';
+}
+
+function textChannelName(name) {
+  return str(name, 32).toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9äöüß_-]/g, '');
+}
+
+function voiceChannelName(name) {
+  return str(name, 32).replace(/\s+/g, ' ');
 }
 
 function hubForChannel(channelId) {
@@ -403,6 +426,62 @@ function emitPresence(user) {
   broadcastToVisible(user.id, 'presence', { userId: user.id, status: presenceOf(user) });
 }
 
+// ---------------------------------------------------------------------------
+// Voice: audio flows peer-to-peer over WebRTC; the server only tracks who is in
+// which voice channel and relays the connection setup (offer/answer/ICE).
+// ---------------------------------------------------------------------------
+
+const VOICE_LIMIT = 10;
+const voice = new Map(); // channelId -> Map(userId -> { socketId, muted, deafened })
+
+const ICE_SERVERS = [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] }];
+if (process.env.TURN_URL) {
+  ICE_SERVERS.push({
+    urls: process.env.TURN_URL.split(',').map((u) => u.trim()),
+    username: process.env.TURN_USERNAME,
+    credential: process.env.TURN_CREDENTIAL,
+  });
+}
+
+function voiceMembers(channelId) {
+  return [...(voice.get(channelId)?.entries() || [])].map(([userId, v]) => ({ userId, muted: v.muted, deafened: v.deafened }));
+}
+
+function emitVoiceState(channelId) {
+  const hub = hubForChannel(channelId);
+  if (hub) io.to(`hub:${hub.id}`).emit('voice:state', { channelId, members: voiceMembers(channelId) });
+}
+
+function voiceLeave(socket) {
+  const channelId = socket.data.voice;
+  if (!channelId) return;
+  socket.data.voice = null;
+  socket.leave(`voice:${channelId}`);
+  const room = voice.get(channelId);
+  const entry = room?.get(socket.data.userId);
+  if (entry && entry.socketId === socket.id) room.delete(socket.data.userId);
+  if (room && !room.size) voice.delete(channelId);
+  socket.to(`voice:${channelId}`).emit('voice:peer-left', { socketId: socket.id });
+  emitVoiceState(channelId);
+}
+
+function voiceKick(socketId, reason) {
+  const target = io.sockets.sockets.get(socketId);
+  if (!target) return;
+  const channelId = target.data.voice;
+  voiceLeave(target);
+  target.emit('voice:kicked', { channelId, reason });
+}
+
+// Removes everyone (or one user) from the voice channels of a hub.
+function voiceKickHub(hub, onlyUserId = null, reason = 'removed') {
+  for (const c of hub.channels) {
+    for (const [uid, v] of voice.get(c.id) || []) {
+      if (!onlyUserId || uid === onlyUserId) voiceKick(v.socketId, reason);
+    }
+  }
+}
+
 io.use((socket, next) => {
   const token = socket.handshake.auth?.token;
   const session = typeof token === 'string' && db.sessions[token];
@@ -454,6 +533,11 @@ io.on('connection', (socket) => {
       dms: Object.values(db.dms).filter((d) => d.members.includes(userId)).map(dmView),
       users,
       presence,
+      voice: Object.fromEntries(
+        Object.values(db.hubs)
+          .filter((h) => h.members.includes(userId))
+          .flatMap((h) => h.channels.filter((c) => voice.has(c.id)).map((c) => [c.id, voiceMembers(c.id)])),
+      ),
     };
   });
 
@@ -512,6 +596,7 @@ io.on('connection', (socket) => {
     const hub = db.hubs[hubId];
     if (!hub || !hub.members.includes(userId)) return { error: 'Hub nicht gefunden.' };
     if (hub.ownerId === userId) return { error: 'Als Besitzer kannst du den Hub nur löschen.' };
+    voiceKickHub(hub, userId);
     hub.members = hub.members.filter((m) => m !== userId);
     save();
     io.in(`user:${userId}`).socketsLeave(`hub:${hub.id}`);
@@ -523,6 +608,7 @@ io.on('connection', (socket) => {
   on('hub:delete', ({ hubId }) => {
     const hub = db.hubs[hubId];
     if (!hub || hub.ownerId !== userId) return { error: 'Nur der Besitzer kann den Hub löschen.' };
+    voiceKickHub(hub);
     io.to(`hub:${hub.id}`).emit('hub:removed', { hubId: hub.id });
     io.in(`hub:${hub.id}`).socketsLeave(`hub:${hub.id}`);
     for (const c of hub.channels) delete db.messages[c.id];
@@ -531,13 +617,14 @@ io.on('connection', (socket) => {
     return {};
   });
 
-  on('channel:create', ({ hubId, name, topic }) => {
+  on('channel:create', ({ hubId, name, topic, kind }) => {
     const hub = db.hubs[hubId];
     if (!hub || !canManage(hub, userId)) return { error: 'Nur der Besitzer kann Kanäle erstellen.' };
-    const channelName = str(name, 32).toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9äöüß_-]/g, '');
+    const channelKind = kind === 'voice' ? 'voice' : 'text';
+    const channelName = channelKind === 'voice' ? voiceChannelName(name) : textChannelName(name);
     if (!channelName) return { error: 'Ungültiger Kanalname.' };
     if (hub.channels.length >= 50) return { error: 'Maximal 50 Kanäle pro Hub.' };
-    const channel = newChannel(channelName, str(topic, 120));
+    const channel = newChannel(channelName, str(topic, 120), channelKind);
     hub.channels.push(channel);
     save();
     io.to(`hub:${hub.id}`).emit('hub:update', hubView(hub));
@@ -548,7 +635,7 @@ io.on('connection', (socket) => {
     const hub = hubForChannel(channelId);
     if (!hub || !canManage(hub, userId)) return { error: 'Nur der Besitzer kann Kanäle bearbeiten.' };
     const channel = hub.channels.find((c) => c.id === channelId);
-    const channelName = str(name, 32).toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9äöüß_-]/g, '');
+    const channelName = channel.kind === 'voice' ? voiceChannelName(name) : textChannelName(name);
     if (!channelName) return { error: 'Ungültiger Kanalname.' };
     channel.name = channelName;
     channel.topic = str(topic, 120);
@@ -560,7 +647,11 @@ io.on('connection', (socket) => {
   on('channel:delete', ({ channelId }) => {
     const hub = hubForChannel(channelId);
     if (!hub || !canManage(hub, userId)) return { error: 'Nur der Besitzer kann Kanäle löschen.' };
-    if (hub.channels.length <= 1) return { error: 'Ein Hub braucht mindestens einen Kanal.' };
+    const channel = hub.channels.find((c) => c.id === channelId);
+    if (channel.kind !== 'voice' && hub.channels.filter((c) => c.kind !== 'voice').length <= 1) {
+      return { error: 'Ein Hub braucht mindestens einen Textkanal.' };
+    }
+    for (const [, v] of voice.get(channelId) || []) voiceKick(v.socketId, 'deleted');
     hub.channels = hub.channels.filter((c) => c.id !== channelId);
     delete db.messages[channelId];
     save();
@@ -569,7 +660,7 @@ io.on('connection', (socket) => {
   });
 
   on('messages:fetch', ({ channelId, before }) => {
-    if (!channelAccess(userId, channelId)) return { error: 'Kein Zugriff.' };
+    if (!channelAccess(userId, channelId) || isVoice(channelId)) return { error: 'Kein Zugriff.' };
     const all = db.messages[channelId] || [];
     let end = all.length;
     if (before) {
@@ -582,7 +673,7 @@ io.on('connection', (socket) => {
 
   on('message:send', ({ channelId, content, replyTo }) => {
     const access = channelAccess(userId, channelId);
-    if (!access) return { error: 'Kein Zugriff.' };
+    if (!access || isVoice(channelId)) return { error: 'Kein Zugriff.' };
     const text = typeof content === 'string' ? content.trim() : '';
     if (!text) return { error: 'Leere Nachricht.' };
     if (text.length > MAX_MESSAGE) return { error: `Maximal ${MAX_MESSAGE} Zeichen.` };
@@ -727,7 +818,53 @@ io.on('connection', (socket) => {
     return { user: publicUser(user) };
   });
 
+  on('voice:join', ({ channelId, muted, deafened }) => {
+    const access = channelAccess(userId, channelId);
+    if (!access || !isVoice(channelId)) return { error: 'Sprachkanal nicht gefunden.' };
+    if (socket.data.voice === channelId) return { error: 'Du bist schon in diesem Sprachkanal.' };
+    const room = voice.get(channelId) || new Map();
+    if (room.size >= VOICE_LIMIT && !room.has(userId)) return { error: `Der Sprachkanal ist voll (max. ${VOICE_LIMIT}).` };
+
+    voiceLeave(socket);
+    // One voice connection per user: a session on another device is disconnected.
+    for (const r of [...voice.values()]) {
+      const existing = r.get(userId);
+      if (existing && existing.socketId !== socket.id) voiceKick(existing.socketId, 'elsewhere');
+    }
+
+    const peers = [...room.entries()].map(([uid, v]) => ({ socketId: v.socketId, userId: uid }));
+    room.set(userId, { socketId: socket.id, muted: Boolean(muted), deafened: Boolean(deafened) });
+    voice.set(channelId, room);
+    socket.data.voice = channelId;
+    socket.join(`voice:${channelId}`);
+    emitVoiceState(channelId);
+    return { peers, iceServers: ICE_SERVERS };
+  });
+
+  on('voice:leave', () => {
+    voiceLeave(socket);
+    return {};
+  });
+
+  on('voice:signal', ({ to, data }) => {
+    const target = typeof to === 'string' && io.sockets.sockets.get(to);
+    if (!socket.data.voice || !target || target.data.voice !== socket.data.voice) return { error: 'Peer nicht gefunden.' };
+    if (!data || typeof data !== 'object') return { error: 'Ungültig.' };
+    target.emit('voice:signal', { from: socket.id, userId, data });
+    return {};
+  });
+
+  on('voice:update', ({ muted, deafened }) => {
+    const entry = socket.data.voice && voice.get(socket.data.voice)?.get(userId);
+    if (!entry || entry.socketId !== socket.id) return { error: 'Nicht im Sprachkanal.' };
+    entry.muted = Boolean(muted);
+    entry.deafened = Boolean(deafened);
+    emitVoiceState(socket.data.voice);
+    return {};
+  });
+
   socket.on('disconnect', () => {
+    voiceLeave(socket);
     const count = (online.get(userId) || 1) - 1;
     if (count <= 0) online.delete(userId);
     else online.set(userId, count);

@@ -1,20 +1,88 @@
 [
   {
+    "version": "V0.1.1 Beta",
+    "date": "2026-10-22",
+    "title": "Sprachkanäle sind da",
+    "changes": [
+      {
+        "icon": "🔊",
+        "text": "Neue Sprachkanäle: Tritt bei und rede in Echtzeit mit deiner Crew"
+      },
+      {
+        "icon": "🟢",
+        "text": "Leuchtende Rahmen zeigen, wer gerade spricht"
+      },
+      {
+        "icon": "🎙️",
+        "text": "Mikrofon stumm schalten, Ton aus und Auflegen mit einem Tipp"
+      },
+      {
+        "icon": "📡",
+        "text": "Sprachleiste unten links: Bleib verbunden, während du in Textkanälen schreibst"
+      },
+      {
+        "icon": "👀",
+        "text": "In der Kanalliste siehst du, wer gerade in welchem Sprachkanal ist"
+      },
+      {
+        "icon": "🛠️",
+        "text": "Hub-Besitzer können beim Erstellen zwischen Text- und Sprachkanal wählen"
+      },
+      {
+        "icon": "🌐",
+        "text": "Die Nexora Lounge hat jetzt die Sprachkanäle Treffpunkt und Gaming"
+      }
+    ]
+  },
+  {
     "version": "V0.1 Beta",
     "date": "2026-10-22",
     "title": "Der Start von Nexora",
     "changes": [
-      { "icon": "🛰️", "text": "Hubs mit eigenen Kanälen erstellen und per Code oder Link Freunde einladen" },
-      { "icon": "⚡", "text": "Nachrichten in Echtzeit – antworten, bearbeiten, löschen und mit Emojis reagieren" },
-      { "icon": "💬", "text": "Direktnachrichten mit jedem Mitglied" },
-      { "icon": "✨", "text": "Formatierung: **fett**, *kursiv*, `code`, Zitate, ||Spoiler|| und @Erwähnungen" },
-      { "icon": "🟢", "text": "Online-Status, Tipp-Anzeige und Ungelesen-Badges mit Ton bei Erwähnungen" },
-      { "icon": "⌘", "text": "Befehlspalette mit Strg+K – spring sofort zu jedem Hub, Kanal oder Menschen" },
-      { "icon": "🎨", "text": "Profile mit Anzeigename, Bio und eigener Akzentfarbe" },
-      { "icon": "✅", "text": "Offizielle Nexora-Accounts mit Abzeichen" },
-      { "icon": "💾", "text": "Alle Accounts und Nachrichten werden dauerhaft gespeichert" },
-      { "icon": "📱", "text": "Optimiert fürs Handy" },
-      { "icon": "🔔", "text": "Update-Hinweise: Du siehst immer, was neu ist, und bekommst automatisch die neueste Version" }
+      {
+        "icon": "🛰️",
+        "text": "Hubs mit eigenen Kanälen erstellen und per Code oder Link Freunde einladen"
+      },
+      {
+        "icon": "⚡",
+        "text": "Nachrichten in Echtzeit – antworten, bearbeiten, löschen und mit Emojis reagieren"
+      },
+      {
+        "icon": "💬",
+        "text": "Direktnachrichten mit jedem Mitglied"
+      },
+      {
+        "icon": "✨",
+        "text": "Formatierung: **fett**, *kursiv*, `code`, Zitate, ||Spoiler|| und @Erwähnungen"
+      },
+      {
+        "icon": "🟢",
+        "text": "Online-Status, Tipp-Anzeige und Ungelesen-Badges mit Ton bei Erwähnungen"
+      },
+      {
+        "icon": "⌘",
+        "text": "Befehlspalette mit Strg+K – spring sofort zu jedem Hub, Kanal oder Menschen"
+      },
+      {
+        "icon": "🎨",
+        "text": "Profile mit Anzeigename, Bio und eigener Akzentfarbe"
+      },
+      {
+        "icon": "✅",
+        "text": "Offizielle Nexora-Accounts mit Abzeichen"
+      },
+      {
+        "icon": "💾",
+        "text": "Alle Accounts und Nachrichten werden dauerhaft gespeichert"
+      },
+      {
+        "icon": "📱",
+        "text": "Optimiert fürs Handy"
+      },
+      {
+        "icon": "🔔",
+        "text": "Update-Hinweise: Du siehst immer, was neu ist, und bekommst automatisch die neueste Version"
+      }
     ]
   }
 ]

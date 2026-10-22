@@ -20,6 +20,12 @@ const ICONS = {
   chat: '<svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
   search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>',
   logout: '<svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>',
+  speaker: '<svg viewBox="0 0 24 24"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>',
+  mic: '<svg viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M19 10v1a7 7 0 0 1-14 0v-1M12 18v4M8 22h8"/></svg>',
+  micOff: '<svg viewBox="0 0 24 24"><path d="m2 2 20 20M9 9v2a3 3 0 0 0 5.12 2.12M15 9.34V5a3 3 0 0 0-5.94-.6"/><path d="M17 16.95A7 7 0 0 1 5 11v-1m14 0v1a7 7 0 0 1-.11 1.23M12 18v4M8 22h8"/></svg>',
+  headphones: '<svg viewBox="0 0 24 24"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>',
+  headphonesOff: '<svg viewBox="0 0 24 24"><path d="m2 2 20 20M3 18v-6a9 9 0 0 1 2.64-6.36M8.4 3.6A9 9 0 0 1 21 12v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3M3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>',
+  hangup: '<svg viewBox="0 0 24 24"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"/><path d="m22 2-20 20"/></svg>',
 };
 
 const EMOJIS = ('🔥 ⚡ 🚀 💯 ❤️ 🧡 💛 👍 👎 👏 🙌 🤝 🙏 💪 👀 🎉 ' +
@@ -46,6 +52,8 @@ const state = {
   replyTo: null,
   editingId: null,
   showMembers: true,
+  voiceStates: new Map(), // channelId -> [{ userId, muted, deafened }]
+  speaking: new Set(), // userIds currently speaking (measured locally)
 };
 
 let socket = null;
@@ -302,6 +310,7 @@ function start(token) {
     try {
       const data = await req('bootstrap');
       applyBootstrap(data);
+      if (vc.channelId) rejoinVoice();
     } catch (ex) {
       toast(ex.message, 'error');
     }
@@ -338,6 +347,7 @@ function start(token) {
 
   socket.on('hub:removed', ({ hubId }) => {
     const hub = state.hubs.get(hubId);
+    if (vc.hubId === hubId) cleanupVoice();
     state.hubs.delete(hubId);
     hub?.channels.forEach((c) => {
       state.channels.delete(c.id);
@@ -399,6 +409,16 @@ function start(token) {
     if (channelId === state.view.channelId) rerenderMessages();
   });
 
+  socket.on('voice:state', onVoiceState);
+  socket.on('voice:signal', (msg) => handleSignal(msg).catch((err) => console.warn('[voice] signal', err)));
+  socket.on('voice:peer-left', ({ socketId }) => closePeer(socketId));
+  socket.on('voice:kicked', ({ reason }) => {
+    cleanupVoice();
+    if (reason === 'elsewhere') toast('Du bist jetzt auf einem anderen Gerät im Sprachkanal.');
+    else if (reason === 'deleted') toast('Der Sprachkanal wurde gelöscht.', 'error');
+    renderVoiceUi();
+  });
+
   socket.on('typing', ({ channelId, userId }) => {
     if (userId === state.me?.id) return;
     let map = state.typing.get(channelId);
@@ -418,6 +438,7 @@ function applyBootstrap(data) {
   state.dms = new Map(data.dms.map((x) => [x.id, x]));
   state.users = new Map(Object.entries(data.users));
   state.presence = new Map(Object.entries(data.presence));
+  state.voiceStates = new Map(Object.entries(data.voice || {}));
   // After a reconnect the cache may be stale — drop it and refetch lazily.
   state.channels.clear();
   state.lastChannel = store('lastChannel') || {};
@@ -459,15 +480,17 @@ function setView(view) {
   if (view.channelId) state.unread.delete(view.channelId);
   $('#app').classList.remove('drawer-open', 'show-members');
   renderAll();
-  if (view.channelId) loadChannel(view.channelId);
-  if (window.matchMedia('(min-width: 761px)').matches) $('#composer-input').focus();
+  if (view.channelId && !isVoiceChannel(view.channelId)) {
+    loadChannel(view.channelId);
+    if (window.matchMedia('(min-width: 761px)').matches) $('#composer-input').focus();
+  }
 }
 
 function openHub(hubId, channelId) {
   const hub = state.hubs.get(hubId);
   if (!hub) return openHome();
   const wanted = channelId || state.lastChannel[hubId];
-  const channel = hub.channels.find((c) => c.id === wanted) || hub.channels[0];
+  const channel = hub.channels.find((c) => c.id === wanted) || hub.channels.find((c) => c.kind !== 'voice') || hub.channels[0];
   setView({ type: 'hub', hubId, channelId: channel?.id || null });
 }
 
@@ -516,7 +539,7 @@ function channelLabel(channelId) {
   if (dm) return '@' + dmPartner(dm).displayName;
   for (const hub of state.hubs.values()) {
     const c = hub.channels.find((x) => x.id === channelId);
-    if (c) return '#' + c.name;
+    if (c) return (c.kind === 'voice' ? '🔊 ' : '#') + c.name;
   }
   return '';
 }
@@ -588,9 +611,9 @@ function renderSidebar() {
     head.querySelector('[data-act=settings]').onclick = () => openHubSettings(hub.id);
     head.querySelector('[data-act=invite]').onclick = () => openInvite(hub.id);
 
-    body.innerHTML = `<div class="section-label"><span>Kanäle</span>${isOwner ? `<button class="icon-btn" data-act="add" title="Kanal erstellen">${ICONS.plus}</button>` : ''}</div>`;
+    body.innerHTML = `<div class="section-label"><span>Textkanäle</span>${isOwner ? `<button class="icon-btn" data-act="add" title="Kanal erstellen">${ICONS.plus}</button>` : ''}</div>`;
     body.querySelector('[data-act=add]')?.addEventListener('click', () => openChannelEditor(hub.id));
-    for (const c of hub.channels) {
+    for (const c of hub.channels.filter((x) => x.kind !== 'voice')) {
       const u = state.unread.get(c.id);
       const active = c.id === state.view.channelId;
       const item = h(`<button class="nav-item ${active ? 'active' : ''} ${u ? 'unread' : ''}">
@@ -603,6 +626,40 @@ function renderSidebar() {
         openHub(hub.id, c.id);
       });
       body.append(item);
+    }
+
+    const voiceChannels = hub.channels.filter((x) => x.kind === 'voice');
+    if (voiceChannels.length || isOwner) {
+      const label = h(`<div class="section-label"><span>Sprachkanäle</span>${isOwner ? `<button class="icon-btn" title="Sprachkanal erstellen">${ICONS.plus}</button>` : ''}</div>`);
+      label.querySelector('.icon-btn')?.addEventListener('click', () => openChannelEditor(hub.id, null, 'voice'));
+      body.append(label);
+    }
+    for (const c of voiceChannels) {
+      const members = state.voiceStates.get(c.id) || [];
+      const active = c.id === state.view.channelId;
+      const item = h(`<button class="nav-item voice-item ${active ? 'active' : ''} ${vc.channelId === c.id ? 'connected' : ''}">
+        <span class="hash">${ICONS.speaker}</span><span class="label">${esc(c.name)}</span>
+        ${members.length ? `<span class="voice-count">${members.length}</span>` : ''}
+        ${isOwner ? `<span class="row-actions"><span class="icon-btn" data-act="edit" title="Kanal bearbeiten">${ICONS.gear}</span></span>` : ''}
+      </button>`);
+      item.addEventListener('click', (e) => {
+        if (e.target.closest('[data-act=edit]')) return openChannelEditor(hub.id, c.id);
+        openHub(hub.id, c.id);
+      });
+      body.append(item);
+      if (members.length) {
+        const list = h('<div class="voice-users"></div>');
+        for (const m of members) {
+          const u = userOf(m.userId);
+          const row = h(`<button class="voice-user ${state.speaking.has(m.userId) ? 'speaking' : ''}" data-voice-user="${esc(m.userId)}">
+            ${avatar(u, { size: 24 })}<span class="label">${esc(u.displayName)}</span>
+            ${m.deafened ? `<span class="vs-icon" title="Stumm geschaltet (Ton aus)">${ICONS.headphonesOff}</span>` : m.muted ? `<span class="vs-icon" title="Mikrofon aus">${ICONS.micOff}</span>` : ''}
+          </button>`);
+          row.onclick = () => showProfile(m.userId, row);
+          list.append(row);
+        }
+        body.append(list);
+      }
     }
   } else {
     head.className = 'sidebar-head';
@@ -650,7 +707,10 @@ function renderChatHeader() {
   const composer = $('#composer-input');
   const membersBtn = $('#toggle-members');
 
-  if (channel) {
+  if (channel?.kind === 'voice') {
+    const n = (state.voiceStates.get(channel.id) || []).length;
+    title.innerHTML = `<div class="hash-big voice">${ICONS.speaker}</div><h1>${esc(channel.name)}</h1><div class="topic">${n ? `${n} im Kanal` : 'Sprachkanal'}</div>`;
+  } else if (channel) {
     title.innerHTML = `<div class="hash-big">#</div><h1>${esc(channel.name)}</h1>${channel.topic ? `<div class="topic">${esc(channel.topic)}</div>` : ''}`;
     composer.placeholder = `Nachricht an #${channel.name}`;
   } else if (dm) {
@@ -663,7 +723,7 @@ function renderChatHeader() {
     composer.placeholder = 'Wähle eine Unterhaltung';
   }
   const hasTarget = Boolean(channel || dm);
-  $('.composer-wrap').classList.toggle('hidden', !hasTarget);
+  $('.composer-wrap').classList.toggle('hidden', !hasTarget || channel?.kind === 'voice');
   membersBtn.classList.toggle('active', state.showMembers);
   $('#app').classList.toggle('no-members', !state.showMembers || !hasTarget);
 }
@@ -750,6 +810,7 @@ function renderMessagesShell() {
     box.querySelector('[data-act=hub]').onclick = openCreateHub;
     return;
   }
+  if (isVoiceChannel(state.view.channelId)) return renderStage();
   const ch = state.channels.get(state.view.channelId);
   if (ch && !ch.loading) rerenderMessages();
 }
@@ -1377,15 +1438,21 @@ function openHubSettings(hubId) {
   };
 }
 
-function openChannelEditor(hubId, channelId) {
+function openChannelEditor(hubId, channelId, initialKind = 'text') {
   const hub = state.hubs.get(hubId);
   const channel = channelId && hub.channels.find((c) => c.id === channelId);
+  let kind = channel ? channel.kind || 'text' : initialKind;
   const { modal, close } = openModal(`
     <h3>${channel ? 'Kanal bearbeiten' : 'Kanal erstellen'}</h3>
-    <p class="sub">${channel ? `#${esc(channel.name)} in ${esc(hub.name)}` : `Neuer Textkanal in ${esc(hub.name)}`}</p>
+    <p class="sub">${channel ? `${esc(channelLabel(channel.id))} in ${esc(hub.name)}` : `Neuer Kanal in ${esc(hub.name)}`}</p>
     <form>
+      ${channel ? '' : `<div class="field"><span>Art</span></div>
+      <div class="kind-row">
+        <button type="button" class="kind-opt" data-kind="text"><b>#</b><span><strong>Text</strong><small>Nachrichten, Emojis, Links</small></span></button>
+        <button type="button" class="kind-opt" data-kind="voice">${ICONS.speaker}<span><strong>Sprache</strong><small>Zusammen reden in Echtzeit</small></span></button>
+      </div>`}
       <label class="field"><span>Name</span><input name="name" maxlength="32" required placeholder="neuer-kanal" /></label>
-      <label class="field"><span>Thema <em>(optional)</em></span><input name="topic" maxlength="120" placeholder="Worum geht's hier?" /></label>
+      <label class="field topic-field"><span>Thema <em>(optional)</em></span><input name="topic" maxlength="120" placeholder="Worum geht's hier?" /></label>
       <p class="form-error"></p>
       <div class="modal-actions">
         ${channel ? `<button type="button" class="btn danger" data-act="delete">${ICONS.trash} Löschen</button><span class="spacer"></span>` : ''}
@@ -1398,7 +1465,20 @@ function openChannelEditor(hubId, channelId) {
     form.name.value = channel.name;
     form.topic.value = channel.topic || '';
   }
+  const applyKind = () => {
+    modal.querySelectorAll('.kind-opt').forEach((b) => b.classList.toggle('sel', b.dataset.kind === kind));
+    modal.querySelector('.topic-field').classList.toggle('hidden', kind === 'voice');
+    form.name.placeholder = kind === 'voice' ? 'Treffpunkt' : 'neuer-kanal';
+  };
+  modal.querySelector('.kind-row')?.addEventListener('click', (e) => {
+    const b = e.target.closest('.kind-opt');
+    if (!b) return;
+    kind = b.dataset.kind;
+    applyKind();
+  });
+  applyKind();
   form.name.addEventListener('input', () => {
+    if (kind === 'voice') return;
     const pos = form.name.selectionStart;
     form.name.value = form.name.value.toLowerCase().replace(/\s/g, '-');
     form.name.setSelectionRange(pos, pos);
@@ -1409,7 +1489,7 @@ function openChannelEditor(hubId, channelId) {
       if (channel) {
         await req('channel:update', { channelId, name: form.name.value, topic: form.topic.value });
       } else {
-        const res = await req('channel:create', { hubId, name: form.name.value, topic: form.topic.value });
+        const res = await req('channel:create', { hubId, name: form.name.value, topic: kind === 'voice' ? '' : form.topic.value, kind });
         const fresh = state.hubs.get(hubId);
         if (!fresh.channels.some((c) => c.id === res.channel.id)) fresh.channels.push(res.channel);
         openHub(hubId, res.channel.id);
@@ -1419,7 +1499,8 @@ function openChannelEditor(hubId, channelId) {
   };
   modal.querySelector('[data-act=delete]')?.addEventListener('click', async () => {
     close();
-    if (!(await confirmDialog('Kanal löschen?', `#${channel.name} und alle Nachrichten darin werden gelöscht.`, 'Löschen'))) return;
+    const text = channel.kind === 'voice' ? `${channelLabel(channel.id)} wird gelöscht. Wer gerade drin ist, fliegt raus.` : `#${channel.name} und alle Nachrichten darin werden gelöscht.`;
+    if (!(await confirmDialog('Kanal löschen?', text, 'Löschen'))) return;
     req('channel:delete', { channelId }).catch((ex) => toast(ex.message, 'error'));
   });
 }
@@ -1536,7 +1617,7 @@ function openPalette() {
     for (const hub of state.hubs.values()) {
       out.push({ label: hub.name, kind: 'Hub', ico: hub.icon || initials(hub.name), go: () => openHub(hub.id) });
       for (const c of hub.channels) {
-        out.push({ label: c.name, kind: hub.name, ico: '#', go: () => openHub(hub.id, c.id), unread: state.unread.has(c.id) });
+        out.push({ label: c.name, kind: hub.name, ico: c.kind === 'voice' ? '🔊' : '#', go: () => openHub(hub.id, c.id), unread: state.unread.has(c.id) });
       }
     }
     const dmUsers = new Set();
@@ -1582,6 +1663,354 @@ function openPalette() {
     if (e.key === 'Enter' && items[sel]) { e.preventDefault(); close(); items[sel].go(); }
   });
   render();
+}
+
+/* =========================================================================
+   Voice (WebRTC mesh; the server only relays the connection setup)
+   ========================================================================= */
+
+const vc = {
+  channelId: null,
+  hubId: null,
+  stream: null,
+  muted: false,
+  deafened: false,
+  mutedBeforeDeafen: false,
+  iceServers: [],
+  peers: new Map(), // socketId -> { pc, userId, audio, pendingIce, analyser }
+  localAnalyser: null,
+  joining: false,
+};
+
+function isVoiceChannel(channelId) {
+  for (const hub of state.hubs.values()) {
+    const c = hub.channels.find((x) => x.id === channelId);
+    if (c) return c.kind === 'voice';
+  }
+  return false;
+}
+
+function getAudioCtx() {
+  audioCtx ||= new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
+  return audioCtx;
+}
+
+function makeAnalyser(stream) {
+  try {
+    const ctx = getAudioCtx();
+    const analyser = ctx.createAnalyser();
+    analyser.fftSize = 512;
+    ctx.createMediaStreamSource(stream).connect(analyser);
+    return { analyser, buf: new Uint8Array(analyser.fftSize) };
+  } catch {
+    return null;
+  }
+}
+
+function level(a) {
+  if (!a) return 0;
+  a.analyser.getByteTimeDomainData(a.buf);
+  let sum = 0;
+  for (const v of a.buf) sum += (v - 128) * (v - 128);
+  return Math.sqrt(sum / a.buf.length);
+}
+
+// Short two-tone chime for join/leave.
+function voiceSound(up) {
+  try {
+    const ctx = getAudioCtx();
+    const t = ctx.currentTime;
+    [0, 0.09].forEach((offset, i) => {
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.frequency.value = up ? [660, 990][i] : [990, 660][i];
+      g.gain.setValueAtTime(0.0001, t + offset);
+      g.gain.exponentialRampToValueAtTime(0.08, t + offset + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + offset + 0.16);
+      o.connect(g).connect(ctx.destination);
+      o.start(t + offset);
+      o.stop(t + offset + 0.2);
+    });
+  } catch {
+    /* audio not available */
+  }
+}
+
+setInterval(() => {
+  if (!vc.channelId) {
+    if (state.speaking.size) { state.speaking.clear(); updateSpeaking(); }
+    return;
+  }
+  const next = new Set();
+  if (!vc.muted && level(vc.localAnalyser) > 6) next.add(state.me.id);
+  for (const peer of vc.peers.values()) if (peer.userId && level(peer.analyser) > 6) next.add(peer.userId);
+  const changed = next.size !== state.speaking.size || [...next].some((id) => !state.speaking.has(id));
+  if (changed) {
+    state.speaking = next;
+    updateSpeaking();
+  }
+}, 120);
+
+function updateSpeaking() {
+  $$('[data-voice-user]').forEach((el) => el.classList.toggle('speaking', state.speaking.has(el.dataset.voiceUser)));
+}
+
+async function joinVoice(channelId) {
+  if (vc.joining || vc.channelId === channelId) return;
+  if (!navigator.mediaDevices?.getUserMedia || !window.RTCPeerConnection) {
+    return toast('Dein Browser unterstützt keine Sprachkanäle (HTTPS nötig).', 'error');
+  }
+  vc.joining = true;
+  renderVoiceUi();
+  try {
+    getAudioCtx();
+    if (vc.channelId) leaveVoice(true);
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+    }).catch(() => {
+      throw new Error('Kein Mikrofon-Zugriff. Erlaube das Mikrofon in den Browser-Einstellungen.');
+    });
+    stream.getAudioTracks().forEach((t) => (t.enabled = !vc.muted));
+    let res;
+    try {
+      res = await req('voice:join', { channelId, muted: vc.muted, deafened: vc.deafened });
+    } catch (ex) {
+      stream.getTracks().forEach((t) => t.stop());
+      throw ex;
+    }
+    vc.stream = stream;
+    vc.channelId = channelId;
+    vc.hubId = [...state.hubs.values()].find((h) => h.channels.some((c) => c.id === channelId))?.id || null;
+    vc.iceServers = res.iceServers || [];
+    vc.localAnalyser = makeAnalyser(stream);
+    for (const p of res.peers) startCall(p.socketId, p.userId);
+    voiceSound(true);
+  } catch (ex) {
+    toast(ex.message, 'error');
+  } finally {
+    vc.joining = false;
+    renderVoiceUi();
+  }
+}
+
+// After a reconnect the server forgot us: rebuild all connections with the same mic.
+async function rejoinVoice() {
+  const channelId = vc.channelId;
+  for (const id of [...vc.peers.keys()]) closePeer(id);
+  if (!isVoiceChannel(channelId)) return cleanupVoice();
+  try {
+    const res = await req('voice:join', { channelId, muted: vc.muted, deafened: vc.deafened });
+    vc.iceServers = res.iceServers || [];
+    for (const p of res.peers) startCall(p.socketId, p.userId);
+  } catch {
+    cleanupVoice();
+  }
+  renderVoiceUi();
+}
+
+function leaveVoice(silent = false) {
+  if (!vc.channelId) return;
+  req('voice:leave').catch(() => {});
+  cleanupVoice();
+  if (!silent) voiceSound(false);
+  renderVoiceUi();
+}
+
+function cleanupVoice() {
+  for (const id of [...vc.peers.keys()]) closePeer(id);
+  vc.stream?.getTracks().forEach((t) => t.stop());
+  vc.stream = null;
+  vc.localAnalyser = null;
+  vc.channelId = null;
+  vc.hubId = null;
+}
+
+function createPeer(socketId, userId) {
+  const pc = new RTCPeerConnection({ iceServers: vc.iceServers });
+  const peer = { pc, userId, audio: null, pendingIce: [], analyser: null, warned: false };
+  vc.peers.set(socketId, peer);
+  vc.stream?.getTracks().forEach((t) => pc.addTrack(t, vc.stream));
+  pc.onicecandidate = (e) => {
+    if (e.candidate) req('voice:signal', { to: socketId, data: { candidate: e.candidate.toJSON() } }).catch(() => {});
+  };
+  pc.ontrack = (e) => {
+    const stream = e.streams[0] || new MediaStream([e.track]);
+    if (!peer.audio) {
+      peer.audio = document.createElement('audio');
+      peer.audio.autoplay = true;
+      peer.audio.playsInline = true;
+      $('#voice-audio').append(peer.audio);
+    }
+    peer.audio.srcObject = stream;
+    peer.audio.muted = vc.deafened;
+    peer.audio.play().catch(() => {});
+    peer.analyser = makeAnalyser(stream);
+  };
+  pc.onconnectionstatechange = () => {
+    if (pc.connectionState === 'failed' && !peer.warned) {
+      peer.warned = true;
+      toast(`Keine Sprachverbindung zu ${userOf(peer.userId).displayName} – das Netzwerk blockiert sie.`, 'error');
+    }
+  };
+  return peer;
+}
+
+async function startCall(socketId, userId) {
+  const { pc } = createPeer(socketId, userId);
+  try {
+    await pc.setLocalDescription(await pc.createOffer());
+    await req('voice:signal', { to: socketId, data: { sdp: pc.localDescription.toJSON() } });
+  } catch (err) {
+    console.warn('[voice] offer', err);
+  }
+}
+
+async function handleSignal({ from, userId, data }) {
+  if (!vc.channelId) return;
+  const peer = vc.peers.get(from) || createPeer(from, userId);
+  peer.userId = userId;
+  const { pc } = peer;
+  if (data.sdp) {
+    await pc.setRemoteDescription(data.sdp);
+    for (const c of peer.pendingIce.splice(0)) await pc.addIceCandidate(c).catch(() => {});
+    if (data.sdp.type === 'offer') {
+      await pc.setLocalDescription(await pc.createAnswer());
+      await req('voice:signal', { to: from, data: { sdp: pc.localDescription.toJSON() } });
+    }
+  } else if (data.candidate) {
+    if (pc.remoteDescription) await pc.addIceCandidate(data.candidate).catch(() => {});
+    else peer.pendingIce.push(data.candidate);
+  }
+}
+
+function closePeer(socketId) {
+  const peer = vc.peers.get(socketId);
+  if (!peer) return;
+  vc.peers.delete(socketId);
+  peer.pc.close();
+  if (peer.audio) {
+    peer.audio.srcObject = null;
+    peer.audio.remove();
+  }
+}
+
+function setVoiceFlags(muted, deafened) {
+  vc.muted = muted;
+  vc.deafened = deafened;
+  vc.stream?.getAudioTracks().forEach((t) => (t.enabled = !muted));
+  for (const peer of vc.peers.values()) if (peer.audio) peer.audio.muted = deafened;
+  if (vc.channelId) req('voice:update', { muted, deafened }).catch(() => {});
+  renderVoiceUi();
+}
+
+function toggleMute() {
+  if (vc.deafened) return setVoiceFlags(false, false);
+  setVoiceFlags(!vc.muted, false);
+}
+
+function toggleDeafen() {
+  if (vc.deafened) return setVoiceFlags(vc.mutedBeforeDeafen, false);
+  vc.mutedBeforeDeafen = vc.muted;
+  setVoiceFlags(true, true);
+}
+
+function onVoiceState({ channelId, members }) {
+  const before = (state.voiceStates.get(channelId) || []).map((m) => m.userId);
+  if (members.length) state.voiceStates.set(channelId, members);
+  else state.voiceStates.delete(channelId);
+  if (channelId === vc.channelId) {
+    const after = members.map((m) => m.userId).filter((id) => id !== state.me.id);
+    const prev = before.filter((id) => id !== state.me.id);
+    if (after.some((id) => !prev.includes(id))) voiceSound(true);
+    else if (prev.some((id) => !after.includes(id))) voiceSound(false);
+  }
+  renderVoiceUi();
+}
+
+function voiceButtons(big = false) {
+  const cls = big ? 'stage-btn' : 'icon-btn';
+  return `
+    <button class="${cls} ${vc.muted ? 'off' : ''}" data-voice="mute" title="${vc.muted ? 'Mikrofon an' : 'Stumm schalten'}">${vc.muted ? ICONS.micOff : ICONS.mic}</button>
+    <button class="${cls} ${vc.deafened ? 'off' : ''}" data-voice="deafen" title="${vc.deafened ? 'Ton an' : 'Ton aus'}">${vc.deafened ? ICONS.headphonesOff : ICONS.headphones}</button>
+    <button class="${cls} hangup" data-voice="leave" title="Verlassen">${ICONS.hangup}</button>`;
+}
+
+function bindVoiceButtons(root) {
+  root.querySelectorAll('[data-voice]').forEach((b) => {
+    b.onclick = (e) => {
+      e.stopPropagation();
+      if (b.dataset.voice === 'mute') toggleMute();
+      if (b.dataset.voice === 'deafen') toggleDeafen();
+      if (b.dataset.voice === 'leave') leaveVoice();
+    };
+  });
+}
+
+function renderVoiceBar() {
+  const bar = $('#voice-bar');
+  if (!vc.channelId) {
+    bar.classList.add('hidden');
+    bar.innerHTML = '';
+    return;
+  }
+  const hub = state.hubs.get(vc.hubId);
+  const channel = hub?.channels.find((c) => c.id === vc.channelId);
+  bar.classList.remove('hidden');
+  bar.innerHTML = `
+    <div class="vb-info" title="Zum Sprachkanal">
+      <span class="vb-status"><i></i>Sprachverbindung</span>
+      <span class="vb-where">${esc(channel?.name || '')} · ${esc(hub?.name || '')}</span>
+    </div>
+    <div class="vb-actions">${voiceButtons()}</div>`;
+  bar.querySelector('.vb-info').onclick = () => vc.hubId && openHub(vc.hubId, vc.channelId);
+  bindVoiceButtons(bar);
+}
+
+function renderStage() {
+  const box = $('#messages');
+  const channel = currentChannel();
+  if (!channel) return;
+  const members = state.voiceStates.get(channel.id) || [];
+  const inHere = vc.channelId === channel.id;
+  box.innerHTML = '';
+  const stage = h(`<div class="stage">
+    <div class="stage-grid ${members.length ? '' : 'empty'}"></div>
+    <div class="stage-controls"></div>
+  </div>`);
+  const grid = stage.querySelector('.stage-grid');
+  if (!members.length) {
+    grid.append(h(`<div class="stage-empty"><div class="hash-huge">${ICONS.speaker}</div><h2>${esc(channel.name)}</h2><p>Noch niemand da. Sei die erste Person!</p></div>`));
+  }
+  for (const m of members) {
+    const u = userOf(m.userId);
+    const tile = h(`<div class="stage-tile ${state.speaking.has(m.userId) ? 'speaking' : ''}" data-voice-user="${esc(m.userId)}" style="--c:${esc(u.color)}">
+      <div class="tile-ring">${avatar(u, { size: 84 })}</div>
+      <div class="tile-name">${esc(u.displayName)}${verified(u)}</div>
+      <div class="tile-flags">${m.deafened ? ICONS.headphonesOff : m.muted ? ICONS.micOff : ''}</div>
+    </div>`);
+    tile.querySelector('.avatar').onclick = (e) => showProfile(m.userId, e.currentTarget);
+    grid.append(tile);
+  }
+  const controls = stage.querySelector('.stage-controls');
+  if (inHere) {
+    controls.innerHTML = voiceButtons(true);
+    bindVoiceButtons(controls);
+  } else {
+    const full = members.length >= 10;
+    controls.innerHTML = `<button class="btn primary stage-join" ${full || vc.joining ? 'disabled' : ''}>${ICONS.speaker} ${vc.joining ? 'Verbinde…' : full ? 'Kanal ist voll' : vc.channelId ? 'Hierher wechseln' : 'Beitreten'}</button>`;
+    controls.querySelector('.stage-join').onclick = () => joinVoice(channel.id);
+  }
+  box.append(stage);
+}
+
+function renderVoiceUi() {
+  renderVoiceBar();
+  if (state.view.type === 'hub') renderSidebar();
+  if (isVoiceChannel(state.view.channelId)) {
+    renderStage();
+    renderChatHeader();
+  }
 }
 
 /* ---------- version & changelog ---------- */
