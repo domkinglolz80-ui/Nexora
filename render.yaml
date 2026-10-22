@@ -8,3 +8,6 @@ services:
     startCommand: npm start
     healthCheckPath: /api/health
     autoDeploy: true
+    envVars:
+      - key: MONGODB_URI
+        sync: false

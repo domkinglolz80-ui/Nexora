@@ -37,6 +37,8 @@ Dann <http://localhost:3000> öffnen. Zum Testen mit mehreren Leuten einfach ein
 | ------------------ | --------- | --------------------------------- |
 | `PORT`             | `3000`    | Port des Servers                  |
 | `NEXORA_DATA_DIR`  | `./data`  | Ordner, in dem `db.json` liegt    |
+| `MONGODB_URI`      | –         | Wenn gesetzt: Daten in MongoDB statt in `db.json` |
+| `MONGODB_DB`       | `nexora`  | Name der MongoDB-Datenbank        |
 
 ## Online stellen (Render.com, kostenlos)
 
@@ -55,17 +57,31 @@ Geht komplett vom Handy aus:
 
 Alternativ: **New +** → **Blueprint** → Repo auswählen; die Einstellungen kommen dann aus `render.yaml`.
 
-**Wichtig zur Gratis-Version:** Der Server schläft nach ~15 Minuten ohne Besucher ein (der erste Aufruf danach dauert ca. 1 Minute) und hat keinen dauerhaften Speicher. Bei jedem Neustart oder Update werden Accounts und Nachrichten zurückgesetzt. Für dauerhafte Daten braucht es eine externe Datenbank oder einen bezahlten Plan mit Disk.
+Der Gratis-Server schläft nach ~15 Minuten ohne Besucher ein; der erste Aufruf danach dauert ca. 1 Minute.
+
+### Daten dauerhaft speichern (MongoDB Atlas, kostenlos)
+
+Ohne Datenbank sind auf Render nach jedem Neustart alle Accounts und Nachrichten weg. So bleiben sie erhalten:
+
+1. Auf <https://www.mongodb.com/atlas> einen kostenlosen **M0**-Cluster anlegen und einen Datenbank-User mit Passwort erstellen.
+2. **Network Access** → **Add IP Address** → **Allow Access from Anywhere** (`0.0.0.0/0`).
+3. **Connect** → **Drivers** → Node.js → Connection String kopieren und `<db_password>` durch das Passwort ersetzen.
+4. Bei Render im Web Service → **Environment** → **Add Environment Variable**:
+   - Key: `MONGODB_URI`
+   - Value: der Connection String
+5. Speichern – Render startet neu, im Log steht dann „Daten werden in MongoDB gespeichert“.
+
+Kann der Server die Datenbank nicht erreichen, startet er absichtlich nicht (statt mit leeren Daten weiterzumachen). Dann im Render-Log nachsehen – meist fehlt Schritt 2 oder das Passwort stimmt nicht.
 
 **Tipp:** Im Handy-Browser „Zum Startbildschirm hinzufügen“ – dann liegt Nexora wie eine App auf dem Homescreen.
 
 ## Aufbau
 
 ```
-server.js          Express + Socket.IO Server, Datenhaltung in data/db.json
+server.js          Express + Socket.IO Server, Daten in MongoDB oder data/db.json
 public/index.html  Oberfläche
 public/app.css     Design (Ember-Theme)
 public/app.js      Client-Logik
 ```
 
-Die Daten liegen in einer JSON-Datei – ideal für kleine Gruppen. Für viele Nutzer wäre später eine echte Datenbank (z. B. SQLite oder Postgres) der nächste Schritt.
+Alle Daten werden im Arbeitsspeicher gehalten und gebündelt gespeichert – ideal für kleine bis mittlere Gruppen.

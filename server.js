@@ -15,23 +15,17 @@ const MAX_MESSAGE = 2000;
 const ACCENTS = ['#ff7a18', '#ff9f1c', '#ff5e3a', '#ffb347', '#ff6b00', '#f9a03f', '#ff8c42', '#e85d04'];
 
 // ---------------------------------------------------------------------------
-// Persistence (JSON file, debounced writes)
+// Persistence: MongoDB when MONGODB_URI is set, otherwise a local JSON file.
+// The whole state lives in memory; writes are debounced.
 // ---------------------------------------------------------------------------
+
+const MONGODB_URI = process.env.MONGODB_URI;
 
 function emptyDb() {
   return { users: {}, sessions: {}, hubs: {}, dms: {}, messages: {} };
 }
 
-function loadDb() {
-  try {
-    return { ...emptyDb(), ...JSON.parse(fs.readFileSync(DB_FILE, 'utf8')) };
-  } catch (err) {
-    if (err.code !== 'ENOENT') console.error('[nexora] Konnte Datenbank nicht lesen:', err.message);
-    return emptyDb();
-  }
-}
-
-const db = loadDb();
+const db = emptyDb();
 let saveTimer = null;
 
 function save() {
@@ -42,11 +36,83 @@ function save() {
 function flush() {
   clearTimeout(saveTimer);
   saveTimer = null;
+  if (MONGODB_URI) return mongoStore.flush();
   fs.mkdirSync(DATA_DIR, { recursive: true });
   const tmp = DB_FILE + '.tmp';
   fs.writeFileSync(tmp, JSON.stringify(db));
   fs.renameSync(tmp, DB_FILE);
 }
+
+function loadFile() {
+  try {
+    Object.assign(db, JSON.parse(fs.readFileSync(DB_FILE, 'utf8')));
+  } catch (err) {
+    if (err.code !== 'ENOENT') console.error('[nexora] Konnte Datenbank nicht lesen:', err.message);
+  }
+}
+
+// One "meta" document for users/sessions/hubs/dms and one document per channel's
+// messages, so no single document approaches MongoDB's 16 MB limit.
+const mongoStore = {
+  col: null,
+  saved: new Map(), // docId -> last written JSON, to only write what changed
+  running: null,
+  again: false,
+
+  async load() {
+    const { MongoClient } = require('mongodb');
+    const client = new MongoClient(MONGODB_URI, { serverSelectionTimeoutMS: 15000 });
+    await client.connect();
+    this.col = client.db(process.env.MONGODB_DB || 'nexora').collection('state');
+    for (const doc of await this.col.find().toArray()) {
+      if (doc._id === 'meta') Object.assign(db, doc.data);
+      else if (doc._id.startsWith('ch:')) db.messages[doc._id.slice(3)] = doc.list;
+      this.saved.set(doc._id, JSON.stringify(doc._id === 'meta' ? doc.data : doc.list));
+    }
+  },
+
+  flush() {
+    if (this.running) {
+      this.again = true;
+      return this.running;
+    }
+    this.running = this.write()
+      .catch((err) => {
+        console.error('[nexora] Speichern in MongoDB fehlgeschlagen:', err.message);
+        setTimeout(save, 5000);
+      })
+      .finally(() => {
+        this.running = null;
+        if (this.again) {
+          this.again = false;
+          save();
+        }
+      });
+    return this.running;
+  },
+
+  async write() {
+    const { users, sessions, hubs, dms } = db;
+    const docs = new Map([['meta', { data: { users, sessions, hubs, dms } }]]);
+    for (const [channelId, list] of Object.entries(db.messages)) docs.set('ch:' + channelId, { list });
+
+    const ops = [];
+    const written = [];
+    for (const [docId, body] of docs) {
+      const json = JSON.stringify(body.data || body.list);
+      if (this.saved.get(docId) === json) continue;
+      ops.push({ replaceOne: { filter: { _id: docId }, replacement: body, upsert: true } });
+      written.push([docId, json]);
+    }
+    const removed = [...this.saved.keys()].filter((docId) => !docs.has(docId));
+    for (const docId of removed) ops.push({ deleteOne: { filter: { _id: docId } } });
+    if (!ops.length) return;
+
+    await this.col.bulkWrite(ops, { ordered: false });
+    for (const [docId, json] of written) this.saved.set(docId, json);
+    for (const docId of removed) this.saved.delete(docId);
+  },
+};
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -616,15 +682,33 @@ io.on('connection', (socket) => {
 
 // ---------------------------------------------------------------------------
 
-ensureLounge();
-
-function shutdown() {
-  if (saveTimer) flush();
-  process.exit(0);
+async function shutdown() {
+  try {
+    if (saveTimer) await flush();
+    if (mongoStore.running) await mongoStore.running;
+  } finally {
+    process.exit(0);
+  }
 }
 process.on('SIGINT', shutdown);
 process.on('SIGTERM', shutdown);
 
-server.listen(PORT, () => {
-  console.log(`[nexora] läuft auf http://localhost:${PORT}`);
+async function main() {
+  if (MONGODB_URI) {
+    // Refuse to start on an empty state: the next save would overwrite the real data.
+    await mongoStore.load();
+    console.log('[nexora] Daten werden in MongoDB gespeichert');
+  } else {
+    loadFile();
+    console.log(`[nexora] Daten werden in ${DB_FILE} gespeichert`);
+  }
+  ensureLounge();
+  server.listen(PORT, () => {
+    console.log(`[nexora] läuft auf http://localhost:${PORT}`);
+  });
+}
+
+main().catch((err) => {
+  console.error('[nexora] Start fehlgeschlagen:', err.message);
+  process.exit(1);
 });
