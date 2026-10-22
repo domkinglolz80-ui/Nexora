@@ -19,8 +19,9 @@ const ACCENTS = ['#ff7a18', '#ff9f1c', '#ff5e3a', '#ffb347', '#ff6b00', '#f9a03f
 // The whole state lives in memory; writes are debounced.
 // ---------------------------------------------------------------------------
 
-// Trim whitespace and stray quotes that easily sneak in when pasting on a phone.
-const MONGODB_URI = (process.env.MONGODB_URI || '').trim().replace(/^["']|["']$/g, '').trim();
+// Remove whitespace and stray quotes that easily sneak in when pasting on a phone.
+// A connection string never contains spaces, so dropping all of them is safe.
+const MONGODB_URI = (process.env.MONGODB_URI || '').replace(/\s+/g, '').replace(/^["']|["']$/g, '');
 
 // Explains a MongoDB problem in plain words for the hosting log (never prints the URI itself).
 function mongoHint(err) {
