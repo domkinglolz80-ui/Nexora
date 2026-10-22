@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: nexora
+    runtime: node
+    plan: free
+    branch: nexora-app
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeploy: true

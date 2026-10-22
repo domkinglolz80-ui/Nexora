@@ -186,6 +186,8 @@ function visibleUserIds(userId) {
 
 const app = express();
 app.disable('x-powered-by');
+// Hosting providers like Render sit behind a proxy; trust it so req.ip is the real client.
+app.set('trust proxy', 1);
 app.use(express.json({ limit: '32kb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
