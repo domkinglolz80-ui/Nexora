@@ -51,7 +51,8 @@ jobs:
         shell: bash
         env:
           NEXORA_URL: ${{ vars.NEXORA_URL }}
-        run: node -e "require('fs').writeFileSync('server.json', JSON.stringify({ url: process.env.NEXORA_URL.trim() }))"
+        run: |
+          node -e "require('fs').writeFileSync('server.json', JSON.stringify({ url: process.env.NEXORA_URL.trim() }))"
 
       - name: Installer bauen
         run: npx electron-builder ${{ matrix.target }} --publish never
