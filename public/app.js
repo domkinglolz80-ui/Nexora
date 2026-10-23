@@ -80,7 +80,46 @@ const ACCESSORIES = [
     id: 'katze', name: 'Katzenohren',
     svg: '<svg viewBox="0 0 48 20"><g class="ear l"><path class="fur" d="M2 20 6 1l13 13z"/><path class="pink" d="m6 16 2-10 6 7z"/></g><g class="ear r"><path class="fur" d="m46 20-4-19-13 13z"/><path class="pink" d="m42 16-2-10-6 7z"/></g></svg>',
   },
+  // Exclusive: the server only lets these accounts wear them.
+  {
+    id: 'kuerbiskoenig', name: 'Kürbiskönig', badge: '👑 Kürbiskönig', allowed: (u) => u.official && !u.bot,
+    svg: `<span class="ring"></span><span class="ember e1"></span><span class="ember e2"></span><span class="ember e3"></span>
+      <svg class="crown" viewBox="0 0 44 26"><path class="gold" d="M4 18 8 4l8 9 6-12 6 12 8-9 4 14z"/><rect class="gold" x="4" y="16.5" width="36" height="8" rx="2"/>
+      <circle class="gem" cx="8" cy="4" r="2.2"/><circle class="gem" cx="36" cy="4" r="2.2"/><circle class="gem g2" cx="22" cy="1.8" r="2"/>
+      <circle class="gem g2" cx="11" cy="20.5" r="1.8"/><circle class="gem" cx="33" cy="20.5" r="1.8"/>
+      <ellipse class="pump" cx="22" cy="20.6" rx="4.6" ry="3.4"/><path class="pump-face" d="m19.6 19.6 1.2-1.2.4 1.4zm4.8 0-1.2-1.2-.4 1.4zM19.3 21.4c1.5 1.6 3.9 1.6 5.4 0z"/><path class="pump-stem" d="M22 17.4v-1.4"/></svg>`,
+    scene: `<svg viewBox="0 0 300 84" preserveAspectRatio="xMidYMid slice"><circle class="moon" cx="244" cy="26" r="15"/>
+      <path class="hill" d="M0 68q60-20 120-6t120-4 60 6v20H0z"/>
+      <g class="lantern-pumpkin" transform="translate(58 58)"><ellipse rx="8" ry="6.5"/><path class="lit" d="m-4-2 2-2 1 3zm8 0-2-2-1 3zM-4 2c2 3 6 3 8 0z"/></g>
+      <g class="lantern-pumpkin p2" transform="translate(150 62) scale(.8)"><ellipse rx="8" ry="6.5"/><path class="lit" d="m-4-2 2-2 1 3zm8 0-2-2-1 3zM-4 2c2 3 6 3 8 0z"/></g>
+      <g class="lantern-pumpkin p3" transform="translate(206 57) scale(1.15)"><ellipse rx="8" ry="6.5"/><path class="lit" d="m-4-2 2-2 1 3zm8 0-2-2-1 3zM-4 2c2 3 6 3 8 0z"/></g>
+      <path class="scene-bat b1" d="M0 4C-3 0-8-1-11 1c2 0 3 2 3 3 1-1 3 0 3 1 1-1 3-1 5 0 2-1 4-1 5 0 0-1 2-2 3-1 0-1 1-3 3-3C8-1 3 0 0 4z"/>
+      <path class="scene-bat b2" d="M0 4C-3 0-8-1-11 1c2 0 3 2 3 3 1-1 3 0 3 1 1-1 3-1 5 0 2-1 4-1 5 0 0-1 2-2 3-1 0-1 1-3 3-3C8-1 3 0 0 4z"/></svg>`,
+  },
+  {
+    id: 'irrlicht', name: 'Irrlicht-Wächter', badge: '🏮 Irrlicht-Wächter', allowed: (u) => Boolean(u.system),
+    svg: `<span class="ring"></span><span class="wisp w1"></span><span class="wisp w2"></span><span class="wisp w3"></span>
+      <svg class="lantern" viewBox="0 0 24 40"><path class="chain" d="M12 0v7"/><path class="iron" d="M7 10h10l-2-3H9z"/><rect class="glass" x="7" y="10" width="10" height="16" rx="1.5"/>
+      <path class="flame" d="M12 13c3 4 3 8 0 10-3-2-3-6 0-10z"/><path class="iron" d="M6 26h12v3H6z"/></svg>`,
+    scene: `<svg viewBox="0 0 300 84" preserveAspectRatio="xMidYMid slice"><circle class="moon" cx="56" cy="24" r="13"/>
+      <path class="tree" d="M250 84V46l-8-10m8 4 7-9m-7 17-12-4m12-2 10-3"/>
+      <path class="hill" d="M0 72q70-14 150-6t150-2v20H0z"/>
+      <path class="stone" d="M150 72V58a7 7 0 0 1 14 0v14zM186 74V62a6 6 0 0 1 12 0v12zM118 74V63h4v-4h3v4h4v11z"/>
+      <ellipse class="fog f1" cx="90" cy="76" rx="90" ry="9"/><ellipse class="fog f2" cx="220" cy="78" rx="100" ry="8"/>
+      <circle class="scene-wisp s1" cx="100" cy="44" r="3"/><circle class="scene-wisp s2" cx="200" cy="38" r="2.4"/><circle class="scene-wisp s3" cx="160" cy="30" r="2"/></svg>`,
+  },
 ];
+
+function exclusiveOf(user) {
+  const acc = user && user.accessory && ACCESSORIES.find((a) => a.id === user.accessory);
+  return acc && acc.allowed ? acc : null;
+}
+
+// Extra class for names, cards and profiles of someone wearing an exclusive accessory.
+function exClass(user) {
+  const ex = exclusiveOf(user);
+  return ex ? ` ex-${ex.id}` : '';
+}
 
 function accessoryHtml(id) {
   const acc = id && ACCESSORIES.find((a) => a.id === id);
@@ -90,8 +129,8 @@ function accessoryHtml(id) {
 // A row of live previews (the user's own avatar wearing each accessory). Returns a getter.
 function accessoryPicker(container, user) {
   let value = user.accessory || '';
-  container.innerHTML = ACCESSORIES.map((a) => `<button type="button" class="acc-opt ${a.id === value ? 'sel' : ''}" data-a="${a.id}" title="${esc(a.name)}">
-    ${avatar({ ...user, accessory: a.id }, { size: 40 })}<span>${esc(a.name)}</span></button>`).join('');
+  container.innerHTML = ACCESSORIES.filter((a) => !a.allowed || a.allowed(user)).map((a) => `<button type="button" class="acc-opt ${a.id === value ? 'sel' : ''}${a.allowed ? ' exclusive' : ''}" data-a="${a.id}" title="${esc(a.name)}">
+    ${a.allowed ? '<i class="ex-tag">Exklusiv</i>' : ''}${avatar({ ...user, accessory: a.id }, { size: 40 })}<span>${esc(a.name)}</span></button>`).join('');
   container.addEventListener('click', (e) => {
     const opt = e.target.closest('.acc-opt');
     if (!opt) return;
@@ -820,7 +859,7 @@ function renderMe() {
   const card = $('#me-card');
   card.innerHTML = `
     ${avatar(me, { dot: true })}
-    <div class="who"><div class="name">${esc(me.displayName)}${verified(me)}</div><div class="handle">${esc(STATUS_LABEL[me.status] || '')} · @${esc(me.username)}</div></div>
+    <div class="who${exClass(me)}"><div class="name">${esc(me.displayName)}${verified(me)}</div><div class="handle">${esc(STATUS_LABEL[me.status] || '')} · @${esc(me.username)}</div></div>
     <button class="icon-btn" data-act="bots" title="Meine Bots">${ICONS.bot}</button>
     <button class="icon-btn" data-act="settings" title="Einstellungen">${ICONS.gear}</button>`;
   card.querySelector('[data-act=bots]').onclick = () => openBotManager();
@@ -1106,7 +1145,7 @@ function messageNode(m, prev) {
       ${avatar(author)}
       <div class="msg-main">
         ${used}
-        <div class="msg-head"><span class="msg-author" style="--c:${esc(author.color)}">${esc(author.displayName)}</span>${verified(author)}<span class="msg-time">${esc(stamp(m.createdAt))}</span></div>
+        <div class="msg-head"><span class="msg-author${exClass(author)}" style="--c:${esc(author.color)}">${esc(author.displayName)}</span>${verified(author)}<span class="msg-time">${esc(stamp(m.createdAt))}</span></div>
         <div class="msg-body">${formatMessage(m.content)}</div>
         <div class="ephemeral-note">Nur für dich sichtbar · <button data-act="dismiss">Ausblenden</button></div>
       </div>
@@ -1117,7 +1156,7 @@ function messageNode(m, prev) {
     <div class="msg-main">
       ${used}
       ${m.replyTo ? `<div class="msg-reply" data-ref="${esc(m.replyTo)}">${ref ? `<b>${esc(userOf(ref.authorId).displayName)}</b><span>${esc(previewText(ref))}</span>` : '<span><i>Ursprüngliche Nachricht nicht geladen oder gelöscht</i></span>'}</div>` : ''}
-      ${cont ? '' : `<div class="msg-head"><span class="msg-author" style="--c:${esc(author.color)}">${esc(author.displayName)}</span>${verified(author)}${hub && hub.ownerId === author.id ? '<span class="owner-tag">OWNER</span>' : ''}<span class="msg-time" title="${esc(fullFmt.format(m.createdAt))}">${esc(stamp(m.createdAt))}</span></div>`}
+      ${cont ? '' : `<div class="msg-head"><span class="msg-author${exClass(author)}" style="--c:${esc(author.color)}">${esc(author.displayName)}</span>${verified(author)}${hub && hub.ownerId === author.id ? '<span class="owner-tag">OWNER</span>' : ''}<span class="msg-time" title="${esc(fullFmt.format(m.createdAt))}">${esc(stamp(m.createdAt))}</span></div>`}
       ${m.content ? `<div class="msg-body ${isJumbo(m.content) ? 'jumbo' : ''}">${formatMessage(m.content)}${edited}</div>` : ''}
       ${pollHtml(m, canDelete)}
       ${attachmentsHtml(m)}
@@ -1818,12 +1857,14 @@ function showProfile(userId, anchor) {
   const st = statusOf(u.id);
   const isMe = u.id === state.me.id;
   if (u.bot) return showBotProfile(u, anchor);
-  const pop = h(`<div class="popover" style="--c:${esc(u.color)}">
-    <div class="profile-banner"></div>
+  const ex = exclusiveOf(u);
+  const pop = h(`<div class="popover${exClass(u)}" style="--c:${esc(u.color)}">
+    <div class="profile-banner">${ex ? ex.scene : ''}</div>
     <div class="profile-body">
       ${avatar(u, { dot: true })}
       <h4>${esc(u.displayName)}${verified(u)}</h4>
       <div class="handle">@${esc(u.username)} · ${STATUS_LABEL[st]}</div>
+      ${ex ? `<div class="ex-badge">${esc(ex.badge)} · Exklusiv</div>` : ''}
       ${u.bio ? `<div class="bio">${esc(u.bio)}</div>` : '<div style="height:12px"></div>'}
       <div class="meta">Dabei seit ${u.createdAt ? esc(fullFmt.format(u.createdAt).split(',')[0]) : '–'}</div>
       ${isMe ? `<button class="btn block" data-act="edit">${ICONS.edit} Profil bearbeiten</button>` : `<button class="btn primary block" data-act="dm">${ICONS.chat} Nachricht senden</button>`}
@@ -1836,12 +1877,14 @@ function showProfile(userId, anchor) {
 function showBotProfile(u, anchor) {
   const commands = (u.commands || []).map((c) => `<li><code>/${esc(c.name)}</code><span>${esc(c.description || '')}</span></li>`).join('');
   const mine = u.ownerId === state.me.id;
-  const pop = h(`<div class="popover" style="--c:${esc(u.color)}">
-    <div class="profile-banner"></div>
+  const ex = exclusiveOf(u);
+  const pop = h(`<div class="popover${exClass(u)}" style="--c:${esc(u.color)}">
+    <div class="profile-banner">${ex ? ex.scene : ''}</div>
     <div class="profile-body">
       ${avatar(u, { dot: true })}
       <h4>${esc(u.displayName)}${verified(u)}</h4>
       <div class="handle">@${esc(u.username)} · ${u.system ? 'Offizieller Bot' : u.disabled ? 'Gesperrt' : 'Bot'}${u.ownerId ? ` · von ${esc(userOf(u.ownerId).displayName)}` : ''}</div>
+      ${ex ? `<div class="ex-badge">${esc(ex.badge)} · Exklusiv</div>` : ''}
       ${u.bio ? `<div class="bio">${esc(u.bio)}</div>` : '<div style="height:12px"></div>'}
       ${u.system && !state.me.official ? '' : commands ? `<div class="field"><span>Befehle${u.system ? ' <em>– nur für das Nexora-Team</em>' : ''}</span></div><ul class="bot-cmd-list">${commands}</ul>` : '<div class="meta">Noch keine Befehle.</div>'}
       ${mine ? `<button class="btn block" data-act="edit">${ICONS.bot} Bot bearbeiten</button>` : ''}
@@ -2292,7 +2335,7 @@ function openNewDm() {
   const render = (users) => {
     list.innerHTML = users.length ? '' : '<div class="empty-hint">Niemand gefunden.</div>';
     for (const u of users) {
-      const row = h(`<button class="member" style="--c:${esc(u.color)}">${avatar(u, { dot: true })}<div class="info"><div class="name">${esc(u.displayName)}${verified(u)}</div><div class="bio">@${esc(u.username)}</div></div></button>`);
+      const row = h(`<button class="member${exClass(u)}" style="--c:${esc(u.color)}">${avatar(u, { dot: true })}<div class="info"><div class="name">${esc(u.displayName)}${verified(u)}</div><div class="bio">@${esc(u.username)}</div></div></button>`);
       row.onclick = () => { close(); openDmWith(u.id); };
       list.append(row);
     }

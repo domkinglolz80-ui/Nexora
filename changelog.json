@@ -1,5 +1,24 @@
 [
   {
+    "version": "V0.1.5.2 Beta",
+    "date": "2026-10-23",
+    "title": "Exklusive Accessoires",
+    "changes": [
+      {
+        "icon": "👑",
+        "text": "**Kürbiskönig** – exklusiv für das Nexora-Team: Feuerring, goldene Krone mit Kürbis-Juwel und aufsteigende Funken"
+      },
+      {
+        "icon": "🏮",
+        "text": "**Irrlicht-Wächter** – exklusiv für den Nexora Helper: grüner Geisterring, schwingende Laterne und kreisende Irrlichter"
+      },
+      {
+        "icon": "🌕",
+        "text": "Exklusive Accessoires verwandeln das ganze Profil: eigene animierte Profilkarte, leuchtender Name im Chat und ein Exklusiv-Abzeichen"
+      }
+    ]
+  },
+  {
     "version": "V0.1.5.1 Beta",
     "date": "2026-10-23",
     "title": "Hotfix: Speichern auf dem Handy",

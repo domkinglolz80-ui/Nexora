@@ -43,6 +43,15 @@ Ab **V0.1.5 Beta** trägt Nexora Halloween: Vollmond, Nebel, Spinnennetz und Fle
 | 🕷️ Spinne           | baumelt an ihrem Faden                                |
 | 🐈‍⬛ Katzenohren      | zucken ab und zu                                      |
 
+**Exklusive Accessoires** – kann niemand sonst auswählen, der Server lehnt sie für alle anderen ab:
+
+| Accessoire              | Wer                                  | Was passiert                                                                 |
+| ----------------------- | ------------------------------------ | ---------------------------------------------------------------------------- |
+| 👑 Kürbiskönig          | offizielle Accounts (Nexora-Team)    | Feuerring, goldene Krone mit Kürbis-Juwel, Funken; Profilkarte mit Kürbis-Hügel bei Vollmond, Name in Feuerfarben |
+| 🏮 Irrlicht-Wächter     | nur der Nexora Helper                | grüner Geisterring, schwingende Laterne, Irrlichter; Profilkarte mit Friedhof im grünen Nebel, Name in Geistergrün |
+
+Offizielle Accounts bekommen den Kürbiskönig beim ersten Serverstart einmal automatisch angelegt und können danach frei wechseln.
+
 **Geisterjagd** – alle 40–90 Sekunden schwebt ein Geist über den Bildschirm. Wer ihn anklickt, fängt ihn; der Zähler bleibt auf dem Gerät gespeichert.
 
 Die Effekte lassen sich pro Gerät in den Profil-Einstellungen abschalten, bei „Bewegung reduzieren“ im System sind alle Animationen aus. Das saisonale Design steckt in `public/halloween.css` und `public/halloween.js` (plus Mond, Fledermäuse und Login-Texte in `public/index.html`). Nach Halloween reicht es, diese wieder herauszunehmen – die Accessoires sind fester Teil der Profile und bleiben erhalten.

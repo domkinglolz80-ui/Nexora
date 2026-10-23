@@ -262,9 +262,26 @@ function canManage(hub, userId) {
 // Animated avatar accessories (Halloween Edition). The look lives in the client.
 const ACCESSORIES = new Set(['kuerbis', 'hexenhut', 'geist', 'fledermaus', 'hoerner', 'spinne', 'katze']);
 
-function accessoryOf(value) {
+// Exclusive accessories: only these accounts may wear them.
+const EXCLUSIVE_ACCESSORIES = {
+  kuerbiskoenig: (u) => isOfficial(u) && !u.bot, // the Nexora team
+  irrlicht: (u) => Boolean(u.system), // the Nexora Helper
+};
+
+function accessoryOf(value, user) {
   if (value === '' || value === null) return '';
-  return ACCESSORIES.has(value) ? value : undefined;
+  if (ACCESSORIES.has(value)) return value;
+  return EXCLUSIVE_ACCESSORIES[value]?.(user) ? value : undefined;
+}
+
+// Official accounts get the Kürbiskönig once; afterwards they can change it like any accessory.
+function grantExclusives() {
+  for (const u of Object.values(db.users)) {
+    if (u.bot || !isOfficial(u) || u.kingGranted) continue;
+    u.accessory = 'kuerbiskoenig';
+    u.kingGranted = true;
+  }
+  save();
 }
 
 function publicUser(u) {
@@ -276,7 +293,7 @@ function publicUser(u) {
     color: u.color,
     status: u.status,
     bio: u.bio || '',
-    accessory: u.accessory || '',
+    accessory: (u.accessory && accessoryOf(u.accessory, u)) || '',
     createdAt: u.createdAt,
   };
   if (u.system) {
@@ -965,7 +982,7 @@ function ensureHelper() {
     color: '#ff7a18',
     status: 'online',
     bio: 'Der offizielle Helfer von Nexora. Moderation per Slash-Befehl – nur für das Nexora-Team.',
-    accessory: 'hexenhut',
+    accessory: 'irrlicht',
     createdAt: db.users[HELPER_ID]?.createdAt || Date.now(),
     bot: true,
     system: true,
@@ -1480,8 +1497,8 @@ io.on('connection', (socket) => {
     }
     if (bio !== undefined) user.bio = str(bio, 190);
     if (accessory !== undefined) {
-      const acc = accessoryOf(accessory);
-      if (acc === undefined) return { error: 'Unbekanntes Accessoire.' };
+      const acc = accessoryOf(accessory, user);
+      if (acc === undefined) return { error: 'Dieses Accessoire kannst du nicht tragen.' };
       user.accessory = acc;
     }
     save();
@@ -1594,8 +1611,8 @@ io.on('connection', (socket) => {
       user.color = color;
     }
     if (accessory !== undefined) {
-      const acc = accessoryOf(accessory);
-      if (acc === undefined) return { error: 'Unbekanntes Accessoire.' };
+      const acc = accessoryOf(accessory, user);
+      if (acc === undefined) return { error: 'Dieses Accessoire kann dein Bot nicht tragen.' };
       user.accessory = acc;
     }
     if (isPublic !== undefined) bot.public = Boolean(isPublic);
@@ -1915,6 +1932,7 @@ async function main() {
   }
   ensureLounge();
   ensureHelper();
+  grantExclusives();
   await botRuntime.ready;
   await sweepOrphanFiles().catch((err) => console.error('[nexora] Aufräumen der Dateien fehlgeschlagen:', err.message));
   server.listen(PORT, () => {
