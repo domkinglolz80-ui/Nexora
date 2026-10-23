@@ -1,5 +1,32 @@
 [
   {
+    "version": "V0.1.4 Beta",
+    "date": "2026-10-23",
+    "title": "Der Nexora Helper",
+    "changes": [
+      {
+        "icon": "🛡️",
+        "text": "Neuer offizieller Bot **Nexora Helper** mit ✓-Abzeichen – nur das Nexora-Team kann ihn benutzen"
+      },
+      {
+        "icon": "🔨",
+        "text": "Moderation direkt im Chat: `/ban`, `/unban`, `/kick`, `/verwarnen` und `/abmelden`"
+      },
+      {
+        "icon": "🧹",
+        "text": "`/loeschen` räumt die letzten Nachrichten eines Kanals auf"
+      },
+      {
+        "icon": "📊",
+        "text": "`/info`, `/stats` und `/ankuendigung` für schnelle Infos und Hinweise an alle"
+      },
+      {
+        "icon": "✅",
+        "text": "Offizielle Bots zeigen jetzt das ✓-Abzeichen zusätzlich zu BOT"
+      }
+    ]
+  },
+  {
     "version": "V0.1.3 Beta",
     "date": "2026-10-23",
     "title": "Bots & Admin-Panel",

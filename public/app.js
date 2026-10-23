@@ -147,8 +147,8 @@ function isAdmin(hub, userId) {
 }
 
 function verified(user) {
-  if (user.bot) return '<span class="bot-tag" title="Bot">BOT</span>';
-  return user.official ? '<span class="verified" title="Offizieller Nexora-Account">✓</span>' : '';
+  const check = user.official ? `<span class="verified" title="${user.bot ? 'Offizieller Nexora-Bot' : 'Offizieller Nexora-Account'}">✓</span>` : '';
+  return user.bot ? `${check}<span class="bot-tag" title="Bot">BOT</span>` : check;
 }
 
 function avatar(user, { dot = false, size } = {}) {
@@ -1444,14 +1444,14 @@ async function sendMessage() {
 
 const slash = { items: [], sel: 0, botId: null, hideTimer: null };
 
-// Commands of all bots in the current hub.
+// Commands of all bots in the current hub, plus the Nexora Helper for official accounts (also in DMs).
 function availableCommands() {
+  if (!state.view.channelId || isVoiceChannel(state.view.channelId)) return [];
   const hub = currentHub();
-  if (!hub || isVoiceChannel(state.view.channelId)) return [];
+  const bots = hub ? hub.members.map((m) => state.users.get(m)).filter((u) => u?.bot && !u.disabled) : [];
+  if (state.me?.official) bots.push(...[...state.users.values()].filter((u) => u.system));
   const out = [];
-  for (const memberId of hub.members) {
-    const u = state.users.get(memberId);
-    if (!u?.bot || u.disabled) continue;
+  for (const u of bots) {
     for (const c of u.commands || []) out.push({ ...c, bot: u });
   }
   return out.sort((a, b) => a.name.localeCompare(b.name) || a.bot.displayName.localeCompare(b.bot.displayName));
@@ -1784,9 +1784,9 @@ function showBotProfile(u, anchor) {
     <div class="profile-body">
       ${avatar(u, { dot: true })}
       <h4>${esc(u.displayName)}${verified(u)}</h4>
-      <div class="handle">@${esc(u.username)} · ${u.disabled ? 'Gesperrt' : 'Bot'}${u.ownerId ? ` · von ${esc(userOf(u.ownerId).displayName)}` : ''}</div>
+      <div class="handle">@${esc(u.username)} · ${u.system ? 'Offizieller Bot' : u.disabled ? 'Gesperrt' : 'Bot'}${u.ownerId ? ` · von ${esc(userOf(u.ownerId).displayName)}` : ''}</div>
       ${u.bio ? `<div class="bio">${esc(u.bio)}</div>` : '<div style="height:12px"></div>'}
-      ${commands ? `<div class="field"><span>Befehle</span></div><ul class="bot-cmd-list">${commands}</ul>` : '<div class="meta">Noch keine Befehle.</div>'}
+      ${u.system && !state.me.official ? '' : commands ? `<div class="field"><span>Befehle${u.system ? ' <em>– nur für das Nexora-Team</em>' : ''}</span></div><ul class="bot-cmd-list">${commands}</ul>` : '<div class="meta">Noch keine Befehle.</div>'}
       ${mine ? `<button class="btn block" data-act="edit">${ICONS.bot} Bot bearbeiten</button>` : ''}
     </div>
   </div>`);

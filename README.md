@@ -44,6 +44,25 @@ Offizielle Accounts sehen in der Hub-Leiste links ein Schild-Symbol (auch über 
 
 Offizielle Accounts können selbst nicht gesperrt werden. Jede Aktion prüft der Server noch einmal – das Panel ist nur die Oberfläche.
 
+## Nexora Helper
+
+Der **Nexora Helper** (`@NexoraHelper`) ist der offizielle Bot von Nexora, mit ✓- und BOT-Abzeichen. Er ist fest eingebaut: Man muss ihn nicht einladen, er kann nicht bearbeitet oder gelöscht werden, und **nur offizielle Accounts** können seine Befehle benutzen – in jedem Hub und in Direktnachrichten. Alle anderen sehen nur seine Nachrichten.
+
+| Befehl                         | Wirkung                                                              |
+| ------------------------------ | -------------------------------------------------------------------- |
+| `/hilfe`                       | alle Befehle (nur für dich sichtbar)                                 |
+| `/ban <nutzer> [grund]`        | sperrt den Account auf ganz Nexora, die Person fliegt sofort raus    |
+| `/unban <nutzer>`              | hebt die Sperre auf                                                  |
+| `/kick <nutzer> [grund]`       | wirft die Person aus dem aktuellen Hub (nicht den Besitzer)          |
+| `/verwarnen <nutzer> <grund>`  | öffentliche Verwarnung mit Erwähnung                                 |
+| `/abmelden <nutzer>`           | meldet die Person auf allen Geräten ab                               |
+| `/info <nutzer>`               | Account-Infos: dabei seit, Hubs, Nachrichten, Sperre                 |
+| `/stats`                       | Nexora in Zahlen                                                     |
+| `/ankuendigung [text]`         | setzt das Banner für alle, ohne Text wird es entfernt                |
+| `/loeschen <anzahl>`           | löscht die letzten 1–100 Nachrichten im Kanal                        |
+
+`<nutzer>` ist der Benutzername, mit oder ohne `@`. Offizielle Accounts und Bots können nicht moderiert werden. Sperren, Verwarnungen und Kicks schreibt der Helper sichtbar in den Kanal, alles andere sieht nur die Person, die den Befehl nutzt.
+
 ## Bots & Slash-Befehle
 
 Über den Roboter-Knopf unten links (**Meine Bots**) kann jede Person bis zu **5 Bots** anlegen. Ein Bot ist ein eigener Account mit `BOT`-Abzeichen, der sich nicht einloggen kann und nur auf Slash-Befehle antwortet.
@@ -103,7 +122,7 @@ Die Stimmen laufen per **WebRTC direkt zwischen den Geräten**; der Server vermi
 
 ## Versionen & Updates
 
-Aktuelle Version: **V0.1.3 Beta**. Alle Änderungen stehen in [`changelog.json`](changelog.json) – der oberste Eintrag ist die laufende Version.
+Aktuelle Version: **V0.1.4 Beta**. Alle Änderungen stehen in [`changelog.json`](changelog.json) – der oberste Eintrag ist die laufende Version.
 
 - Nach dem Login (und nach jedem Update) zeigt Nexora einmal das Fenster **„Was ist neu?“**. Über die Versionsanzeige unten in der Hub-Leiste lässt es sich jederzeit wieder öffnen.
 - Geht eine neue Version live, während jemand Nexora offen hat, lädt die Seite automatisch neu. Tippt die Person gerade etwas, erscheint stattdessen ein „Jetzt laden“-Hinweis.

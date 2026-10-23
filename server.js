@@ -270,6 +270,16 @@ function publicUser(u) {
     bio: u.bio || '',
     createdAt: u.createdAt,
   };
+  if (u.system) {
+    Object.assign(view, {
+      bot: true,
+      system: true,
+      official: true,
+      disabled: false,
+      commands: HELPER_COMMANDS.map((c) => ({ name: c.name, description: c.description, options: c.options })),
+    });
+    return view;
+  }
   const bot = u.bot && db.bots[u.id];
   if (bot) {
     // Everything a client needs for slash commands; the scripts stay on the server.
@@ -737,6 +747,65 @@ function deleteHub(hub) {
   save();
 }
 
+function removeFromHub(hub, memberId) {
+  voiceKickHub(hub, memberId);
+  hub.members = hub.members.filter((m) => m !== memberId);
+  save();
+  io.in(`user:${memberId}`).socketsLeave(`hub:${hub.id}`);
+  io.to(`user:${memberId}`).emit('hub:removed', { hubId: hub.id });
+  io.to(`hub:${hub.id}`).emit('hub:update', hubView(hub));
+}
+
+// ---------------------------------------------------------------------------
+// Moderation, shared by the admin panel and the Nexora Helper.
+// ---------------------------------------------------------------------------
+
+// The target of a moderation action: a real (non-bot) user that is not official.
+function moderatable(target) {
+  if (!target || target.bot) return { error: 'Benutzer nicht gefunden.' };
+  if (isOfficial(target)) return { error: 'Offizielle Accounts können nicht moderiert werden.' };
+  return { target };
+}
+
+function banUser(target, reason, byId) {
+  target.banned = { reason: str(reason, 200), at: Date.now(), by: byId };
+  endSessions(target.id, banMessage(target));
+}
+
+// A banner on top of Nexora for everyone; an empty text removes it.
+function setAnnouncement(text) {
+  const content = str(text, 300);
+  db.announcement = content ? { id: id(), text: content, createdAt: Date.now() } : null;
+  save();
+  io.emit('announcement', db.announcement);
+  return db.announcement;
+}
+
+function platformCounts() {
+  const humans = Object.values(db.users).filter((u) => !u.bot);
+  const dayAgo = Date.now() - 86400000;
+  let messages = 0, messagesToday = 0;
+  for (const list of Object.values(db.messages)) {
+    messages += list.length;
+    for (let i = list.length - 1; i >= 0 && list[i].createdAt > dayAgo; i--) messagesToday += 1;
+  }
+  let inVoice = 0;
+  for (const room of voice.values()) inVoice += room.size;
+  return {
+    users: humans.length,
+    online: humans.filter((u) => online.get(u.id)).length,
+    newToday: humans.filter((u) => u.createdAt > dayAgo).length,
+    banned: humans.filter((u) => u.banned).length,
+    bots: Object.keys(db.bots).length,
+    hubs: Object.keys(db.hubs).length,
+    channels: Object.values(db.hubs).reduce((n, h) => n + h.channels.length, 0),
+    dms: Object.keys(db.dms).length,
+    messages,
+    messagesToday,
+    inVoice,
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Bots: accounts without a password that answer slash commands in hubs. Each
 // command replies with a text template or runs a sandboxed script (bots.js).
@@ -861,6 +930,174 @@ function deleteBot(bot) {
   save();
 }
 
+// ---------------------------------------------------------------------------
+// Nexora Helper: the official system bot. Its commands are built in and only
+// official accounts can use them – in every hub and DM, without inviting it.
+// ---------------------------------------------------------------------------
+
+const HELPER_ID = 'nexora-helper';
+const MAX_PURGE = 100;
+
+function ensureHelper() {
+  const taken = findUserByName('NexoraHelper');
+  // The profile is fixed in code and refreshed on every start.
+  db.users[HELPER_ID] = {
+    id: HELPER_ID,
+    username: taken && taken.id !== HELPER_ID ? 'Nexora.Helper' : 'NexoraHelper',
+    displayName: 'Nexora Helper',
+    color: '#ff7a18',
+    status: 'online',
+    bio: 'Der offizielle Helfer von Nexora. Moderation per Slash-Befehl – nur für das Nexora-Team.',
+    createdAt: db.users[HELPER_ID]?.createdAt || Date.now(),
+    bot: true,
+    system: true,
+  };
+  save();
+}
+
+const option = (name, description, required = false) => ({ name, description, required });
+const userByMention = (name) => findUserByName(String(name || '').replace(/^@/, ''));
+const dateFmt = new Intl.DateTimeFormat('de-DE', { dateStyle: 'medium' });
+const numberFmt = new Intl.NumberFormat('de-DE');
+
+function commandUsage(command) {
+  return [`/${command.name}`, ...command.options.map((o) => (o.required ? `<${o.name}>` : `[${o.name}]`))].join(' ');
+}
+
+// Each run gets { invoker, access, channelId, options } and returns
+// { public: [texts posted by the helper], ephemeral: [texts only the invoker sees] }.
+const HELPER_COMMANDS = [
+  {
+    name: 'hilfe',
+    description: 'Zeigt alle Befehle des Nexora Helpers',
+    options: [],
+    run: () => ({
+      ephemeral: [`🛡️ **Nexora Helper** – nur für das Nexora-Team\n${HELPER_COMMANDS.map((c) => `\`${commandUsage(c)}\` – ${c.description}`).join('\n')}`],
+    }),
+  },
+  {
+    name: 'ban',
+    description: 'Sperrt einen Account auf ganz Nexora',
+    options: [option('nutzer', 'Wer gesperrt wird', true), option('grund', 'Sieht die Person beim Login')],
+    run: ({ invoker, options }) => {
+      const { target, error } = moderatable(userByMention(options.nutzer));
+      if (error) return { ephemeral: [error] };
+      if (target.banned) return { ephemeral: [`@${target.username} ist schon gesperrt.`] };
+      banUser(target, options.grund, invoker.id);
+      return { public: [`🔨 **@${target.username}** wurde gesperrt.${options.grund ? ` Grund: ${options.grund}` : ''}`] };
+    },
+  },
+  {
+    name: 'unban',
+    description: 'Hebt eine Sperre wieder auf',
+    options: [option('nutzer', 'Wer entsperrt wird', true)],
+    run: ({ options }) => {
+      const { target, error } = moderatable(userByMention(options.nutzer));
+      if (error) return { ephemeral: [error] };
+      if (!target.banned) return { ephemeral: [`@${target.username} ist nicht gesperrt.`] };
+      delete target.banned;
+      save();
+      return { ephemeral: [`✅ @${target.username} ist wieder entsperrt.`] };
+    },
+  },
+  {
+    name: 'kick',
+    description: 'Wirft jemanden aus diesem Hub',
+    options: [option('nutzer', 'Wer den Hub verlassen muss', true), option('grund', 'Wird im Kanal angezeigt')],
+    run: ({ access, options }) => {
+      if (access.type !== 'hub') return { ephemeral: ['/kick funktioniert nur in Hubs.'] };
+      const { target, error } = moderatable(userByMention(options.nutzer));
+      if (error) return { ephemeral: [error] };
+      const { hub } = access;
+      if (!hub.members.includes(target.id)) return { ephemeral: [`@${target.username} ist nicht in diesem Hub.`] };
+      if (hub.ownerId === target.id) return { ephemeral: ['Den Besitzer kann man nicht aus seinem eigenen Hub werfen.'] };
+      removeFromHub(hub, target.id);
+      return { public: [`👢 **@${target.username}** wurde aus dem Hub entfernt.${options.grund ? ` Grund: ${options.grund}` : ''}`] };
+    },
+  },
+  {
+    name: 'verwarnen',
+    description: 'Verwarnt jemanden öffentlich im Kanal',
+    options: [option('nutzer', 'Wer verwarnt wird', true), option('grund', 'Worum es geht', true)],
+    run: ({ options }) => {
+      const { target, error } = moderatable(userByMention(options.nutzer));
+      if (error) return { ephemeral: [error] };
+      return { public: [`⚠️ @${target.username}, das ist eine Verwarnung vom Nexora-Team: ${options.grund}`] };
+    },
+  },
+  {
+    name: 'abmelden',
+    description: 'Meldet jemanden auf allen Geräten ab',
+    options: [option('nutzer', 'Wer abgemeldet wird', true)],
+    run: ({ options }) => {
+      const { target, error } = moderatable(userByMention(options.nutzer));
+      if (error) return { ephemeral: [error] };
+      endSessions(target.id, 'Du wurdest vom Nexora-Team abgemeldet. Bitte melde dich neu an.');
+      return { ephemeral: [`🚪 @${target.username} wurde überall abgemeldet.`] };
+    },
+  },
+  {
+    name: 'info',
+    description: 'Zeigt Infos zu einem Account',
+    options: [option('nutzer', 'Wessen Infos', true)],
+    run: ({ options }) => {
+      const u = userByMention(options.nutzer);
+      if (!u || u.bot) return { ephemeral: ['Benutzer nicht gefunden.'] };
+      let messages = 0;
+      for (const list of Object.values(db.messages)) for (const m of list) if (m.authorId === u.id) messages += 1;
+      const hubs = Object.values(db.hubs).filter((h) => h.members.includes(u.id)).length;
+      const bots = Object.values(db.bots).filter((b) => b.ownerId === u.id).length;
+      return {
+        ephemeral: [[
+          `ℹ️ **${u.displayName}** (@${u.username})${isOfficial(u) ? ' · offiziell' : ''}`,
+          `Dabei seit ${dateFmt.format(u.createdAt)} · ${online.get(u.id) ? 'gerade online' : 'offline'}`,
+          `${numberFmt.format(hubs)} Hubs · ${numberFmt.format(messages)} Nachrichten · ${numberFmt.format(bots)} Bots`,
+          u.banned ? `🔨 Gesperrt seit ${dateFmt.format(u.banned.at)}${u.banned.reason ? ` – ${u.banned.reason}` : ''}` : 'Nicht gesperrt',
+        ].join('\n')],
+      };
+    },
+  },
+  {
+    name: 'stats',
+    description: 'Zeigt Nexora in Zahlen',
+    options: [],
+    run: () => {
+      const c = platformCounts();
+      const n = numberFmt.format;
+      return {
+        ephemeral: [[
+          `📊 **Nexora in Zahlen** · ${VERSION}`,
+          `Nutzer: ${n(c.users)} (${n(c.online)} online, +${n(c.newToday)} heute) · gesperrt: ${n(c.banned)}`,
+          `Hubs: ${n(c.hubs)} · Kanäle: ${n(c.channels)} · Bots: ${n(c.bots)} · im Sprachkanal: ${n(c.inVoice)}`,
+          `Nachrichten: ${n(c.messages)} (${n(c.messagesToday)} in 24 Std.)`,
+        ].join('\n')],
+      };
+    },
+  },
+  {
+    name: 'ankuendigung',
+    description: 'Setzt das Banner für alle – ohne Text wird es entfernt',
+    options: [option('text', 'Was alle oben im Chat sehen')],
+    run: ({ options }) => ({
+      ephemeral: [setAnnouncement(options.text) ? '📣 Die Ankündigung ist live.' : '📣 Die Ankündigung wurde entfernt.'],
+    }),
+  },
+  {
+    name: 'loeschen',
+    description: `Löscht die letzten Nachrichten in diesem Kanal (max. ${MAX_PURGE})`,
+    options: [option('anzahl', `Wie viele (1–${MAX_PURGE})`, true)],
+    run: ({ access, channelId, options }) => {
+      const count = Number(options.anzahl);
+      if (!Number.isInteger(count) || count < 1 || count > MAX_PURGE) return { ephemeral: [`Bitte eine Zahl von 1 bis ${MAX_PURGE}.`] };
+      const removed = (db.messages[channelId] || []).splice(-count);
+      discardFiles(removed);
+      save();
+      for (const m of removed) emitToChannel(access, 'message:remove', { channelId, messageId: m.id });
+      return { ephemeral: [`🧹 ${removed.length} Nachricht${removed.length === 1 ? '' : 'en'} gelöscht.`] };
+    },
+  },
+];
+
 io.use((socket, next) => {
   const token = socket.handshake.auth?.token;
   const session = typeof token === 'string' && db.sessions[token];
@@ -905,6 +1142,9 @@ io.on('connection', (socket) => {
       users[uid] = publicUser(u);
       presence[uid] = presenceOf(u);
     }
+    // Everyone can see the helper's messages, so everyone knows its profile.
+    users[HELPER_ID] = publicUser(db.users[HELPER_ID]);
+    presence[HELPER_ID] = 'online';
     return {
       version: VERSION,
       announcement: db.announcement,
@@ -976,12 +1216,7 @@ io.on('connection', (socket) => {
     const hub = db.hubs[hubId];
     if (!hub || !hub.members.includes(userId)) return { error: 'Hub nicht gefunden.' };
     if (hub.ownerId === userId) return { error: 'Als Besitzer kannst du den Hub nur löschen.' };
-    voiceKickHub(hub, userId);
-    hub.members = hub.members.filter((m) => m !== userId);
-    save();
-    io.in(`user:${userId}`).socketsLeave(`hub:${hub.id}`);
-    io.to(`user:${userId}`).emit('hub:removed', { hubId: hub.id });
-    io.to(`hub:${hub.id}`).emit('hub:update', hubView(hub));
+    removeFromHub(hub, userId);
     return {};
   });
 
@@ -1428,14 +1663,32 @@ io.on('connection', (socket) => {
     return {};
   });
 
+  // Built-in command of the Nexora Helper, for official accounts only.
+  function runHelper(access, channelId, command, text) {
+    if (rateLimited()) return { error: 'Langsam! Du sendest zu schnell.' };
+    const input = typeof text === 'string' ? text.trim().slice(0, MAX_MESSAGE) : '';
+    const { options, missing } = parseArgs(command, input);
+    if (missing) return { botId: HELPER_ID, command: command.name, ephemeral: [`Es fehlt „${missing.name}“. So geht's: \`${commandUsage(command)}\``] };
+    const result = command.run({ invoker: me(), access, channelId, options });
+    const interaction = { userId, command: command.name };
+    (result.public || []).forEach((content, i) => postMessage(access, channelId, HELPER_ID, { content, interaction: i ? null : interaction }));
+    return { botId: HELPER_ID, command: command.name, ephemeral: result.ephemeral || [] };
+  }
+
   on('command:run', ({ channelId, botId, name, text }) => {
     const access = channelAccess(userId, channelId);
-    if (!access || access.type !== 'hub' || isVoice(channelId)) return { error: 'Befehle funktionieren nur in Textkanälen von Hubs.' };
-    const { hub } = access;
+    if (!access || isVoice(channelId)) return { error: 'Befehle funktionieren nur in Textkanälen.' };
     const commandName = str(name, 33).toLowerCase().replace(/^\//, '');
-    const inHub = hub.members.map((m) => db.bots[m]).filter((b) => b && !b.disabled);
+    const inHub = access.type === 'hub' ? access.hub.members.map((m) => db.bots[m]).filter((b) => b && !b.disabled) : [];
     const has = (b) => b.commands.some((c) => c.name === commandName);
     const bot = inHub.find((b) => b.id === botId && has(b)) || inHub.find(has);
+    const helperCommand = HELPER_COMMANDS.find((c) => c.name === commandName);
+    if (helperCommand && (botId === HELPER_ID || !bot)) {
+      if (!isOfficial(me())) return { error: 'Der Nexora Helper ist nur für das Nexora-Team.' };
+      return runHelper(access, channelId, helperCommand, text);
+    }
+    if (access.type !== 'hub') return { error: 'Befehle von Bots funktionieren nur in Hubs.' };
+    const { hub } = access;
     if (!bot) return { error: `Unbekannter Befehl /${commandName}.` };
     if (rateLimited()) return { error: 'Langsam! Du sendest zu schnell.' };
 
@@ -1443,10 +1696,7 @@ io.on('connection', (socket) => {
     const input = typeof text === 'string' ? text.trim().slice(0, MAX_MESSAGE) : '';
     const { args, options, missing } = parseArgs(command, input);
     const botUser = db.users[bot.id];
-    if (missing) {
-      const usage = `/${command.name} ${command.options.map((o) => (o.required ? `<${o.name}>` : `[${o.name}]`)).join(' ')}`.trim();
-      return { botId: bot.id, ephemeral: [`Es fehlt „${missing.name}“. So geht's: \`${usage}\``] };
-    }
+    if (missing) return { botId: bot.id, ephemeral: [`Es fehlt „${missing.name}“. So geht's: \`${commandUsage(command)}\``] };
     const u = me();
     const ctx = {
       user: { id: u.id, username: u.username, displayName: u.displayName, mention: '@' + u.username },
@@ -1478,47 +1728,15 @@ io.on('connection', (socket) => {
 
   const onAdmin = (event, handler) => on(event, (payload) => (isOfficial(me()) ? handler(payload) : { error: 'Nur für offizielle Nexora-Accounts.' }));
 
-  // The target of a moderation action: a real (non-bot) user that is not official.
-  const moderatable = (targetId) => {
-    const target = own(db.users, targetId);
-    if (!target || target.bot) return { error: 'Benutzer nicht gefunden.' };
-    if (isOfficial(target)) return { error: 'Offizielle Accounts können nicht moderiert werden.' };
-    return { target };
-  };
-
-  onAdmin('admin:overview', () => {
-    const users = Object.values(db.users);
-    const humans = users.filter((u) => !u.bot);
-    const dayAgo = Date.now() - 86400000;
-    let messages = 0, messagesToday = 0;
-    for (const list of Object.values(db.messages)) {
-      messages += list.length;
-      for (let i = list.length - 1; i >= 0 && list[i].createdAt > dayAgo; i--) messagesToday += 1;
-    }
-    let inVoice = 0;
-    for (const room of voice.values()) inVoice += room.size;
-    return {
-      version: VERSION,
-      storage: MONGODB_URI ? 'MongoDB' : 'Datei (db.json)',
-      startedAt: STARTED_AT,
-      memory: process.memoryUsage().rss,
-      dataSize: Buffer.byteLength(JSON.stringify(db)),
-      counts: {
-        users: humans.length,
-        online: humans.filter((u) => online.get(u.id)).length,
-        newToday: humans.filter((u) => u.createdAt > dayAgo).length,
-        banned: humans.filter((u) => u.banned).length,
-        bots: Object.keys(db.bots).length,
-        hubs: Object.keys(db.hubs).length,
-        channels: Object.values(db.hubs).reduce((n, h) => n + h.channels.length, 0),
-        dms: Object.keys(db.dms).length,
-        messages,
-        messagesToday,
-        inVoice,
-      },
-      announcement: db.announcement,
-    };
-  });
+  onAdmin('admin:overview', () => ({
+    version: VERSION,
+    storage: MONGODB_URI ? 'MongoDB' : 'Datei (db.json)',
+    startedAt: STARTED_AT,
+    memory: process.memoryUsage().rss,
+    dataSize: Buffer.byteLength(JSON.stringify(db)),
+    counts: platformCounts(),
+    announcement: db.announcement,
+  }));
 
   onAdmin('admin:users', ({ query }) => {
     const q = str(query, 32).toLowerCase();
@@ -1544,15 +1762,14 @@ io.on('connection', (socket) => {
   });
 
   onAdmin('admin:ban', ({ userId: targetId, reason }) => {
-    const { target, error } = moderatable(targetId);
+    const { target, error } = moderatable(own(db.users, targetId));
     if (error) return { error };
-    target.banned = { reason: str(reason, 200), at: Date.now(), by: userId };
-    endSessions(target.id, banMessage(target));
+    banUser(target, reason, userId);
     return {};
   });
 
   onAdmin('admin:unban', ({ userId: targetId }) => {
-    const { target, error } = moderatable(targetId);
+    const { target, error } = moderatable(own(db.users, targetId));
     if (error) return { error };
     delete target.banned;
     save();
@@ -1560,14 +1777,14 @@ io.on('connection', (socket) => {
   });
 
   onAdmin('admin:logout', ({ userId: targetId }) => {
-    const { target, error } = moderatable(targetId);
+    const { target, error } = moderatable(own(db.users, targetId));
     if (error) return { error };
     endSessions(target.id, 'Du wurdest von einem Admin abgemeldet. Bitte melde dich neu an.');
     return {};
   });
 
   onAdmin('admin:resetPassword', ({ userId: targetId }) => {
-    const { target, error } = moderatable(targetId);
+    const { target, error } = moderatable(own(db.users, targetId));
     if (error) return { error };
     const chars = 'abcdefghjkmnpqrstuvwxyz23456789';
     const password = Array.from(crypto.randomBytes(10), (b) => chars[b % chars.length]).join('');
@@ -1635,14 +1852,7 @@ io.on('connection', (socket) => {
     return {};
   });
 
-  // A banner on top of Nexora for everyone; an empty text removes it.
-  onAdmin('admin:announce', ({ text }) => {
-    const content = str(text, 300);
-    db.announcement = content ? { id: id(), text: content, createdAt: Date.now() } : null;
-    save();
-    io.emit('announcement', db.announcement);
-    return { announcement: db.announcement };
-  });
+  onAdmin('admin:announce', ({ text }) => ({ announcement: setAnnouncement(text) }));
 
   socket.on('disconnect', () => {
     voiceLeave(socket);
@@ -1676,6 +1886,7 @@ async function main() {
     console.log(`[nexora] Daten werden in ${DB_FILE} gespeichert`);
   }
   ensureLounge();
+  ensureHelper();
   await botRuntime.ready;
   await sweepOrphanFiles().catch((err) => console.error('[nexora] Aufräumen der Dateien fehlgeschlagen:', err.message));
   server.listen(PORT, () => {
