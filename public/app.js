@@ -6,6 +6,8 @@
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+// Set by the preload script of the Nexora desktop app; null in a normal browser.
+const DESKTOP = window.nexoraDesktop || null;
 
 const ICONS = {
   plus: '<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
@@ -1044,8 +1046,10 @@ function hubUnread(hub) {
 function renderRail() {
   const list = $('#hub-list');
   list.innerHTML = '';
+  let mentions = 0;
   for (const hub of state.hubs.values()) {
     const u = hubUnread(hub);
+    if (u.mention) mentions += u.count;
     const active = state.view.type === 'hub' && state.view.hubId === hub.id;
     const btn = h(`<button class="rail-item ${active ? 'active' : ''} ${u.count ? 'unread' : ''}" style="--hub-color:${esc(hub.color)}" title="${esc(hub.name)}">
       ${hub.icon ? `<span class="emoji">${esc(hub.icon)}</span>` : esc(initials(hub.name))}
@@ -1060,6 +1064,7 @@ function renderRail() {
   const dmUnread = [...state.dms.keys()].reduce((n, id) => n + (state.unread.get(id)?.count || 0), 0);
   home.querySelector('.badge')?.remove();
   if (dmUnread) home.append(h(`<span class="badge">${dmUnread > 99 ? '99+' : dmUnread}</span>`));
+  setAppBadge(mentions + dmUnread);
   updateTitle();
 }
 
@@ -1628,7 +1633,8 @@ async function react(messageId, emoji) {
 }
 
 function notify(msg) {
-  if (!store('notify') || !document.hidden || !('Notification' in window) || Notification.permission !== 'granted') return;
+  const away = document.hidden || (DESKTOP && !document.hasFocus());
+  if (!store('notify') || !away || !('Notification' in window) || Notification.permission !== 'granted') return;
   try {
     const author = userOf(msg.authorId);
     const where = state.dms.has(msg.channelId) ? '' : ` · ${channelLabel(msg.channelId)}`;
@@ -1639,6 +1645,7 @@ function notify(msg) {
     });
     n.onclick = () => {
       window.focus();
+      DESKTOP?.focus();
       openChannel(msg.channelId);
       n.close();
     };
@@ -3203,6 +3210,8 @@ const versionReady = fetch('/api/version', { cache: 'no-store' })
   .then((d) => {
     state.version = d.version;
     state.changelog = d.changelog;
+    state.desktopVersion = d.desktop?.version || null;
+    updateDownloadButton();
     $$('[data-version]').forEach((el) => {
       el.textContent = d.version;
       el.hidden = false;
@@ -3224,6 +3233,105 @@ function openChangelog() {
     <div class="cl-hero"><div class="logo-mark"><span>N</span></div><div><h3>${t('Was ist neu?')}</h3><p class="sub">${t('Du nutzt Nexora <b>{version}</b>', { version: esc(state.version) })}</p></div></div>
     <div class="cl-list">${entries}</div>
     <div class="modal-actions"><button class="btn primary" data-close>${t("Los geht's")}</button></div>`, { className: 'changelog' });
+}
+
+/* ---------- desktop app ---------- */
+
+const DESKTOP_PLATFORMS = [
+  { id: 'windows', name: 'Windows', icon: '🪟', note: 'Windows 10 & 11 · 64 Bit' },
+  { id: 'mac', name: 'macOS', icon: '🍎', note: 'Intel & Apple Silicon' },
+  { id: 'linux', name: 'Linux', icon: '🐧', note: 'AppImage · 64 Bit' },
+];
+
+// Chrome and Edge offer to install Nexora as an app straight from the browser.
+let installPrompt = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  installPrompt = e;
+});
+window.addEventListener('appinstalled', () => {
+  installPrompt = null;
+  toast(t('Nexora wurde installiert'));
+});
+
+function detectPlatform() {
+  const ua = `${navigator.userAgentData?.platform || ''} ${navigator.platform || ''} ${navigator.userAgent}`.toLowerCase();
+  // iPads report themselves as Macs, but have a touch screen.
+  if (/android|iphone|ipad|ipod/.test(ua) || (ua.includes('mac') && navigator.maxTouchPoints > 1)) return null;
+  if (ua.includes('win')) return 'windows';
+  if (ua.includes('mac')) return 'mac';
+  if (ua.includes('linux') || ua.includes('x11') || ua.includes('cros')) return 'linux';
+  return null;
+}
+
+// "0.10.1" > "0.9.3"
+function newerVersion(a, b) {
+  const pa = String(a).split('.').map(Number);
+  const pb = String(b).split('.').map(Number);
+  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+    if ((pa[i] || 0) !== (pb[i] || 0)) return (pa[i] || 0) > (pb[i] || 0);
+  }
+  return false;
+}
+
+const desktopOutdated = () => Boolean(DESKTOP && state.desktopVersion && newerVersion(state.desktopVersion, DESKTOP.version));
+
+// Inside the desktop app the button only shows up when a newer app version is available.
+function updateDownloadButton() {
+  const btn = $('#download-btn');
+  const outdated = desktopOutdated();
+  btn.classList.toggle('hidden', Boolean(DESKTOP) && !outdated);
+  btn.classList.toggle('has-update', outdated);
+  btn.title = outdated ? t('Neue Desktop-App verfügbar') : t('Nexora für deinen PC');
+}
+
+let lastBadge = 0;
+function setAppBadge(count) {
+  if (!DESKTOP || count === lastBadge) return;
+  lastBadge = count;
+  DESKTOP.setBadge(count);
+}
+
+function openDownload() {
+  const mine = detectPlatform();
+  const platforms = [...DESKTOP_PLATFORMS].sort((a, b) => (b.id === mine) - (a.id === mine));
+  const cards = platforms.map((p) => `<a class="dl-card ${p.id === mine ? 'rec' : ''}" href="/download/${p.id}" data-platform="${p.id}">
+      <span class="dl-os">${p.icon}</span>
+      <span class="dl-name"><b>${p.name}</b><small>${esc(t(p.note))}</small></span>
+      ${p.id === mine ? `<span class="dl-tag">${t('Für dich')}</span>` : ''}
+      <span class="dl-get">${ICONS.download}</span>
+    </a>`).join('');
+  const current = DESKTOP
+    ? `<div class="dl-current ${desktopOutdated() ? 'update' : ''}">💻 ${t('Du nutzt die Desktop-App <b>{version}</b>.', { version: esc(DESKTOP.version) })}${desktopOutdated() ? ` ${t('Version <b>{version}</b> ist da – einfach herunterladen und drüber installieren.', { version: esc(state.desktopVersion) })}` : ''}</div>`
+    : '';
+  const pwa = installPrompt && !DESKTOP
+    ? `<div class="dl-pwa"><div><b>${t('Ohne Download')}</b><small>${t('Installiere Nexora direkt aus deinem Browser.')}</small></div><button class="btn" data-install>${t('Als App installieren')}</button></div>`
+    : '';
+  const { modal, close } = openModal(`
+    <div class="dl-hero"><div class="dl-icon">${ICONS.download}</div><div><h3>${t('Nexora für deinen PC')}</h3><p class="sub">${t('Eigenes Fenster, eigenes Symbol in der Taskleiste – ganz ohne Browser. Neue Nexora-Versionen kommen automatisch.')}</p></div></div>
+    ${current}
+    <div class="dl-list">${cards}</div>
+    ${pwa}
+    <details class="dl-help">
+      <summary>${t("So geht's")}</summary>
+      <ol>
+        <li>${t('Datei herunterladen und öffnen – Nexora startet danach von selbst.')}</li>
+        <li>${t('<b>Windows:</b> Kommt „Der Computer wurde durch Windows geschützt“, klicke auf „Weitere Informationen“ und dann „Trotzdem ausführen“.')}</li>
+        <li>${t('<b>macOS:</b> Nexora in den Programme-Ordner ziehen und beim ersten Mal per Rechtsklick → „Öffnen“ starten. Meldet macOS, die App sei beschädigt, hilft im Terminal: <code>xattr -cr /Applications/Nexora.app</code>')}</li>
+        <li>${t('<b>Linux:</b> Rechtsklick auf die Datei → Eigenschaften → „Als Programm ausführen“ erlauben, dann doppelklicken.')}</li>
+      </ol>
+    </details>
+    ${DESKTOP ? '' : `<div class="dl-server"><span>${t('Server-Adresse')}</span><code>${esc(location.origin)}</code><button class="icon-btn" type="button" data-copy title="${t('Kopieren')}">${ICONS.copy}</button></div>
+    <p class="dl-foot">${t('Fragt die App beim ersten Start nach dem Server, gib diese Adresse ein.')}</p>`}
+    <div class="modal-actions"><button class="btn primary" data-close>${t('Schließen')}</button></div>`, { className: 'download' });
+  modal.querySelector('[data-copy]')?.addEventListener('click', () => copyText(location.origin));
+  modal.querySelectorAll('.dl-card').forEach((a) => (a.onclick = () => toast(t('Download startet…'))));
+  modal.querySelector('[data-install]')?.addEventListener('click', async () => {
+    const prompt = installPrompt;
+    installPrompt = null;
+    close();
+    prompt?.prompt();
+  });
 }
 
 // The version of the code running in this tab, written into the page by the server.
@@ -3255,6 +3363,7 @@ $('#create-hub-btn').onclick = openCreateHub;
 $('#join-hub-btn').onclick = openJoinHub;
 $('#palette-btn').onclick = openPalette;
 $('#version-btn').onclick = openChangelog;
+$('#download-btn').onclick = openDownload;
 $('#admin-btn').onclick = () => openAdminPanel();
 $('#auth-version').onclick = openChangelog;
 $('#toggle-members').onclick = () => {

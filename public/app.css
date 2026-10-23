@@ -755,6 +755,51 @@ h1 .verified, h2 .verified, h4 .verified { width: 20px; height: 20px; font-size:
 .cl-ico { width: 22px; text-align: center; flex-shrink: 0; }
 .cl-entry code { font: 12px var(--mono); background: rgba(0, 0, 0, 0.4); padding: 1px 5px; border-radius: 5px; }
 .cl-entry .spoiler { background: #3a2a1f; border-radius: 4px; padding: 0 3px; }
+/* ---------- desktop app download ---------- */
+.rail-item.download { margin-top: auto; }
+.rail-item.download:not(.hidden) + .version-pill { margin-top: 0; }
+.rail-item.download.has-update { color: #1a0b02; background: var(--grad); border-style: solid; border-color: transparent; animation: dl-nudge 2.4s ease-in-out infinite; }
+.rail-item.download.has-update::after { content: ''; position: absolute; top: -3px; right: -3px; width: 12px; height: 12px; border-radius: 50%; background: var(--success); box-shadow: 0 0 0 3px var(--bg); }
+@keyframes dl-nudge { 50% { transform: translateY(2px); } }
+.modal.download { width: min(520px, 100%); }
+.dl-hero { display: flex; align-items: center; gap: 16px; margin-bottom: 18px; }
+.dl-hero .sub { margin: 0; }
+.dl-icon { width: 56px; height: 56px; flex-shrink: 0; display: grid; place-items: center; border-radius: 18px; background: var(--grad); color: #1a0b02; box-shadow: 0 10px 30px -8px rgba(255, 106, 0, 0.8); }
+.dl-icon svg { width: 28px; height: 28px; stroke-width: 2.4; animation: dl-drop 2s ease-in-out infinite; }
+@keyframes dl-drop { 0%, 100% { transform: translateY(-2px); } 50% { transform: translateY(2px); } }
+.dl-current { margin-bottom: 14px; padding: 10px 14px; border-radius: 12px; background: rgba(255, 255, 255, 0.04); border: 1px solid var(--line); color: var(--text-2); font-size: 14px; }
+.dl-current.update { border-color: rgba(61, 220, 132, 0.4); background: rgba(61, 220, 132, 0.08); }
+.dl-current b { color: var(--orange-2); }
+.dl-list { display: grid; gap: 8px; margin-bottom: 14px; }
+.dl-card {
+  display: flex; align-items: center; gap: 14px; padding: 12px 14px;
+  border-radius: 16px; background: rgba(0, 0, 0, 0.3); border: 1px solid var(--line);
+  color: var(--text); text-decoration: none;
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s, background 0.2s;
+}
+.dl-card:hover { border-color: var(--line-strong); background: rgba(255, 122, 24, 0.08); transform: translateY(-1px); }
+.dl-card.rec { border-color: rgba(255, 122, 24, 0.55); box-shadow: var(--glow); }
+.dl-os { font-size: 26px; line-height: 1; width: 32px; text-align: center; }
+.dl-name { display: grid; flex: 1; min-width: 0; }
+.dl-name b { font: 700 16px var(--display); }
+.dl-name small { color: var(--muted); font-size: 12px; }
+.dl-tag { padding: 3px 9px; border-radius: 999px; background: var(--grad); color: #1a0b02; font: 700 11px var(--font); text-transform: uppercase; letter-spacing: 0.05em; }
+.dl-get { color: var(--orange-2); display: grid; }
+.dl-pwa { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; padding: 12px 14px; border-radius: 16px; border: 1px dashed var(--line-strong); }
+.dl-pwa > div { display: grid; flex: 1; }
+.dl-pwa small { color: var(--muted); font-size: 12px; }
+.dl-help { margin-bottom: 14px; color: var(--text-2); font-size: 14px; }
+.dl-help summary { cursor: pointer; color: var(--orange-2); font-weight: 600; }
+.dl-help ol { margin: 10px 0 0; padding-left: 20px; display: grid; gap: 6px; }
+.dl-help code { font: 12px var(--mono); background: rgba(0, 0, 0, 0.4); padding: 1px 5px; border-radius: 5px; overflow-wrap: anywhere; }
+.dl-server { display: flex; align-items: center; gap: 10px; padding: 8px 8px 8px 14px; border-radius: 12px; background: rgba(0, 0, 0, 0.35); border: 1px solid var(--line); }
+.dl-server span { color: var(--muted); font-size: 12px; font-weight: 600; white-space: nowrap; }
+.dl-server code { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 13px var(--mono); color: var(--orange-2); }
+.dl-foot { margin: 8px 0 14px; color: var(--muted); font-size: 12px; }
+@media (prefers-reduced-motion: reduce) {
+  .rail-item.download.has-update, .dl-icon svg { animation: none; }
+}
+
 .update-banner {
   position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 65;
   display: flex; align-items: center; gap: 14px; padding: 10px 10px 10px 18px;

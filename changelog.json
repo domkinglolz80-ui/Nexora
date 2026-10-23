@@ -1,5 +1,43 @@
 [
   {
+    "version": "V0.2.0 Beta",
+    "date": "2026-10-23",
+    "title": "Nexora für deinen PC",
+    "titleEn": "Nexora for your PC",
+    "changes": [
+      {
+        "icon": "💻",
+        "text": "**Die Nexora Desktop-App ist da!** Nexora läuft jetzt als eigenes Programm auf **Windows**, **macOS** und **Linux** – mit eigenem Fenster und eigenem Symbol in der Taskleiste, ganz ohne Browser",
+        "textEn": "**The Nexora desktop app is here!** Nexora now runs as its own program on **Windows**, **macOS** and **Linux** – with its own window and its own icon in the taskbar, no browser needed"
+      },
+      {
+        "icon": "⬇️",
+        "text": "Neues **Download-Symbol** unten in der Hub-Leiste: Es erkennt dein System, zeigt den passenden Download zuerst und erklärt die Installation Schritt für Schritt",
+        "textEn": "New **download icon** at the bottom of the hub rail: it detects your system, shows the right download first and explains the installation step by step"
+      },
+      {
+        "icon": "🔄",
+        "text": "Neue Nexora-Versionen kommen in der App **automatisch** an – installieren musst du nur, wenn es eine neue Desktop-App gibt, dann leuchtet das Download-Symbol",
+        "textEn": "New Nexora versions reach the app **automatically** – you only need to install again when there is a new desktop app, and the download icon lights up when there is"
+      },
+      {
+        "icon": "🔔",
+        "text": "In der Desktop-App: Benachrichtigungen schon, wenn das Fenster im Hintergrund ist, ein Zähler am App-Symbol, Mikrofon für Sprachkanäle, das Fenster merkt sich Größe und Position, und Links zu anderen Seiten öffnen im Browser",
+        "textEn": "In the desktop app: notifications as soon as the window is in the background, a counter on the app icon, the microphone for voice channels, the window remembers its size and position, and links to other sites open in your browser"
+      },
+      {
+        "icon": "😴",
+        "text": "Schläft der Server gerade, zeigt die App „Nexora startet…“ und wartet, statt leer zu bleiben – ohne Internet gibt es „Erneut versuchen“",
+        "textEn": "If the server is asleep, the app shows “Starting Nexora…” and waits instead of staying blank – without internet there is “Try again”"
+      },
+      {
+        "icon": "📲",
+        "text": "In Chrome und Edge lässt sich Nexora außerdem **direkt aus dem Browser als App installieren** – mit neuem Nexora-Symbol",
+        "textEn": "In Chrome and Edge you can also **install Nexora as an app straight from the browser** – with a new Nexora icon"
+      }
+    ]
+  },
+  {
     "version": "V0.1.8 Beta",
     "date": "2026-10-23",
     "title": "Der Nexora Helper wird erwachsen",

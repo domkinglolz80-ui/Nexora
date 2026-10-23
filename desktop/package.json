@@ -1,0 +1,56 @@
+{
+  "name": "nexora-desktop",
+  "productName": "Nexora",
+  "version": "0.2.0",
+  "description": "Nexora als eigene App für Windows, macOS und Linux",
+  "main": "main.js",
+  "private": true,
+  "author": "Nexora",
+  "license": "GPL-3.0",
+  "homepage": "https://github.com/domkinglolz80-ui/Nexora",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/domkinglolz80-ui/Nexora.git"
+  },
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --publish never"
+  },
+  "devDependencies": {
+    "electron": "44.7.0",
+    "electron-builder": "26.17.0"
+  },
+  "build": {
+    "appId": "app.nexora.desktop",
+    "productName": "Nexora",
+    "copyright": "Nexora · GPL-3.0",
+    "directories": { "output": "dist", "buildResources": "build" },
+    "publish": null,
+    "files": ["main.js", "preload.js", "connect.html", "server.json", "build/icon.png"],
+    "win": {
+      "target": [{ "target": "nsis", "arch": ["x64"] }],
+      "artifactName": "Nexora-Setup.${ext}"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "createDesktopShortcut": "always",
+      "createStartMenuShortcut": true,
+      "shortcutName": "Nexora",
+      "deleteAppDataOnUninstall": false
+    },
+    "mac": {
+      "target": [{ "target": "dmg", "arch": ["universal"] }],
+      "category": "public.app-category.social-networking",
+      "artifactName": "Nexora.${ext}",
+      "identity": null,
+      "extendInfo": { "NSMicrophoneUsageDescription": "Nexora braucht das Mikrofon für Sprachkanäle." }
+    },
+    "linux": {
+      "target": [{ "target": "AppImage", "arch": ["x64"] }],
+      "category": "Network",
+      "executableName": "nexora",
+      "artifactName": "Nexora.${ext}"
+    }
+  }
+}

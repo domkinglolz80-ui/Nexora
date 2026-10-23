@@ -27,6 +27,10 @@ const STARTED_AT = Date.now();
 // The newest changelog entry is the running version; clients compare it to reload on updates.
 const CHANGELOG = require('./changelog.json');
 const VERSION = CHANGELOG[0].version;
+// The desktop app (desktop/) is released on GitHub; its installers always keep the same file names.
+const DESKTOP_VERSION = require('./desktop/package.json').version;
+const DESKTOP_DOWNLOAD_BASE = (process.env.DESKTOP_DOWNLOAD_BASE || 'https://github.com/domkinglolz80-ui/Nexora/releases/latest/download').replace(/\/+$/, '');
+const DESKTOP_FILES = { windows: 'Nexora-Setup.exe', mac: 'Nexora.dmg', linux: 'Nexora.AppImage' };
 const ACCENTS = ['#ff7a18', '#ff9f1c', '#ff5e3a', '#ffb347', '#ff6b00', '#f9a03f', '#ff8c42', '#e85d04'];
 
 // ---------------------------------------------------------------------------
@@ -587,7 +591,14 @@ app.use(express.static(path.join(__dirname, 'public'), {
 
 app.get('/api/version', (_req, res) => {
   res.setHeader('Cache-Control', 'no-store');
-  res.json({ version: VERSION, changelog: CHANGELOG });
+  res.json({ version: VERSION, desktop: { version: DESKTOP_VERSION }, changelog: CHANGELOG });
+});
+
+// /download/windows, /download/mac, /download/linux → the newest installer on GitHub.
+app.get('/download/:platform', (req, res) => {
+  const file = Object.hasOwn(DESKTOP_FILES, req.params.platform) && DESKTOP_FILES[req.params.platform];
+  if (!file) return res.status(404).json({ error: 'Unbekannte Plattform.' });
+  res.redirect(302, `${DESKTOP_DOWNLOAD_BASE}/${file}`);
 });
 
 const USERNAME_RE = /^[a-zA-Z0-9_.]{3,20}$/;

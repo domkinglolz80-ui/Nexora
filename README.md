@@ -23,6 +23,7 @@ Nexora ist eine Echtzeit-Chat-Plattform mit eigenem Look: dunkles Glas-Design mi
 - **Befehlspalette** – `Strg`+`K` springt zu jedem Hub, Kanal oder Menschen
 - **Profile** – Anzeigename, Bio, Akzentfarbe
 - **Deutsch & Englisch** – Sprache beim Login oder in den Profil-Einstellungen wählen, beim ersten Besuch wird sie automatisch erkannt
+- **Desktop-App** – Nexora als eigenes Programm für Windows, macOS und Linux, Download über das Symbol unten in der Hub-Leiste
 - **Responsive** – funktioniert auch auf dem Handy
 - **Halloween Edition 2026** – gruseliger Look, animierte Profil-Accessoires und Geisterjagd
 
@@ -246,9 +247,31 @@ Die Stimmen laufen per **WebRTC direkt zwischen den Geräten**; der Server vermi
 - Dateien sind über ihren zufälligen, nicht erratbaren Link erreichbar (wie bei Discord). Wer den Link hat, kann die Datei öffnen.
 - Hochgeladene, aber nie gesendete Dateien werden nach einer Stunde bzw. beim nächsten Start automatisch entfernt.
 
+## Desktop-App 💻
+
+Ab **V0.2.0 Beta** gibt es Nexora als eigenes Programm. Das **Download-Symbol** (⬇) unten in der Hub-Leiste öffnet die Downloads – das passende System steht oben:
+
+| System  | Datei              | Hinweis                                   |
+| ------- | ------------------ | ----------------------------------------- |
+| Windows | `Nexora-Setup.exe` | Windows 10 & 11, 64 Bit                   |
+| macOS   | `Nexora.dmg`       | Intel und Apple Silicon                   |
+| Linux   | `Nexora.AppImage`  | 64 Bit, vor dem Start ausführbar machen   |
+
+- Die App ist ein schlankes Fenster um Nexora (Electron). Die Oberfläche kommt weiter vom Server – **jedes Nexora-Update ist sofort auch in der App**. Neu installieren muss man nur, wenn es eine neue Desktop-App gibt; dann leuchtet das Download-Symbol in der App.
+- Benachrichtigungen, sobald das Fenster im Hintergrund ist, Zähler am App-Symbol (macOS/Linux) bzw. blinkende Taskleiste (Windows), Mikrofon für Sprachkanäle, Fenstergröße wird gemerkt, fremde Links öffnen im Browser.
+- Schläft der Render-Server, zeigt die App „Nexora startet…“ und wartet bis zu 90 Sekunden. Ohne Verbindung gibt es „Erneut versuchen“ und „Adresse ändern“. Im Menü (`Alt` drücken) steht „Server-Adresse ändern…“.
+- Die Installer sind nicht signiert: Windows zeigt beim ersten Start „Der Computer wurde durch Windows geschützt“ → „Weitere Informationen“ → „Trotzdem ausführen“; auf dem Mac per Rechtsklick → „Öffnen“ (meldet macOS „beschädigt“: `xattr -cr /Applications/Nexora.app`).
+- In Chrome und Edge geht es auch ohne Download: im Download-Fenster „Als App installieren“.
+
+**So entstehen die Downloads:** Der Workflow [`.github/workflows/desktop.yml`](.github/workflows/desktop.yml) baut bei jedem Push auf `nexora-app`, der `desktop/` ändert, die drei Installer auf GitHub (Windows, macOS, Linux) und veröffentlicht sie als Release `desktop-v<Version>`. Der Server leitet `/download/windows`, `/download/mac` und `/download/linux` auf das neueste Release weiter. Für eine neue Desktop-App die `version` in `desktop/package.json` erhöhen.
+
+**Server-Adresse einbauen (empfohlen):** Auf GitHub unter *Settings → Secrets and variables → Actions → Variables* eine Variable `NEXORA_URL` mit der Render-Adresse anlegen (z. B. `https://nexora-xxxx.onrender.com`) und den Workflow neu laufen lassen. Dann startet die App sofort mit Nexora. Ohne die Variable fragt die App beim ersten Start nach der Adresse – das Download-Fenster zeigt sie mit Kopier-Knopf an.
+
+Selbst bauen: `cd desktop && npm install && npm start` (Testen) bzw. `npm run dist` (Installer für das eigene System in `desktop/dist`).
+
 ## Versionen & Updates
 
-Aktuelle Version: **V0.1.8 Beta**. Alle Änderungen stehen in [`changelog.json`](changelog.json) – der oberste Eintrag ist die laufende Version.
+Aktuelle Version: **V0.2.0 Beta**. Alle Änderungen stehen in [`changelog.json`](changelog.json) – der oberste Eintrag ist die laufende Version.
 
 - Nach dem Login (und nach jedem Update) zeigt Nexora einmal das Fenster **„Was ist neu?“**. Über die Versionsanzeige unten in der Hub-Leiste lässt es sich jederzeit wieder öffnen.
 - Geht eine neue Version live, während jemand Nexora offen hat, lädt die Seite automatisch neu. Tippt die Person gerade etwas, erscheint stattdessen ein „Jetzt laden“-Hinweis.
@@ -275,6 +298,7 @@ Dann <http://localhost:3000> öffnen. Zum Testen mit mehreren Leuten einfach ein
 | `MONGODB_URI`      | –         | Wenn gesetzt: Daten in MongoDB statt in `db.json` |
 | `MONGODB_DB`       | `nexora`  | Name der MongoDB-Datenbank        |
 | `NEXORA_OFFICIAL`  | `nexora`  | Offizielle Accounts (Benutzernamen, kommagetrennt) |
+| `DESKTOP_DOWNLOAD_BASE` | GitHub-Releases | Wohin `/download/…` weiterleitet (Ordner mit den Installern) |
 
 ## Online stellen (Render.com, kostenlos)
 
@@ -322,6 +346,7 @@ public/app.css     Design (Ember-Theme)
 public/app.js      Client-Logik
 public/bots.js     Bots verwalten, Befehle und Skripte bearbeiten
 public/admin.js    Admin-Panel
+desktop/           Desktop-App (Electron): Fenster, Verbindungsseite, Installer-Einstellungen
 ```
 
 Alle Daten werden im Arbeitsspeicher gehalten und gebündelt gespeichert – ideal für kleine bis mittlere Gruppen.
