@@ -1,6 +1,7 @@
 # Builds the Nexora desktop app for Windows, macOS and Linux and publishes the
 # installers as the GitHub release "desktop-v<version>". The web app links to
-# releases/latest/download/<file>, so the file names must stay the same.
+# releases/latest/download/<file>, so the file names must stay the same; the
+# installed apps read releases/latest/download/latest*.yml to update themselves.
 name: Desktop-App
 
 on:
@@ -59,14 +60,25 @@ jobs:
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
 
+      # latest.yml / latest-linux.yml tell the installed apps about the new version (self-update).
+      - name: Update-Infos prüfen
+        if: ${{ matrix.os != 'macos-latest' }}
+        shell: bash
+        run: |
+          ls -la dist
+          test -f dist/latest.yml || test -f dist/latest-linux.yml
+
       - uses: actions/upload-artifact@v4
         with:
           name: nexora-${{ matrix.os }}
           if-no-files-found: error
           path: |
             desktop/dist/Nexora-Setup.exe
+            desktop/dist/Nexora-Setup.exe.blockmap
             desktop/dist/Nexora.dmg
             desktop/dist/Nexora.AppImage
+            desktop/dist/latest.yml
+            desktop/dist/latest-linux.yml
 
   release:
     needs: build

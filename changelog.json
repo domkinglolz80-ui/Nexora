@@ -1,5 +1,28 @@
 [
   {
+    "version": "V0.5.0 Beta",
+    "date": "2026-10-23",
+    "title": "Halber Preis & Updates von selbst",
+    "titleEn": "Half price & updates by themselves",
+    "changes": [
+      {
+        "icon": "🎃",
+        "text": "**50 % Rabatt auf alles im Geister-Laden!** Der Blutmond-Herrscher kostet jetzt 👻 333 statt 👻 666, das Spinnennetz nur noch 👻 13",
+        "textEn": "**50% off everything in the Ghost Shop!** The Blood Moon Sovereign now costs 👻 333 instead of 👻 666, the Cobweb only 👻 13"
+      },
+      {
+        "icon": "🔄",
+        "text": "**Die Desktop-App aktualisiert sich selbst**: Gibt es eine neue Version, schließt sich Nexora, ein Update-Fenster lädt und installiert sie, und Nexora öffnet sich von allein wieder (Windows und Linux)",
+        "textEn": "**The desktop app updates itself**: when there is a new version, Nexora closes, an update window downloads and installs it, and Nexora opens again by itself (Windows and Linux)"
+      },
+      {
+        "icon": "💻",
+        "text": "**Desktop-App 0.5.0** – einmal noch von Hand installieren (Download-Symbol), danach kommen alle Updates automatisch. Neu im Menü: „Nach Updates suchen“",
+        "textEn": "**Desktop app 0.5.0** – install it by hand one last time (download icon), after that every update arrives automatically. New in the menu: “Check for updates”"
+      }
+    ]
+  },
+  {
     "version": "V0.4.0 Beta",
     "date": "2026-10-23",
     "title": "Der Geister-Laden",

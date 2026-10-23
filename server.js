@@ -33,6 +33,14 @@ const SHOP = {
   geisterschwarm: 400,
   blutmond: 666,
 };
+// Sale in the Geister-Laden: 0.5 = 50 % off everything, 0 = regular prices.
+const SHOP_DISCOUNT = 0.5;
+const shopPrice = (item) => Math.ceil(SHOP[item] * (1 - SHOP_DISCOUNT));
+// What the shop shows: the price now and, during a sale, the regular one.
+const shopView = () => ({
+  discount: SHOP_DISCOUNT,
+  prices: Object.fromEntries(Object.keys(SHOP).map((item) => [item, { price: shopPrice(item), regular: SHOP[item] }])),
+});
 const STARTED_AT = Date.now();
 // The newest changelog entry is the running version; clients compare it to reload on updates.
 const CHANGELOG = require('./changelog.json');
@@ -1770,6 +1778,7 @@ io.on('connection', (socket) => {
       version: VERSION,
       helperCommands: isOwner(me()) ? HELPER_COMMANDS.map(helperCommandView) : undefined,
       announcement: db.announcement,
+      shop: shopView(),
       me: publicUser(me()),
       hubs: Object.values(db.hubs).filter((h) => h.members.includes(userId)).map(hubView),
       dms: Object.values(db.dms).filter((d) => dmVisible(d, userId)).map(dmView),
@@ -2645,7 +2654,7 @@ io.on('connection', (socket) => {
     const user = me();
     if (user.bot || typeof item !== 'string' || !Object.hasOwn(SHOP, item)) return { error: 'Diese Dekoration gibt es im Laden nicht.' };
     if (owns(user, item)) return { error: 'Diese Dekoration gehört dir schon.' };
-    const price = SHOP[item];
+    const price = shopPrice(item);
     if ((user.ghosts || 0) < price) return { error: 'Dafür hast du nicht genug Geister.' };
     user.ghosts -= price;
     user.owned = [...(Array.isArray(user.owned) ? user.owned : []), item];

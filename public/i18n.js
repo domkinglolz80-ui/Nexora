@@ -656,6 +656,7 @@ const EN = {
   'Noch {n} 👻': '{n} 👻 to go',
   'Wirklich für 👻 {n} kaufen?': 'Really buy for 👻 {n}?',
   'Gehört dir': 'Yours',
+  '🎃 {n} % Rabatt auf alles!': '🎃 {n}% off everything!',
   '🎃 Gekauft und angelegt: {name}': '🎃 Bought and put on: {name}',
   'Gruselig': 'Creepy',
   'Schaurig': 'Eerie',

@@ -367,26 +367,33 @@ function openShop() {
     <div class="shop-wallet"></div>
     <div class="shop-grid"></div>
     <div class="modal-actions"><button type="button" class="btn" data-close>${t('Schließen')}</button></div>`, { className: 'shop' });
+  // The server sets the prices (and any sale); the ones written here are the regular fallback.
+  const priceOf = (a) => state.shop?.prices?.[a.id]?.price ?? a.price;
+  const regularOf = (a) => state.shop?.prices?.[a.id]?.regular ?? a.price;
+  const sale = Math.round((state.shop?.discount || 0) * 100);
   const items = ACCESSORIES.filter((a) => a.tier === 'shop').sort((a, b) => a.price - b.price);
   let confirming = null;
 
   const render = () => {
     const me = state.me;
     const ghosts = me.ghosts || 0;
-    modal.querySelector('.shop-wallet').innerHTML = `<span class="sw-ico">👻</span><div><b>${plural(ghosts, 'Geist', 'Geister')}</b><small>${t('zum Ausgeben · fang mehr, wenn sie vorbeischweben')}</small></div>`;
+    modal.querySelector('.shop-wallet').innerHTML = `<span class="sw-ico">👻</span><div><b>${plural(ghosts, 'Geist', 'Geister')}</b><small>${t('zum Ausgeben · fang mehr, wenn sie vorbeischweben')}</small></div>
+      ${sale ? `<span class="shop-sale">${t('🎃 {n} % Rabatt auf alles!', { n: sale })}</span>` : ''}`;
     modal.querySelector('.shop-grid').innerHTML = items.map((a) => {
+      const price = priceOf(a);
+      const regular = regularOf(a);
       const owned = a.allowed(me);
       const worn = me.accessory === a.id;
       const action = worn ? `<button type="button" class="btn block" disabled>✓ ${t('Trägst du gerade')}</button>`
         : owned ? `<button type="button" class="btn block" data-wear="${a.id}">${t('Anlegen')}</button>`
-        : ghosts < a.price ? `<button type="button" class="btn block" disabled>${t('Noch {n} 👻', { n: a.price - ghosts })}</button>`
-        : confirming === a.id ? `<button type="button" class="btn primary block confirm" data-buy="${a.id}">${t('Wirklich für 👻 {n} kaufen?', { n: a.price })}</button>`
-        : `<button type="button" class="btn primary block" data-buy="${a.id}">👻 ${a.price}</button>`;
+        : ghosts < price ? `<button type="button" class="btn block" disabled>${t('Noch {n} 👻', { n: price - ghosts })}</button>`
+        : confirming === a.id ? `<button type="button" class="btn primary block confirm" data-buy="${a.id}">${t('Wirklich für 👻 {n} kaufen?', { n: price })}</button>`
+        : `<button type="button" class="btn primary block" data-buy="${a.id}">👻 ${price}</button>`;
       return `<div class="shop-item r${a.r}${owned ? ' owned' : ''}">
         <i class="shop-rarity">${esc(tierLabel(a))}</i>${owned ? `<i class="shop-owned">${t('Gehört dir')}</i>` : ''}
         <div class="shop-preview">${avatar({ ...me, accessory: a.id }, { size: 64 })}</div>
         <b>${esc(a.name)}</b><small>${esc(a.desc)}</small>
-        <span class="shop-price">👻 ${a.price}</span>${action}</div>`;
+        <span class="shop-price">${price < regular ? `<s>👻 ${regular}</s> ` : ''}👻 ${price}</span>${action}</div>`;
     }).join('');
   };
 
@@ -1083,6 +1090,7 @@ function applyBootstrap(data) {
   state.announcement = data.announcement || null;
   // The helper's commands: only @nexora gets them from the server.
   state.helperCommands = data.helperCommands || [];
+  state.shop = data.shop || null;
   // After a reconnect the cache may be stale — drop it and refetch lazily.
   state.channels.clear();
   state.lastChannel = accountStore('lastChannel') || {};
@@ -3673,6 +3681,8 @@ const desktopOutdated = () => Boolean(DESKTOP && state.desktopVersion && newerVe
 function updateDownloadButton() {
   const btn = $('#download-btn');
   const outdated = desktopOutdated();
+  // Desktop apps from 0.5.0 on update themselves; this only makes them look right away.
+  if (outdated) DESKTOP.checkUpdate?.();
   btn.classList.toggle('hidden', Boolean(DESKTOP) && !outdated);
   btn.classList.toggle('has-update', outdated);
   btn.title = outdated ? t('Neue Desktop-App verfügbar') : t('Nexora für deinen PC');

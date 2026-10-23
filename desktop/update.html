@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:" />
+  <title>Nexora Update</title>
+  <style>
+    :root { --orange: #ff7a18; --text: #fff4ec; --text-2: #d8c3b4; --muted: #9a8170; --line: rgba(255, 140, 60, 0.28); --grad: linear-gradient(135deg, #ffb347 0%, #ff7a18 45%, #ff4d1a 100%); color-scheme: dark; }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      display: grid; place-items: center; padding: 24px;
+      background: radial-gradient(circle at 20% 10%, rgba(255, 106, 0, 0.18), transparent 45%), radial-gradient(circle at 85% 90%, rgba(255, 77, 26, 0.14), transparent 40%), #0a0705;
+      color: var(--text); font: 15px/1.5 'Segoe UI', system-ui, -apple-system, sans-serif;
+      -webkit-user-select: none; user-select: none;
+    }
+    .card { width: min(380px, 100%); text-align: center; }
+    .logo { width: 72px; height: 72px; margin: 0 auto 18px; display: grid; place-items: center; background: var(--grad); clip-path: polygon(50% 0, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%); color: #1a0d04; font: 700 32px system-ui, sans-serif; filter: drop-shadow(0 0 22px rgba(255, 106, 0, 0.6)); animation: pulse 1.6s ease-in-out infinite; }
+    .error .logo { animation: none; filter: grayscale(0.6); }
+    @keyframes pulse { 50% { transform: scale(0.88) rotate(30deg); filter: brightness(1.3); } }
+    h1 { margin: 0 0 4px; font-size: 22px; }
+    .versions { margin: 0 0 18px; color: var(--muted); font-size: 13px; }
+    .bar { height: 10px; border-radius: 999px; background: rgba(38, 25, 16, 0.9); border: 1px solid var(--line); overflow: hidden; }
+    .bar i { display: block; height: 100%; width: 0; background: var(--grad); transition: width 0.3s; }
+    .install .bar i { width: 100%; animation: glow 1s ease-in-out infinite alternate; }
+    .error .bar { display: none; }
+    @keyframes glow { to { opacity: 0.55; } }
+    p { margin: 12px 0 0; color: var(--text-2); font-size: 14px; }
+    .detail { color: #ff8a7a; font-size: 12px; overflow-wrap: anywhere; }
+    .row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 18px; }
+    button { padding: 10px 16px; border-radius: 12px; border: 1px solid var(--line); background: rgba(38, 25, 16, 0.75); color: var(--text); font: 600 14px/1.2 'Segoe UI', system-ui, -apple-system, sans-serif; cursor: pointer; }
+    button:hover { border-color: var(--orange); }
+    button.primary { background: var(--grad); color: #1a0d04; border-color: transparent; }
+    [hidden] { display: none !important; }
+    @media (prefers-reduced-motion: reduce) { .logo, .install .bar i { animation: none; } }
+  </style>
+</head>
+<body>
+  <div class="card" id="card">
+    <div class="logo">N</div>
+    <h1 id="title"></h1>
+    <div class="versions" id="versions"></div>
+    <div class="bar" id="bar"><i id="fill"></i></div>
+    <p id="text"></p>
+    <p class="detail" id="detail" hidden></p>
+    <div class="row" id="actions" hidden>
+      <button class="primary" id="retry"></button>
+      <button id="open"></button>
+    </div>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(location.search);
+    const de = params.get('lang') !== 'en';
+    const T = de ? {
+      title: 'Nexora wird aktualisiert',
+      prepare: 'Das Update wird vorbereitet…',
+      download: 'Neue Version wird geladen… {n} %',
+      install: 'Wird installiert – Nexora öffnet sich gleich wieder von selbst.',
+      errorTitle: 'Update fehlgeschlagen',
+      error: 'Das Update konnte nicht geladen werden. Prüfe dein Internet und versuch es noch einmal.',
+      retry: 'Erneut versuchen',
+      open: 'Nexora trotzdem öffnen',
+    } : {
+      title: 'Updating Nexora',
+      prepare: 'Getting the update ready…',
+      download: 'Downloading the new version… {n}%',
+      install: 'Installing – Nexora will open again by itself in a moment.',
+      errorTitle: 'Update failed',
+      error: 'The update could not be downloaded. Check your internet and try again.',
+      retry: 'Try again',
+      open: 'Open Nexora anyway',
+    };
+    const $ = (id) => document.getElementById(id);
+    $('versions').textContent = `${params.get('from') || '?'} → ${params.get('version') || '?'}`;
+    $('retry').textContent = T.retry;
+    $('open').textContent = T.open;
+
+    function show(state) {
+      const step = state?.step || 'prepare';
+      $('card').className = 'card ' + step;
+      $('title').textContent = step === 'error' ? T.errorTitle : T.title;
+      $('fill').style.width = step === 'download' ? `${state.percent || 0}%` : '';
+      $('text').textContent = step === 'download' ? T.download.replace('{n}', state.percent || 0) : T[step] || T.prepare;
+      $('detail').hidden = step !== 'error' || !state.detail;
+      $('detail').textContent = state?.detail || '';
+      $('actions').hidden = step !== 'error';
+    }
+
+    $('retry').onclick = () => { show({ step: 'prepare' }); window.nexoraUpdate.retry(); };
+    $('open').onclick = () => window.nexoraUpdate.openNexora();
+    window.nexoraUpdate.onState(show);
+    window.nexoraUpdate.state().then(show);
+  </script>
+</body>
+</html>

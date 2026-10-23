@@ -109,6 +109,8 @@ Der Rang zählt **alle jemals gefangenen Geister** – auch die, die du im Laden
 | 👻 Geisterschwarm       | 👻 400 | Mythisch | drei Geister kreisen im geisterhaften Ring; leuchtender Name, Abzeichen und Profilkarte mit Geisterfriedhof |
 | 🌕 Blutmond-Herrscher   | 👻 666 | Mythisch | Blutmond über dem Kopf, kreisende Runen, blutroter Ring, Glut und Fledermäuse; blutroter Name, Abzeichen und Profilkarte mit Schloss unter dem Blutmond |
 
+**Rabatt:** `SHOP_DISCOUNT` in `server.js` senkt alle Preise (aufgerundet); gerade läuft **50 % auf alles** (👻 13 bis 👻 333), der Laden zeigt den alten Preis durchgestrichen. Mit `0` gelten wieder die normalen Preise aus der Tabelle.
+
 Der Server prüft jeden Kauf (Preis, Kontostand, schon gekauft) und lässt gekaufte Dekoration nur von ihrem Besitzer tragen. Bots können nichts kaufen.
 
 **Süßigkeitenregen** – wer „Süßes oder Saures“, „Trick or treat“ oder „Happy Halloween“ in den Chat schreibt, lässt bei allen, die den Kanal offen haben, Süßigkeiten regnen.
@@ -279,13 +281,14 @@ Ab **V0.2.0 Beta** gibt es Nexora als eigenes Programm. Das **Download-Symbol** 
 | macOS   | `Nexora.dmg`       | Intel und Apple Silicon                   |
 | Linux   | `Nexora.AppImage`  | 64 Bit, vor dem Start ausführbar machen   |
 
-- Die App ist ein schlankes Fenster um Nexora (Electron). Die Oberfläche kommt weiter vom Server – **jedes Nexora-Update ist sofort auch in der App**. Neu installieren muss man nur, wenn es eine neue Desktop-App gibt; dann leuchtet das Download-Symbol in der App.
+- Die App ist ein schlankes Fenster um Nexora (Electron). Die Oberfläche kommt weiter vom Server – **jedes Nexora-Update ist sofort auch in der App**.
+- **Die App aktualisiert sich selbst** (ab Desktop-App 0.5.0, Windows und Linux): Beim Start, alle 10 Minuten und sobald der Server eine neuere Desktop-App meldet, schaut sie auf GitHub nach. Gibt es eine neue Version, schließt sich Nexora, das Update-Fenster lädt und installiert sie, und Nexora öffnet sich von selbst wieder. Klappt das Update nicht, lässt es sich wiederholen oder Nexora erst einmal in der alten Version öffnen. Im Menü gibt es „Nach Updates suchen“. Auf macOS geht das ohne Apple-Signatur nicht – dort leuchtet weiter das Download-Symbol. Ältere Apps (bis 0.4.0) müssen einmal von Hand auf 0.5.0 gebracht werden.
 - Benachrichtigungen, sobald das Fenster im Hintergrund ist, Zähler am App-Symbol (macOS/Linux) bzw. blinkende Taskleiste (Windows), Mikrofon für Sprachkanäle, Fenstergröße wird gemerkt, fremde Links öffnen im Browser.
 - Schläft der Render-Server, zeigt die App „Nexora startet…“ und wartet bis zu 90 Sekunden. Ohne Verbindung gibt es „Erneut versuchen“ und „Adresse ändern“. Im Menü (`Alt` drücken) steht „Server-Adresse ändern…“.
 - Die Installer sind nicht signiert: Windows zeigt beim ersten Start „Der Computer wurde durch Windows geschützt“ → „Weitere Informationen“ → „Trotzdem ausführen“; auf dem Mac per Rechtsklick → „Öffnen“ (meldet macOS „beschädigt“: `xattr -cr /Applications/Nexora.app`).
 - In Chrome und Edge geht es auch ohne Download: im Download-Fenster „Als App installieren“.
 
-**So entstehen die Downloads:** Der Workflow [`.github/workflows/desktop.yml`](.github/workflows/desktop.yml) baut bei jedem Push auf `nexora-app`, der `desktop/` ändert, die drei Installer auf GitHub (Windows, macOS, Linux) und veröffentlicht sie als Release `desktop-v<Version>`. Der Server leitet `/download/windows`, `/download/mac` und `/download/linux` auf das neueste Release weiter. Für eine neue Desktop-App die `version` in `desktop/package.json` erhöhen.
+**So entstehen die Downloads:** Der Workflow [`.github/workflows/desktop.yml`](.github/workflows/desktop.yml) baut bei jedem Push auf `nexora-app`, der `desktop/` ändert, die drei Installer auf GitHub (Windows, macOS, Linux) und veröffentlicht sie als Release `desktop-v<Version>`. Der Server leitet `/download/windows`, `/download/mac` und `/download/linux` auf das neueste Release weiter. Für eine neue Desktop-App die `version` in `desktop/package.json` erhöhen. Neben den Installern landen `latest.yml` (Windows) und `latest-linux.yml` im Release – daran erkennen die installierten Apps das Update.
 
 **Server-Adresse:** Die App verbindet sich von selbst mit `https://nexora-yxvx.onrender.com` (`DEFAULT_SERVER` in `desktop/main.js`). Für einen anderen Server auf GitHub unter *Settings → Secrets and variables → Actions → Variables* eine Variable `NEXORA_URL` anlegen und den Workflow neu laufen lassen; einzelne Nutzer können die Adresse im Menü unter „Server-Adresse ändern…“ wechseln.
 
@@ -293,7 +296,7 @@ Selbst bauen: `cd desktop && npm install && npm start` (Testen) bzw. `npm run di
 
 ## Versionen & Updates
 
-Aktuelle Version: **V0.4.0 Beta** (Desktop-App 0.4.0). Alle Änderungen stehen in [`changelog.json`](changelog.json) – der oberste Eintrag ist die laufende Version.
+Aktuelle Version: **V0.5.0 Beta** (Desktop-App 0.5.0). Alle Änderungen stehen in [`changelog.json`](changelog.json) – der oberste Eintrag ist die laufende Version.
 
 - Nach dem Login (und nach jedem Update) zeigt Nexora einmal das Fenster **„Was ist neu?“**. Über die Versionsanzeige unten in der Hub-Leiste lässt es sich jederzeit wieder öffnen.
 - Geht eine neue Version live, während jemand Nexora offen hat, lädt die Seite automatisch neu. Tippt die Person gerade etwas, erscheint stattdessen ein „Jetzt laden“-Hinweis.

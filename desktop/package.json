@@ -1,7 +1,7 @@
 {
   "name": "nexora-desktop",
   "productName": "Nexora",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Nexora als eigene App für Windows, macOS und Linux",
   "main": "main.js",
   "private": true,
@@ -20,13 +20,16 @@
     "electron": "44.7.0",
     "electron-builder": "26.17.0"
   },
+  "dependencies": {
+    "electron-updater": "6.8.10"
+  },
   "build": {
     "appId": "app.nexora.desktop",
     "productName": "Nexora",
     "copyright": "Nexora · GPL-3.0",
     "directories": { "output": "dist", "buildResources": "build" },
-    "publish": null,
-    "files": ["main.js", "preload.js", "connect.html", "server.json", "build/icon.png"],
+    "publish": [{ "provider": "generic", "url": "https://github.com/domkinglolz80-ui/Nexora/releases/latest/download" }],
+    "files": ["main.js", "preload.js", "connect.html", "update.html", "server.json", "build/icon.png"],
     "win": {
       "target": [{ "target": "nsis", "arch": ["x64"] }],
       "artifactName": "Nexora-Setup.${ext}"

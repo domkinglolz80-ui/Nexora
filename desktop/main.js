@@ -4,10 +4,12 @@
    Nexora Desktop. A small Electron shell around the Nexora web app: it opens
    the Nexora server in its own window, so nobody needs a browser tab. The
    web app itself still comes from the server, which means every Nexora
-   update arrives here automatically – only this shell is installed.
+   update arrives here automatically – only this shell is installed, and it
+   updates itself too (see "self-update" below).
    ========================================================================= */
 
-const { app, BrowserWindow, Menu, ipcMain, net, screen, session, shell } = require('electron');
+const { app, BrowserWindow, Menu, dialog, ipcMain, net, screen, session, shell } = require('electron');
+const { autoUpdater } = require('electron-updater');
 const fs = require('fs');
 const path = require('path');
 
@@ -219,6 +221,99 @@ ipcMain.on('app:focus', (e) => {
   win.focus();
 });
 
+/* ---------- self-update ---------- */
+
+// Every desktop release on GitHub carries latest.yml next to the installers. When a newer
+// version is there, the Nexora window closes, the update window downloads and installs it,
+// and Nexora opens again by itself. Windows and the Linux AppImage can do this; macOS
+// can't (the app isn't signed by Apple), there the download icon in Nexora lights up.
+const UPDATE_FEED = process.env.NEXORA_UPDATE_FEED || 'https://github.com/domkinglolz80-ui/Nexora/releases/latest/download';
+const UPDATE_CHECK_EVERY = 10 * 60 * 1000;
+const canSelfUpdate = () => app.isPackaged && (process.platform === 'win32' || (process.platform === 'linux' && Boolean(process.env.APPIMAGE)));
+
+let updater = null; // the update window while an update runs
+let updateState = { step: 'prepare' };
+let manualCheck = false;
+
+function setUpdateState(state) {
+  updateState = state;
+  if (updater && !updater.isDestroyed()) updater.webContents.send('update:state', state);
+}
+
+function checkForUpdates(manual = false) {
+  if (!canSelfUpdate()) {
+    if (manual) dialog.showMessageBox({ message: L('Auf diesem System aktualisiert sich Nexora nicht selbst. Neue Versionen gibt es über das Download-Symbol in Nexora.', 'Nexora cannot update itself on this system. New versions are available via the download icon in Nexora.') });
+    return;
+  }
+  if (updater) return;
+  manualCheck = manual;
+  autoUpdater.checkForUpdates().catch(() => {});
+}
+
+function startUpdate(version) {
+  if (updater) return;
+  updater = new BrowserWindow({
+    width: 440,
+    height: 380,
+    resizable: false,
+    maximizable: false,
+    fullscreenable: false,
+    title: 'Nexora Update',
+    backgroundColor: '#0a0705',
+    autoHideMenuBar: true,
+    show: false,
+    icon: path.join(__dirname, 'build', 'icon.png'),
+    webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, sandbox: true, nodeIntegration: false },
+  });
+  updater.setMenu(null);
+  updater.on('closed', () => { updater = null; });
+  // The update window is open before Nexora closes, so the app keeps running in between.
+  updater.once('ready-to-show', () => {
+    updater.show();
+    win?.close();
+  });
+  setUpdateState({ step: 'prepare' });
+  updater.loadFile(path.join(__dirname, 'update.html'), { query: { version, from: app.getVersion(), lang: DE ? 'de' : 'en' } });
+  autoUpdater.downloadUpdate().catch(() => {});
+}
+
+function setupUpdates() {
+  if (!canSelfUpdate()) return;
+  autoUpdater.setFeedURL({ provider: 'generic', url: UPDATE_FEED });
+  autoUpdater.autoDownload = false;
+  autoUpdater.autoInstallOnAppQuit = false;
+  autoUpdater.on('update-available', (info) => startUpdate(info.version));
+  autoUpdater.on('update-not-available', () => {
+    if (manualCheck) dialog.showMessageBox({ message: L(`Du hast schon die neueste Version (${app.getVersion()}).`, `You already have the newest version (${app.getVersion()}).`) });
+  });
+  autoUpdater.on('download-progress', (p) => setUpdateState({ step: 'download', percent: Math.round(p.percent || 0) }));
+  autoUpdater.on('update-downloaded', () => {
+    setUpdateState({ step: 'install' });
+    // Install without questions, then start Nexora again.
+    setTimeout(() => autoUpdater.quitAndInstall(true, true), 1500);
+  });
+  autoUpdater.on('error', (err) => {
+    if (updater) setUpdateState({ step: 'error', detail: String(err?.message || err).split('\n')[0].slice(0, 200) });
+  });
+  checkForUpdates();
+  setInterval(checkForUpdates, UPDATE_CHECK_EVERY);
+}
+
+ipcMain.handle('update:get', (e) => (fromLocalPage(e) ? updateState : null));
+ipcMain.on('update:retry', (e) => {
+  if (!fromLocalPage(e) || !updater) return;
+  setUpdateState({ step: 'prepare' });
+  autoUpdater.downloadUpdate().catch(() => {});
+});
+// After a failed update: back to the old version for now, the next check tries again.
+ipcMain.on('update:open', (e) => {
+  if (!fromLocalPage(e) || !updater) return;
+  if (!win) createWindow();
+  updater.close();
+});
+// The web app noticed a newer desktop version (the server knows it before the next check).
+ipcMain.on('update:check', (e) => { if (fromNexora(e)) checkForUpdates(); });
+
 /* ---------- permissions: microphone for voice channels, notifications ---------- */
 
 const ALLOWED = new Set(['media', 'notifications', 'clipboard-sanitized-write', 'fullscreen']);
@@ -244,6 +339,7 @@ function buildMenu() {
         { label: L('Neu laden', 'Reload'), accelerator: 'CmdOrCtrl+R', click: () => (serverUrl() ? openServer() : showConnect('setup')) },
         { label: L('Server-Adresse ändern…', 'Change server address…'), click: () => showConnect('setup') },
         { label: L('Im Browser öffnen', 'Open in browser'), click: () => serverUrl() && shell.openExternal(serverUrl()) },
+        { label: L('Nach Updates suchen', 'Check for updates'), click: () => checkForUpdates(true) },
         { type: 'separator' },
         mac ? { role: 'close' } : { role: 'quit', label: L('Beenden', 'Quit') },
       ],
@@ -289,6 +385,7 @@ if (!app.requestSingleInstanceLock()) {
     setupPermissions();
     buildMenu();
     createWindow();
+    setupUpdates();
     app.on('activate', () => { if (!BrowserWindow.getAllWindows().length) createWindow(); });
   });
 
