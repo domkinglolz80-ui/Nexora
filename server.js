@@ -374,6 +374,7 @@ const EXCLUSIVE_ACCESSORIES = {
   schaltkern: (u) => Boolean(u.system), // official: the Nexora Helper
   hoellenfuerst: isLegend, // legendary: only @Zorvecx
   nexuskrone: (u) => isOwner(u), // founder: only @nexora
+  firejason: (u) => isOwner(u), // brutal rare: only @nexora
 };
 
 // Put on once automatically (afterwards it can be changed like any accessory): [accessory, who, flag].
@@ -381,6 +382,7 @@ const AUTO_GRANTS = [
   ['kuerbiskoenig', isOwner, 'kingGranted'],
   ['hoellenfuerst', isLegend, 'legendGranted'],
   ['nexuskrone', isOwner, 'founderGranted'],
+  ['firejason', isOwner, 'fireJasonGranted'],
 ];
 
 function grantAccessories(u) {
@@ -401,7 +403,7 @@ function accessoryOf(value, user) {
   return EXCLUSIVE_ACCESSORIES[value]?.(user) ? value : undefined;
 }
 
-// @nexora gets the Kürbiskönig and then the Nexus-Krone, @Zorvecx the Höllenfürst, each once;
+// @nexora gets the Kürbiskönig, the Nexus-Krone and then Fire Jason, @Zorvecx the Höllenfürst, each once;
 // anyone else still holding an exclusive from an earlier version loses it.
 function grantExclusives() {
   for (const u of Object.values(db.users)) {

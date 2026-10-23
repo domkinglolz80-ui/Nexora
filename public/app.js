@@ -273,6 +273,37 @@ const ACCESSORIES = [
       <polygon class="core-hex" points="0,-9 7.8,-4.5 7.8,4.5 0,9 -7.8,4.5 -7.8,-4.5"/></g>
       <path class="comet" d="M0 0h-34"/></svg>`,
   },
+  // Brutal rare: only @nexora. A burning slasher – hockey mask, bloody machete, hellfire.
+  {
+    id: 'firejason', name: t('Fire Jason'), badge: t('🔥 Fire Jason'), tier: 'brutal', allowed: (u) => !u.bot && u.username?.toLowerCase() === 'nexora',
+    svg: `<span class="aura"></span><span class="ring"></span><span class="ring r2"></span>
+      <span class="smoke k1"></span><span class="smoke k2"></span>
+      <span class="flame f1"></span><span class="flame f2"></span><span class="flame f3"></span><span class="flame f4"></span><span class="flame f5"></span>
+      <span class="ooze o1"></span><span class="ooze o2"></span>
+      <span class="ember e1"></span><span class="ember e2"></span><span class="ember e3"></span><span class="ember e4"></span>
+      <svg class="mask" viewBox="0 0 40 50"><path class="bone" d="M20 2C9 2 4 12 4 24c0 13 7 23 16 24 9-1 16-11 16-24C36 12 31 2 20 2z"/>
+      <path class="chev" d="M12 7.5l3 3 3-3M22 7.5l3 3 3-3M8.5 27l3 2.4 3-2.4M25.5 27l3 2.4 3-2.4"/>
+      <ellipse class="hole" cx="14" cy="19" rx="4.2" ry="3.2"/><ellipse class="hole" cx="26" cy="19" rx="4.2" ry="3.2"/>
+      <circle class="glare" cx="14" cy="19.4" r="1.5"/><circle class="glare" cx="26" cy="19.4" r="1.5"/>
+      <g class="vent"><circle cx="15" cy="32" r=".95"/><circle cx="20" cy="31" r=".95"/><circle cx="25" cy="32" r=".95"/><circle cx="17.5" cy="35.5" r=".95"/><circle cx="22.5" cy="35.5" r=".95"/><circle cx="20" cy="40" r=".95"/><circle cx="15.5" cy="40" r=".9"/><circle cx="24.5" cy="40" r=".9"/></g>
+      <path class="crack" d="M21 2l-2 6 3 4-2.5 5M34 15l-4 3.5 1 4.5M7 33l4 1"/>
+      <path class="blood" d="M27 3c4 1 7 4 6 8-3-1-5-4-6-8zM32.5 12c.7 2 .5 4-.6 5.4-.8-1.7-.5-3.6.6-5.4zM6 22c2 0 3 2 2 4-1.5-.4-2.3-2-2-4z"/>
+      <path class="drip" d="M31.6 16c.9 3 .9 7 0 10-.9-3-.9-7 0-10z"/></svg>
+      <svg class="machete" viewBox="0 0 20 60"><path class="steel" d="M7 2c6 1.5 8.5 12 7.5 38H7z"/><path class="edge" d="M13 8c1.2 8 1.6 18 1.4 30"/>
+      <path class="gore" d="M7 2c4 1 6.5 4.5 7.6 10-2.6.6-5-1.4-7.6-4zM11 14c.8 2.5.8 5 0 7-.8-2-.8-4.6 0-7z"/><rect class="guard" x="4.5" y="39.5" width="12.5" height="3" rx="1"/>
+      <rect class="grip" x="8" y="42.5" width="5.4" height="16" rx="2"/><path class="wrap" d="M8 46h5.4M8 50h5.4M8 54h5.4"/><path class="glint" d="M9 6c2 6 3 14 3.4 24"/></svg>`,
+    scene: `<svg viewBox="0 0 300 104" preserveAspectRatio="xMidYMid slice">
+      <circle class="fj-moon-glow" cx="150" cy="30" r="30"/><circle class="fj-moon" cx="150" cy="30" r="19"/>
+      <path class="pines" d="M8 34L12 52h-2L16 70h-4L20 87h-5L10 92h-4L1 87h-5L4 70h-4L6 52h-2zM26 48L29 61h-1L32 75h-3L35 88h-4L28 92h-4L21 88h-4L23 75h-3L24 61h-1zM44 30L48 49h-2L53 68h-4L57 87h-6L46 92h-4L37 87h-6L39 68h-4L42 49h-2zM250 42L253 57h-2L257 73h-3L260 88h-4L252 92h-4L244 88h-4L246 73h-3L248 57h-2zM270 28L274 48h-2L279 67h-4L283 87h-6L272 92h-4L263 87h-6L265 67h-4L268 48h-2zM292 46L295 60h-1L298 74h-3L301 88h-4L294 92h-4L287 88h-4L289 74h-3L290 60h-1z"/>
+      <path class="cabin" d="M186 92V70l22-15 22 15v22z"/><rect class="window" x="194" y="76" width="8" height="7"/><rect class="window w2" x="214" y="76" width="8" height="7"/>
+      <path class="fire fl1" d="M190 72c-3-9 4-13 3-22 7 7 9 14 7 22z"/><path class="fire fl2" d="M203 60c-2-10 5-14 5-24 7 9 8 16 5 24z"/>
+      <path class="fire fl3" d="M216 64c-1-8 4-11 4-19 6 7 7 13 4 19z"/><path class="fire fl4" d="M224 72c-2-6 3-9 3-15 5 5 5 10 3 15z"/>
+      <g class="stalker" transform="translate(262 44)"><path class="body" d="M-14 60V24c0-8 6-12 14-12s14 4 14 12v36z"/><ellipse class="head" cy="4" rx="7.5" ry="9"/>
+      <ellipse class="face" cy="5" rx="5.8" ry="7.2"/><circle class="eye" cx="-2.2" cy="3" r="1.1"/><circle class="eye" cx="2.2" cy="3" r="1.1"/>
+      <path class="blade" d="M15 22l4 30-3 2-3-31z"/></g>
+      <rect class="lake" y="92" width="300" height="12"/><ellipse class="reflect" cx="207" cy="97" rx="30" ry="3"/><ellipse class="reflect r2" cx="150" cy="99" rx="20" ry="2"/>
+      <circle class="spark s1" cx="200" cy="56" r="1.4"/><circle class="spark s2" cx="210" cy="50" r="1.1"/><circle class="spark s3" cx="220" cy="58" r="1.6"/><circle class="spark s4" cx="194" cy="60" r="1"/><circle class="spark s5" cx="214" cy="46" r="1.2"/></svg>`,
+  },
 ];
 
 function exclusiveOf(user) {
@@ -315,6 +346,7 @@ const RARITY = { 1: t('Gruselig'), 2: t('Schaurig'), 3: t('Albtraum'), 4: t('Myt
 // "Legendär" for one-of-a-kind accessories, "Exklusiv" for the rest of the special ones.
 function tierLabel(acc) {
   if (acc.tier === 'shop') return RARITY[acc.r];
+  if (acc.tier === 'brutal') return t('Brutal Rare');
   if (acc.tier === 'founder') return t('Gründer');
   if (acc.tier === 'official') return t('Offiziell');
   return acc.tier === 'legendary' ? t('Legendär') : t('Exklusiv');

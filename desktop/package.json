@@ -1,7 +1,7 @@
 {
   "name": "nexora-desktop",
   "productName": "Nexora",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Nexora als eigene App für Windows, macOS und Linux",
   "main": "main.js",
   "private": true,

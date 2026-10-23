@@ -2163,3 +2163,152 @@ textarea.code:focus { border-color: var(--orange); box-shadow: 0 0 0 4px rgba(25
 @media (prefers-reduced-motion: reduce) {
   .shop-ico, .shop-item .btn.confirm { animation: none; }
 }
+
+/* =========================================================================
+   BRUTAL RARE: Fire Jason (only @nexora, V0.6.0)
+   A charred avatar behind a cracked, bloody hockey mask with burning eyes,
+   a machete that hacks now and then, a double hellfire ring, flames, smoke,
+   dripping blood and embers; the profile card opens onto a burning camp.
+   ========================================================================= */
+.avatar:has(> .acc-firejason) {
+  color: transparent; text-shadow: none;
+  background: radial-gradient(120% 90% at 50% 115%, #ffb000 0%, #ff4d00 16%, #9d0208 38%, #2a0505 66%, #050101 100%);
+}
+.acc-firejason { inset: 0; border-radius: 38%; box-shadow: 0 0 calc(var(--s) * 0.3) rgba(255, 40, 0, 0.9); }
+.acc-firejason > * { position: absolute; display: block; }
+.acc-firejason .aura {
+  inset: calc(var(--s) * -0.36); border-radius: 50%; z-index: -1;
+  background: radial-gradient(circle, rgba(255, 60, 0, 0.6) 28%, rgba(140, 0, 10, 0.3) 52%, transparent 70%);
+  animation: fj-heartbeat 1.1s ease-in-out infinite;
+}
+@keyframes fj-heartbeat { 0%, 100% { transform: scale(0.9); opacity: 0.7; } 14% { transform: scale(1.08); opacity: 1; } 28% { transform: scale(0.95); } 42% { transform: scale(1.12); opacity: 1; } 70% { transform: scale(0.92); opacity: 0.75; } }
+.acc-firejason .ring {
+  inset: calc(var(--s) * -0.11); border-radius: 38%; overflow: hidden; padding: calc(var(--s) * 0.06 + 1.5px);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude;
+}
+.acc-firejason .ring::before { content: ''; position: absolute; inset: -30%; background: conic-gradient(#ff0000, #120000, #ff5a00, #ffd000, #ff5a00, #120000, #ff0000); animation: ex-spin 1.4s linear infinite; }
+.acc-firejason .ring.r2 { inset: calc(var(--s) * -0.22); border-radius: 44%; padding: calc(var(--s) * 0.03 + 1px); opacity: 0.9; }
+.acc-firejason .ring.r2::before { background: repeating-conic-gradient(#b00000 0 5deg, transparent 5deg 12deg, #ff7a00 12deg 14deg, transparent 14deg 24deg); animation-duration: 5s; animation-direction: reverse; }
+
+/* the mask: cracked bone-white, red chevrons, burning eyes, a slow stare and a sudden twitch */
+.avatar .acc-firejason .mask {
+  width: calc(var(--s) * 0.8); height: calc(var(--s) * 1); left: 50%; top: calc(var(--s) * -0.02); margin-left: calc(var(--s) * -0.4);
+  filter: drop-shadow(0 calc(var(--s) * 0.03) calc(var(--s) * 0.05) rgba(0, 0, 0, 0.9));
+  transform-origin: 50% 60%; animation: fj-twitch 4.6s ease-in-out infinite;
+}
+.acc-firejason .bone { fill: #ebe5d6; stroke: #5a4a35; stroke-width: 0.8; }
+.acc-firejason .chev { fill: none; stroke: #c1121f; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.acc-firejason .hole { fill: #070000; }
+.acc-firejason .glare { fill: #ff2a00; filter: drop-shadow(0 0 2px #ff6a00); animation: fj-glare 2.3s ease-in-out infinite; }
+.acc-firejason .vent circle { fill: #1c0d06; }
+.acc-firejason .crack { fill: none; stroke: #5a4a35; stroke-width: 0.6; stroke-linecap: round; }
+.acc-firejason .blood { fill: #9d0208; }
+.acc-firejason .drip { fill: #c1121f; transform-box: fill-box; transform-origin: 50% 0; animation: fj-drip 2.8s ease-in infinite; }
+@keyframes fj-twitch { 0%, 72%, 100% { transform: rotate(0) scale(1); } 76% { transform: rotate(-9deg) scale(1.04); } 79% { transform: rotate(6deg); } 82% { transform: rotate(-3deg); } 86% { transform: rotate(0) scale(1); } }
+@keyframes fj-glare { 0%, 100% { opacity: 1; } 40% { opacity: 0.55; } 46%, 50% { opacity: 0.1; } 54% { opacity: 1; } }
+@keyframes fj-drip { 0% { transform: scaleY(0.3); opacity: 0.9; } 70% { transform: scaleY(1.6); opacity: 1; } 100% { transform: scaleY(1.6) translateY(30%); opacity: 0; } }
+
+/* the machete: hangs at the side, then hacks down */
+.avatar .acc-firejason .machete {
+  width: calc(var(--s) * 0.38); height: calc(var(--s) * 1.12); right: calc(var(--s) * -0.42); top: calc(var(--s) * -0.36);
+  transform-origin: 55% 92%; animation: fj-hack 3.2s cubic-bezier(.5, 0, .2, 1) infinite;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.8));
+}
+.acc-firejason .steel { fill: #c9ccd3; stroke: #5b616e; stroke-width: 0.6; }
+.acc-firejason .edge { fill: none; stroke: #f4f6fa; stroke-width: 0.7; }
+.acc-firejason .gore { fill: #a4000f; }
+.acc-firejason .guard { fill: #2a2a2e; }
+.acc-firejason .grip { fill: #3b2414; stroke: #1a0e06; stroke-width: 0.6; }
+.acc-firejason .wrap { stroke: #1a0e06; stroke-width: 0.9; }
+.acc-firejason .glint { fill: none; stroke: #fff; stroke-width: 1.3; stroke-linecap: round; opacity: 0; animation: fj-glint 3.2s ease-in-out infinite; }
+@keyframes fj-hack { 0%, 55% { transform: rotate(16deg); } 63% { transform: rotate(34deg); } 70% { transform: rotate(-38deg); } 74% { transform: rotate(-30deg); } 100% { transform: rotate(16deg); } }
+@keyframes fj-glint { 0%, 40%, 100% { opacity: 0; } 48% { opacity: 1; } }
+
+/* hellfire around the bottom, smoke above, blood oozing down the frame, embers */
+.acc-firejason .flame {
+  width: calc(var(--s) * 0.3); height: calc(var(--s) * 0.5); bottom: calc(var(--s) * -0.24);
+  border-radius: 50% 50% 35% 35% / 70% 70% 30% 30%;
+  background: radial-gradient(60% 50% at 50% 80%, #fff3b0 0%, #ffb000 28%, #ff3b00 58%, rgba(180, 0, 10, 0) 100%);
+  transform-origin: 50% 100%; animation: hf-flame 0.55s ease-in-out infinite alternate;
+}
+.acc-firejason .f1 { left: -10%; animation-delay: -0.2s; }
+.acc-firejason .f2 { left: 12%; animation-delay: -0.45s; height: calc(var(--s) * 0.62); }
+.acc-firejason .f3 { left: 36%; animation-delay: -0.1s; }
+.acc-firejason .f4 { left: 60%; animation-delay: -0.3s; height: calc(var(--s) * 0.66); }
+.acc-firejason .f5 { left: 84%; animation-delay: -0.5s; }
+.acc-firejason .smoke {
+  width: calc(var(--s) * 0.5); height: calc(var(--s) * 0.5); top: calc(var(--s) * -0.4); border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(60, 50, 50, 0.6), transparent); animation: fj-smoke 3.4s ease-out infinite;
+}
+.acc-firejason .k1 { left: 0; }
+.acc-firejason .k2 { left: 46%; animation-delay: -1.7s; }
+@keyframes fj-smoke { 0% { transform: translateY(20%) scale(0.6); opacity: 0; } 30% { opacity: 1; } 100% { transform: translateY(-70%) scale(1.4); opacity: 0; } }
+.acc-firejason .ooze {
+  width: calc(var(--s) * 0.06 + 1px); height: calc(var(--s) * 0.22); top: calc(var(--s) * -0.08); border-radius: 0 0 50% 50%;
+  background: linear-gradient(#5a0005, #d00012); transform-origin: 50% 0; animation: fj-ooze 3.6s ease-in infinite;
+}
+.acc-firejason .o1 { left: 20%; }
+.acc-firejason .o2 { left: 70%; animation-delay: -1.8s; height: calc(var(--s) * 0.3); }
+@keyframes fj-ooze { 0% { transform: scaleY(0.2); } 60% { transform: scaleY(1); } 80% { transform: scaleY(1.15); opacity: 1; } 100% { transform: scaleY(1.15); opacity: 0; } }
+.acc-firejason .ember {
+  width: calc(var(--s) * 0.08 + 1px); height: calc(var(--s) * 0.08 + 1px); border-radius: 50%; bottom: 0;
+  background: radial-gradient(circle, #fff3b0, #ff5a00 60%, transparent 70%); opacity: 0; animation: ex-ember 1.9s ease-out infinite;
+}
+.acc-firejason .e1 { left: 6%; }
+.acc-firejason .e2 { left: 34%; animation-delay: 0.5s; }
+.acc-firejason .e3 { left: 62%; animation-delay: 1s; }
+.acc-firejason .e4 { left: 90%; animation-delay: 1.4s; }
+.avatar.tiny .acc-firejason .flame, .avatar.tiny .acc-firejason .smoke, .avatar.tiny .acc-firejason .ooze,
+.avatar.tiny .acc-firejason .ember, .avatar.tiny .acc-firejason .r2, .avatar.tiny .acc-firejason .aura, .avatar.tiny .acc-firejason .machete { display: none; }
+
+/* name, member list, profile card */
+.msg-author.ex-firejason {
+  background: linear-gradient(90deg, #fff3b0, #ffb000, #ff3b00, #9d0208, #ff3b00, #ffb000, #fff3b0) 0 0 / 300% 100%;
+  -webkit-background-clip: text; background-clip: text; color: transparent; font-weight: 900; letter-spacing: 0.02em;
+  filter: drop-shadow(0 0 6px rgba(255, 40, 0, 0.85)); animation: fj-burn 2.4s linear infinite;
+}
+@keyframes fj-burn { to { background-position: 300% 0; } }
+.member.ex-firejason .name, .who.ex-firejason .name { color: #ff8a3d; text-shadow: 0 0 8px rgba(255, 40, 0, 1), 0 0 2px #fff3b0; }
+.popover.ex-firejason { border-color: rgba(255, 40, 0, 0.85); box-shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.95), 0 0 70px -6px rgba(255, 40, 0, 0.85), 0 0 0 1px rgba(255, 176, 0, 0.5); }
+.popover.ex-firejason .profile-banner { background: linear-gradient(180deg, #050000 0%, #2b0303 40%, #8a0b05 75%, #ff5a00 100%); }
+.popover.ex-firejason h4 { color: #ffd0a8; text-shadow: 0 0 14px rgba(255, 40, 0, 1); }
+.ex-firejason .ex-badge {
+  color: #fff3e0; border: 1px solid rgba(255, 90, 0, 0.95); text-shadow: 0 0 6px #ff2a00, 0 0 1px #000; letter-spacing: 0.08em;
+  background: linear-gradient(90deg, #3a0000, #b00000, #ff5a00, #b00000, #3a0000) 0 0 / 200% 100%;
+  box-shadow: 0 0 16px -2px rgba(255, 40, 0, 0.9), inset 0 0 8px rgba(0, 0, 0, 0.6);
+  animation: fj-badge 1.8s linear infinite, fj-flicker 3.1s steps(1) infinite;
+}
+@keyframes fj-badge { to { background-position: 200% 0; } }
+@keyframes fj-flicker { 0%, 100% { opacity: 1; } 47% { opacity: 1; } 48% { opacity: 0.4; } 49% { opacity: 1; } 51% { opacity: 0.6; } 52% { opacity: 1; } }
+
+/* burning camp: blood moon over the pines, a cabin in flames, the stalker by the lake */
+.ex-firejason .profile-banner .fj-moon-glow { fill: #ff2a00; opacity: 0.4; filter: blur(9px); }
+.ex-firejason .profile-banner .fj-moon { fill: #ff7b3a; }
+.ex-firejason .profile-banner .pines { fill: #050000; }
+.ex-firejason .profile-banner .cabin { fill: #0b0303; stroke: #3a0905; stroke-width: 1; }
+.ex-firejason .profile-banner .window { fill: #ffb000; animation: ex-twinkle 0.6s steps(2) infinite; }
+.ex-firejason .profile-banner .window.w2 { animation-delay: -0.3s; }
+.ex-firejason .profile-banner .fire { fill: #ff5a00; transform-box: fill-box; transform-origin: 50% 100%; animation: fj-fire 0.45s ease-in-out infinite alternate; }
+.ex-firejason .profile-banner .fl2 { fill: #ffb000; animation-delay: -0.2s; }
+.ex-firejason .profile-banner .fl3 { fill: #ff2a00; animation-delay: -0.1s; }
+.ex-firejason .profile-banner .fl4 { fill: #ffd000; animation-delay: -0.3s; }
+@keyframes fj-fire { from { transform: scale(0.85, 0.8) skewX(-5deg); } to { transform: scale(1.05, 1.15) skewX(5deg); } }
+.ex-firejason .profile-banner .stalker .body, .ex-firejason .profile-banner .stalker .head { fill: #020000; }
+.ex-firejason .profile-banner .stalker .face { fill: #d9d2c2; }
+.ex-firejason .profile-banner .stalker .eye { fill: #ff2a00; animation: fj-glare 2.3s ease-in-out infinite; }
+.ex-firejason .profile-banner .stalker .blade { fill: #9aa0ab; }
+.ex-firejason .profile-banner .lake { fill: #0a0202; }
+.ex-firejason .profile-banner .reflect { fill: rgba(255, 90, 0, 0.45); filter: blur(1.5px); animation: hf-flow 3s ease-in-out infinite; }
+.ex-firejason .profile-banner .reflect.r2 { fill: rgba(255, 120, 60, 0.35); animation-direction: reverse; }
+.ex-firejason .profile-banner .spark { fill: #ffd27a; animation: hf-ash 2.4s ease-out infinite; }
+.ex-firejason .profile-banner .s2 { animation-delay: -0.5s; }
+.ex-firejason .profile-banner .s3 { animation-delay: -1s; animation-duration: 3s; }
+.ex-firejason .profile-banner .s4 { animation-delay: -1.5s; }
+.ex-firejason .profile-banner .s5 { animation-delay: -2s; animation-duration: 2s; }
+
+/* picker tile */
+.acc-opt.brutal { border-color: rgba(255, 40, 0, 0.85); background: linear-gradient(160deg, rgba(255, 30, 0, 0.28), rgba(40, 0, 0, 0.5) 60%, rgba(0, 0, 0, 0.4)); box-shadow: inset 0 0 22px -6px rgba(255, 60, 0, 0.95), 0 0 14px -6px rgba(255, 40, 0, 0.9); }
+.acc-opt.brutal .ex-tag { color: #ffb38a; text-shadow: 0 0 6px #ff2a00; animation: fj-flicker 3.1s steps(1) infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .msg-author.ex-firejason, .ex-firejason .ex-badge, .acc-opt.brutal .ex-tag { animation: none; }
+}

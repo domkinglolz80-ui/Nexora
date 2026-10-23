@@ -77,6 +77,14 @@ Und diese zur Halloween Edition:
 
 `@nexora` bekommt die Nexus-Krone einmal automatisch angelegt und kann jederzeit zum Kürbiskönig oder einem anderen Accessoire wechseln.
 
+**Brutal-Rare-Accessoire** – die seltenste Stufe von allen, nur für `@nexora`:
+
+| Accessoire              | Wer                                  | Was passiert                                                                 |
+| ----------------------- | ------------------------------------ | ---------------------------------------------------------------------------- |
+| 🔥 Fire Jason           | nur `@nexora`                        | verkohltes Profilbild hinter einer gesprungenen, blutigen Hockeymaske mit glühenden Augen, die ab und zu zuckt; blutige Machete, die zuschlägt; doppelter Höllenfeuer-Ring, Flammen, Rauch, herablaufendes Blut, Glut und ein Herzschlag-Leuchten; brennender Name, flackerndes Abzeichen **🔥 Fire Jason · Brutal Rare**; Profilkarte mit brennender Hütte, Blutmond, Kiefern und der maskierten Gestalt am See |
+
+`@nexora` bekommt Fire Jason (ab V0.6.0 Beta) einmal automatisch angelegt und kann danach frei wechseln.
+
 **Legendäre Accessoires** – gibt es genau einmal, für einen einzigen Account:
 
 | Accessoire              | Wer                                  | Was passiert                                                                 |
@@ -296,7 +304,7 @@ Selbst bauen: `cd desktop && npm install && npm start` (Testen) bzw. `npm run di
 
 ## Versionen & Updates
 
-Aktuelle Version: **V0.5.0 Beta** (Desktop-App 0.5.0). Alle Änderungen stehen in [`changelog.json`](changelog.json) – der oberste Eintrag ist die laufende Version.
+Aktuelle Version: **V0.6.0 Beta** (Desktop-App 0.6.0). Alle Änderungen stehen in [`changelog.json`](changelog.json) – der oberste Eintrag ist die laufende Version.
 
 - Nach dem Login (und nach jedem Update) zeigt Nexora einmal das Fenster **„Was ist neu?“**. Über die Versionsanzeige unten in der Hub-Leiste lässt es sich jederzeit wieder öffnen.
 - Geht eine neue Version live, während jemand Nexora offen hat, lädt die Seite automatisch neu. Tippt die Person gerade etwas, erscheint stattdessen ein „Jetzt laden“-Hinweis.

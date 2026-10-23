@@ -1,5 +1,28 @@
 [
   {
+    "version": "V0.6.0 Beta",
+    "date": "2026-10-23",
+    "title": "Fire Jason",
+    "titleEn": "Fire Jason",
+    "changes": [
+      {
+        "icon": "🔥",
+        "text": "**Fire Jason** – das erste **Brutal-Rare**-Accessoire, nur für **@nexora**: gesprungene, blutige Hockeymaske mit glühenden Augen, eine Machete, die zuschlägt, Höllenfeuer, Rauch, herablaufendes Blut und Glut",
+        "textEn": "**Fire Jason** – the first **Brutal Rare** accessory, only for **@nexora**: a cracked, bloody hockey mask with burning eyes, a machete that strikes, hellfire, smoke, dripping blood and embers"
+      },
+      {
+        "icon": "🩸",
+        "text": "Dazu ein brennender Name, das flackernde Abzeichen **🔥 Fire Jason · Brutal Rare** und eine Profilkarte mit brennender Hütte unter dem Blutmond – und der maskierten Gestalt am See",
+        "textEn": "Plus a burning name, the flickering badge **🔥 Fire Jason · Brutal Rare** and a profile card with a burning cabin under the blood moon – and the masked figure by the lake"
+      },
+      {
+        "icon": "🔄",
+        "text": "**Desktop-App 0.6.0** – das erste Update, das sich selbst installiert: Nexora schließt sich, aktualisiert sich und öffnet sich wieder",
+        "textEn": "**Desktop app 0.6.0** – the first update that installs itself: Nexora closes, updates and opens again"
+      }
+    ]
+  },
+  {
     "version": "V0.5.0 Beta",
     "date": "2026-10-23",
     "title": "Halber Preis & Updates von selbst",
