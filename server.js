@@ -332,7 +332,7 @@ function publicUser(u) {
       system: true,
       official: true,
       disabled: false,
-      commands: HELPER_COMMANDS.map((c) => ({ name: c.name, description: c.description, options: c.options })),
+      commands: HELPER_COMMANDS.map((c) => ({ name: c.name, description: c.description, options: c.options, ownerOnly: c.ownerOnly || undefined })),
     });
     return view;
   }
@@ -1025,6 +1025,30 @@ function deleteBot(bot) {
 const HELPER_ID = 'nexora-helper';
 const MAX_PURGE = 100;
 
+// Bots and the Nexora Helper don't count as people in a hub.
+const isBotMember = (memberId) => memberId === HELPER_ID || Boolean(db.bots[memberId]);
+
+// @nexora can invite the helper into any hub; it then shows up in the member list for everyone.
+function helperTargetHub(access, code) {
+  const wanted = String(code || '').trim().replace(/^.*[/=]/, '').toUpperCase();
+  if (wanted) return Object.values(db.hubs).find((h) => h.inviteCode === wanted) || null;
+  return access.type === 'hub' ? access.hub : null;
+}
+
+function addHelperToHub(hub) {
+  hub.members.push(HELPER_ID);
+  save();
+  io.to(`hub:${hub.id}`).emit('user:update', publicUser(db.users[HELPER_ID]));
+  io.to(`hub:${hub.id}`).emit('presence', { userId: HELPER_ID, status: 'online' });
+  io.to(`hub:${hub.id}`).emit('hub:update', hubView(hub));
+  const channel = hub.channels.find((c) => c.kind !== 'voice');
+  if (channel) {
+    postMessage({ type: 'hub', hub }, channel.id, HELPER_ID, {
+      content: '👋 Hallo zusammen! Ich bin der **Nexora Helper**, der offizielle Helfer von Nexora. Ab jetzt bin ich hier und unterstütze das Nexora-Team.',
+    });
+  }
+}
+
 function ensureHelper() {
   const taken = findUserByName('NexoraHelper');
   // The profile is fixed in code and refreshed on every start.
@@ -1059,9 +1083,37 @@ const HELPER_COMMANDS = [
     name: 'hilfe',
     description: 'Zeigt alle Befehle des Nexora Helpers',
     options: [],
-    run: () => ({
-      ephemeral: [`🛡️ **Nexora Helper** – nur für das Nexora-Team\n${HELPER_COMMANDS.map((c) => `\`${commandUsage(c)}\` – ${c.description}`).join('\n')}`],
+    run: ({ invoker }) => ({
+      ephemeral: [`🛡️ **Nexora Helper** – nur für das Nexora-Team\n${HELPER_COMMANDS.filter((c) => !c.ownerOnly || isOwner(invoker)).map((c) => `\`${commandUsage(c)}\` – ${c.description}`).join('\n')}`],
     }),
+  },
+  {
+    name: 'einladen',
+    description: 'Lädt den Nexora Helper in einen Hub ein – für alle sichtbar',
+    ownerOnly: true,
+    options: [option('code', 'Einladungscode – ohne Code: dieser Hub')],
+    run: ({ invoker, access, options }) => {
+      const hub = helperTargetHub(access, options.code);
+      if (!hub) return { ephemeral: [options.code ? 'Einladungscode ungültig.' : 'Gib den Einladungscode des Hubs an, z. B. `/einladen ABC123`.'] };
+      if (hub.members.includes(HELPER_ID)) return { ephemeral: [`Der Nexora Helper ist schon in „${hub.name}“.`] };
+      addHelperToHub(hub);
+      audit(invoker.id, 'helperInvite', hub.name);
+      return { ephemeral: [`✅ Der Nexora Helper ist jetzt in „${hub.name}“ – alle Mitglieder sehen ihn.`] };
+    },
+  },
+  {
+    name: 'ausladen',
+    description: 'Holt den Nexora Helper wieder aus einem Hub',
+    ownerOnly: true,
+    options: [option('code', 'Einladungscode – ohne Code: dieser Hub')],
+    run: ({ invoker, access, options }) => {
+      const hub = helperTargetHub(access, options.code);
+      if (!hub) return { ephemeral: [options.code ? 'Einladungscode ungültig.' : 'Gib den Einladungscode des Hubs an, z. B. `/ausladen ABC123`.'] };
+      if (!hub.members.includes(HELPER_ID)) return { ephemeral: [`Der Nexora Helper ist nicht in „${hub.name}“.`] };
+      removeFromHub(hub, HELPER_ID);
+      audit(invoker.id, 'helperRemove', hub.name);
+      return { ephemeral: [`👋 Der Nexora Helper hat „${hub.name}“ verlassen.`] };
+    },
   },
   {
     name: 'ban',
@@ -1790,6 +1842,7 @@ io.on('connection', (socket) => {
     const helperCommand = HELPER_COMMANDS.find((c) => c.name === commandName);
     if (helperCommand && (botId === HELPER_ID || !bot)) {
       if (!isOfficial(me())) return { error: 'Der Nexora Helper ist nur für das Nexora-Team.' };
+      if (helperCommand.ownerOnly && !isOwner(me())) return { error: 'Nur @nexora kann den Nexora Helper ein- und ausladen.' };
       return runHelper(access, channelId, helperCommand, text);
     }
     if (access.type !== 'hub') return { error: 'Befehle von Bots funktionieren nur in Hubs.' };
@@ -1806,7 +1859,7 @@ io.on('connection', (socket) => {
     const ctx = {
       user: { id: u.id, username: u.username, displayName: u.displayName, mention: '@' + u.username },
       channel: { id: channelId, name: channelById(channelId).name },
-      hub: { id: hub.id, name: hub.name, memberCount: hub.members.filter((m) => !db.bots[m]).length },
+      hub: { id: hub.id, name: hub.name, memberCount: hub.members.filter((m) => !isBotMember(m)).length },
       bot: { id: bot.id, username: botUser.username, displayName: botUser.displayName },
       command: command.name,
       text: input,
@@ -1913,8 +1966,8 @@ io.on('connection', (socket) => {
         isLounge: Boolean(h.isLounge),
         inviteCode: h.inviteCode,
         owner: h.ownerId && db.users[h.ownerId] ? publicUser(db.users[h.ownerId]) : null,
-        members: h.members.filter((m) => !db.bots[m]).length,
-        bots: h.members.filter((m) => db.bots[m]).length,
+        members: h.members.filter((m) => !isBotMember(m)).length,
+        bots: h.members.filter(isBotMember).length,
         channels: h.channels.length,
         messages: h.channels.reduce((n, c) => n + (db.messages[c.id]?.length || 0), 0),
         createdAt: h.createdAt,

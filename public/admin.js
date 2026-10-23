@@ -291,6 +291,8 @@ const AUDIT_LABELS = {
   resetPassword: ['🔑', 'hat ein Passwort zurückgesetzt'],
   deleteHub: ['🗑️', 'hat einen Hub gelöscht'],
   hubOwner: ['👑', 'hat einen Hub übertragen'],
+  helperInvite: ['🛡️', 'hat den Nexora Helper eingeladen'],
+  helperRemove: ['🛡️', 'hat den Nexora Helper ausgeladen'],
   botDisable: ['⛔', 'hat einen Bot gesperrt'],
   botEnable: ['🤖', 'hat einen Bot entsperrt'],
   deleteBot: ['🗑️', 'hat einen Bot gelöscht'],

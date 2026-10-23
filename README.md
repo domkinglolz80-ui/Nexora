@@ -6,7 +6,7 @@ Nexora ist eine Echtzeit-Chat-Plattform mit eigenem Look: dunkles Glas-Design mi
 
 ## Features
 
-- **Accounts** – Registrieren und Einloggen (Passwörter werden mit scrypt gehasht)
+- **Accounts** – Registrieren und Einloggen (Passwörter werden mit scrypt gehasht); bis zu 5 Accounts pro Gerät, Wechsel per Klick ohne Passwort
 - **Hubs** – eigene Hubs erstellen, per Einladungscode oder -link beitreten, verlassen, umbenennen, löschen
 - **Kanäle** – Textkanäle mit Thema erstellen, bearbeiten, löschen (Besitzer)
 - **Nachrichten in Echtzeit** – Antworten, Bearbeiten (auch mit ↑), Löschen, Emoji-Reaktionen
@@ -108,6 +108,8 @@ Private Direktnachrichten anderer kann auch der Owner nicht lesen.
 
 Der **Nexora Helper** (`@NexoraHelper`) ist der offizielle Bot von Nexora, mit ✓- und BOT-Abzeichen. Er ist fest eingebaut: Man muss ihn nicht einladen, er kann nicht bearbeitet oder gelöscht werden, und **nur offizielle Accounts** können seine Befehle benutzen – in jedem Hub und in Direktnachrichten. Alle anderen sehen nur seine Nachrichten.
 
+Nur **@nexora** kann den Helper mit `/einladen` als sichtbares Mitglied in einen Hub holen: Er erscheint dann für alle in der Mitgliederliste unter „Bots“ und begrüßt den Hub im ersten Textkanal. Ohne Code gilt der Befehl für den aktuellen Hub, mit Einladungscode für jeden anderen Hub (auch aus einer DM heraus).
+
 | Befehl                         | Wirkung                                                              |
 | ------------------------------ | -------------------------------------------------------------------- |
 | `/hilfe`                       | alle Befehle (nur für dich sichtbar)                                 |
@@ -120,6 +122,8 @@ Der **Nexora Helper** (`@NexoraHelper`) ist der offizielle Bot von Nexora, mit �
 | `/stats`                       | Nexora in Zahlen                                                     |
 | `/ankuendigung [text]`         | setzt das Banner für alle, ohne Text wird es entfernt                |
 | `/loeschen <anzahl>`           | löscht die letzten 1–100 Nachrichten im Kanal                        |
+| `/einladen [code]`             | nur @nexora: holt den Helper sichtbar in diesen oder einen anderen Hub |
+| `/ausladen [code]`             | nur @nexora: holt den Helper wieder aus dem Hub                       |
 
 `<nutzer>` ist der Benutzername, mit oder ohne `@`. Offizielle Accounts und Bots können nicht moderiert werden. Sperren, Verwarnungen und Kicks schreibt der Helper sichtbar in den Kanal, alles andere sieht nur die Person, die den Befehl nutzt.
 
@@ -182,7 +186,7 @@ Die Stimmen laufen per **WebRTC direkt zwischen den Geräten**; der Server vermi
 
 ## Versionen & Updates
 
-Aktuelle Version: **V0.1.6 Beta**. Alle Änderungen stehen in [`changelog.json`](changelog.json) – der oberste Eintrag ist die laufende Version.
+Aktuelle Version: **V0.1.6.5 Beta**. Alle Änderungen stehen in [`changelog.json`](changelog.json) – der oberste Eintrag ist die laufende Version.
 
 - Nach dem Login (und nach jedem Update) zeigt Nexora einmal das Fenster **„Was ist neu?“**. Über die Versionsanzeige unten in der Hub-Leiste lässt es sich jederzeit wieder öffnen.
 - Geht eine neue Version live, während jemand Nexora offen hat, lädt die Seite automatisch neu. Tippt die Person gerade etwas, erscheint stattdessen ein „Jetzt laden“-Hinweis.

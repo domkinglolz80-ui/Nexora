@@ -113,6 +113,18 @@ const EN = {
   'hat ein Passwort zurückgesetzt': 'reset a password',
   'hat einen Hub gelöscht': 'deleted a hub',
   'hat einen Hub übertragen': 'transferred a hub',
+  'hat den Nexora Helper eingeladen': 'invited the Nexora Helper',
+  // ---------- several accounts ----------
+  'Zurück zu Nexora': 'Back to Nexora',
+  'Account wechseln': 'Switch account',
+  'Accounts': 'Accounts',
+  'Account hinzufügen': 'Add account',
+  'aktiv': 'active',
+  'Angemeldet auf diesem Gerät': 'Signed in on this device',
+  'Auf diesem Gerät abmelden': 'Sign out on this device',
+  'Maximal {n} Accounts pro Gerät.': 'At most {n} accounts per device.',
+  '@{name} wurde auf diesem Gerät abgemeldet.': '@{name} was signed out on this device.',
+  'hat den Nexora Helper ausgeladen': 'removed the Nexora Helper',
   'hat einen Bot gesperrt': 'disabled a bot',
   'hat einen Bot entsperrt': 'enabled a bot',
   'hat einen Bot gelöscht': 'deleted a bot',
@@ -654,6 +666,10 @@ const EN = {
   'Wer abgemeldet wird': 'Who gets signed out',
   'Wessen Infos': 'Whose info',
   'Was alle oben im Chat sehen': 'What everyone sees on top of the chat',
+  'Lädt den Nexora Helper in einen Hub ein – für alle sichtbar': 'Invites the Nexora Helper into a hub – visible to everyone',
+  'Holt den Nexora Helper wieder aus einem Hub': 'Takes the Nexora Helper out of a hub again',
+  'Einladungscode – ohne Code: dieser Hub': 'Invite code – without a code: this hub',
+  'Nur @nexora kann den Nexora Helper ein- und ausladen.': 'Only @nexora can invite or remove the Nexora Helper.',
 };
 
 // Server messages that contain a value. Matched only when no exact translation exists.
@@ -681,6 +697,11 @@ const EN_PATTERNS = [
   [/^Das Skript hat zu lange gebraucht \(max\. (\d+) ms\)\.$/, 'The script took too long (max. $1 ms).'],
   [/^Löscht die letzten Nachrichten in diesem Kanal \(max\. (\d+)\)$/, 'Deletes the latest messages in this channel (max. $1)'],
   [/^Wie viele \(1–(\d+)\)$/, 'How many (1–$1)'],
+  [/^Gib den Einladungscode des Hubs an, z\. B\. (`.*`)\.$/, "Enter the hub's invite code, e.g. $1."],
+  [/^Der Nexora Helper ist schon in „(.*)“\.$/, 'The Nexora Helper is already in "$1".'],
+  [/^✅ Der Nexora Helper ist jetzt in „(.*)“ – alle Mitglieder sehen ihn\.$/, '✅ The Nexora Helper is now in "$1" – all members can see it.'],
+  [/^Der Nexora Helper ist nicht in „(.*)“\.$/, 'The Nexora Helper is not in "$1".'],
+  [/^👋 Der Nexora Helper hat „(.*)“ verlassen\.$/, '👋 The Nexora Helper left "$1".'],
   [/ \(Zeile (\d+)\)$/, ' (line $1)'],
 ];
 

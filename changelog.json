@@ -1,5 +1,33 @@
 [
   {
+    "version": "V0.1.6.5 Beta",
+    "date": "2026-10-23",
+    "title": "Mehrere Accounts & der Helper zieht ein",
+    "titleEn": "Multiple accounts & the Helper moves in",
+    "changes": [
+      {
+        "icon": "🔀",
+        "text": "**Account wechseln**: Melde dich auf einem Gerät mit bis zu 5 Accounts an und wechsle mit einem Klick unten links – ganz ohne Passwort",
+        "textEn": "**Switch accounts**: sign in with up to 5 accounts on one device and switch with one click at the bottom left – no password needed"
+      },
+      {
+        "icon": "🚪",
+        "text": "Beim Abmelden übernimmt automatisch dein nächster Account, und auf dem Login-Bildschirm siehst du alle noch angemeldeten Accounts",
+        "textEn": "When you sign out, your next account takes over automatically, and the login screen shows every account that is still signed in"
+      },
+      {
+        "icon": "📝",
+        "text": "Entwürfe und zuletzt geöffnete Kanäle merkt sich Nexora jetzt für jeden Account einzeln",
+        "textEn": "Nexora now remembers drafts and last opened channels separately for each account"
+      },
+      {
+        "icon": "🛡️",
+        "text": "Der **Nexora Helper** kann von @nexora mit `/einladen` in jeden Hub geholt werden – dort sehen ihn alle in der Mitgliederliste. Mit `/ausladen` geht er wieder",
+        "textEn": "@nexora can bring the **Nexora Helper** into any hub with `/einladen` – everyone there sees it in the member list. `/ausladen` sends it away again"
+      }
+    ]
+  },
+  {
     "version": "V0.1.6 Beta",
     "date": "2026-10-23",
     "title": "Die Owner-Zentrale",

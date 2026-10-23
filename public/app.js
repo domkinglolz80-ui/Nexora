@@ -19,6 +19,7 @@ const ICONS = {
   copy: '<svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>',
   chat: '<svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
   search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>',
+  switch: '<svg viewBox="0 0 24 24"><path d="M16 3l4 4-4 4M20 7H8M8 21l-4-4 4-4M4 17h12"/></svg>',
   logout: '<svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>',
   speaker: '<svg viewBox="0 0 24 24"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>',
   mic: '<svg viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M19 10v1a7 7 0 0 1-14 0v-1M12 18v4M8 22h8"/></svg>',
@@ -403,12 +404,128 @@ function ping() {
    Auth
    ========================================================================= */
 
-function showAuth() {
+function showAuth({ adding = false } = {}) {
   $('#app').classList.add('hidden');
   $('#auth').classList.remove('hidden');
+  $('#auth').classList.toggle('adding', adding);
   $('#splash').classList.add('out');
-  setAuthMode(store('lastUser') ? 'login' : 'register');
+  setAuthMode(adding || store('lastUser') || savedAccounts().length ? 'login' : 'register');
+  if (adding) $('#auth-form [name=username]').value = '';
+  renderAuthAccounts();
 }
+
+/* ---------- several accounts on one device ---------- */
+
+// Every account signed in on this device keeps its own session token, so switching
+// needs no password. The active one is stored under "token" as before.
+const MAX_ACCOUNTS = 5;
+
+function savedAccounts() {
+  const list = store('accounts');
+  return Array.isArray(list) ? list.filter((a) => a && typeof a.token === 'string' && a.username) : [];
+}
+
+function rememberAccount(token, user) {
+  const list = savedAccounts();
+  const entry = { token, id: user.id, username: user.username, displayName: user.displayName, color: user.color, accessory: user.accessory || '' };
+  const at = list.findIndex((a) => a.token === token || a.id === user.id);
+  if (at === -1) list.push(entry);
+  else {
+    // Signed in again with an account that was already here: the older session is not needed anymore.
+    if (list[at].token !== token) signOutToken(list[at].token);
+    list[at] = entry;
+  }
+  store('accounts', list);
+}
+
+function forgetAccount(token) {
+  store('accounts', savedAccounts().filter((a) => a.token !== token));
+}
+
+// Drafts and the last opened channels belong to one account, not to the device.
+const ACCOUNT_KEYS = ['drafts', 'lastChannel', 'view'];
+function accountStore(key, value) {
+  return store(`${key}:${state.me.id}`, value);
+}
+
+// Before V0.1.6.5 these were stored once per device; they now go to the account that was signed in.
+function adoptDeviceKeys() {
+  for (const key of ACCOUNT_KEYS) {
+    const old = store(key);
+    if (old == null) continue;
+    if (accountStore(key) == null) accountStore(key, old);
+    store(key, null);
+  }
+}
+
+function signOutToken(token) {
+  // keepalive: the request still goes out when the page reloads right after.
+  fetch('/api/logout', { method: 'POST', keepalive: true, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token }) }).catch(() => {});
+}
+
+// A fresh page load makes sure nothing of the previous account stays around (chats, voice, drafts).
+function switchAccount(token) {
+  store('token', token);
+  if (socket) socket.disconnect();
+  socket = null;
+  location.replace('/');
+}
+
+function addAccount() {
+  closePopover();
+  closeAllModals();
+  if (savedAccounts().length >= MAX_ACCOUNTS) return toast(t('Maximal {n} Accounts pro Gerät.', { n: MAX_ACCOUNTS }), 'error');
+  showAuth({ adding: true });
+}
+
+// Accounts that are still signed in, as quick buttons on the login screen.
+function renderAuthAccounts() {
+  const box = $('#auth-accounts');
+  const list = savedAccounts().filter((a) => a.token !== state.token);
+  box.classList.toggle('hidden', !list.length);
+  if (!list.length) return (box.innerHTML = '');
+  box.innerHTML = `<div class="section-label"><span>${t('Angemeldet auf diesem Gerät')}</span></div>`;
+  for (const a of list) {
+    const row = h(`<button type="button" class="account-row">${avatar(a)}<div class="info"><div class="name">${esc(a.displayName)}</div><div class="handle">@${esc(a.username)}</div></div>${ICONS.switch}</button>`);
+    row.onclick = () => switchAccount(a.token);
+    box.append(row);
+  }
+}
+
+function openAccountSwitcher(anchor) {
+  closePopover();
+  const list = savedAccounts();
+  const pop = h(`<div class="popover account-pop">
+    <div class="section-label"><span>${t('Accounts')}</span></div>
+    <div class="account-list"></div>
+    <button type="button" class="btn block" data-act="add">${ICONS.plus} ${t('Account hinzufügen')}</button>
+  </div>`);
+  const box = pop.querySelector('.account-list');
+  for (const a of list) {
+    const active = a.token === state.token;
+    const row = h(`<div class="account-row${active ? ' active' : ''}">${avatar(a)}<div class="info"><div class="name">${esc(a.displayName)}</div><div class="handle">@${esc(a.username)}${active ? ` · ${t('aktiv')}` : ''}</div></div>
+      ${active ? ICONS.check : `<button type="button" class="icon-btn" data-act="forget" title="${t('Auf diesem Gerät abmelden')}">${ICONS.x}</button>`}</div>`);
+    if (!active) {
+      row.onclick = () => switchAccount(a.token);
+      row.querySelector('[data-act=forget]').onclick = (e) => {
+        e.stopPropagation();
+        forgetAccount(a.token);
+        signOutToken(a.token);
+        row.remove();
+        toast(t('@{name} wurde auf diesem Gerät abgemeldet.', { name: a.username }));
+      };
+    }
+    box.append(row);
+  }
+  pop.querySelector('[data-act=add]').onclick = addAccount;
+  placePopover(pop, anchor);
+}
+
+$('#auth-back').addEventListener('click', () => {
+  $('#auth').classList.add('hidden');
+  $('#auth').classList.remove('adding');
+  $('#app').classList.remove('hidden');
+});
 
 function setAuthMode(mode) {
   const auth = $('#auth');
@@ -447,10 +564,15 @@ $('#auth-form').addEventListener('submit', async (e) => {
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error ? tServer(data.error) : t('Etwas ist schiefgelaufen.'));
-    store('token', data.token);
     store('lastUser', data.user.username);
+    rememberAccount(data.token, data.user);
     form.password.value = '';
-    start(data.token);
+    // While another account is still connected, the new one starts with a fresh page.
+    if (socket) switchAccount(data.token);
+    else {
+      store('token', data.token);
+      start(data.token);
+    }
   } catch (ex) {
     err.textContent = ex.message;
   } finally {
@@ -458,12 +580,16 @@ $('#auth-form').addEventListener('submit', async (e) => {
   }
 });
 
+// Signs out the active account; another account on this device takes over if there is one.
 async function logout() {
   const token = state.token;
+  forgetAccount(token);
+  signOutToken(token);
+  const next = savedAccounts()[0];
+  if (next) return switchAccount(next.token);
   store('token', null);
   if (socket) socket.disconnect();
   socket = null;
-  fetch('/api/logout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token }) }).catch(() => {});
   location.replace('/');
 }
 
@@ -490,8 +616,10 @@ function start(token) {
 
   socket.on('connect_error', (err) => {
     if (err.message === 'unauthorized') {
+      forgetAccount(token);
       store('token', null);
       socket.disconnect();
+      socket = null;
       showAuth();
     }
   });
@@ -504,7 +632,9 @@ function start(token) {
     if (reason === 'io server disconnect') {
       banner?.remove();
       banner = null;
+      forgetAccount(token);
       store('token', null);
+      state.token = null;
       socket = null;
       cleanupVoice();
       closeAllModals();
@@ -555,6 +685,7 @@ function start(token) {
     state.users.set(user.id, user);
     if (user.id === state.me?.id) {
       state.me = user;
+      rememberAccount(state.token, user);
       renderMe();
     }
     renderMembers();
@@ -628,6 +759,9 @@ function start(token) {
 
 function applyBootstrap(data) {
   state.me = data.me;
+  rememberAccount(state.token, data.me);
+  adoptDeviceKeys();
+  state.drafts = accountStore('drafts') || {};
   state.hubs = new Map(data.hubs.map((x) => [x.id, x]));
   state.dms = new Map(data.dms.map((x) => [x.id, x]));
   state.users = new Map(Object.entries(data.users));
@@ -636,7 +770,7 @@ function applyBootstrap(data) {
   state.announcement = data.announcement || null;
   // After a reconnect the cache may be stale — drop it and refetch lazily.
   state.channels.clear();
-  state.lastChannel = store('lastChannel') || {};
+  state.lastChannel = accountStore('lastChannel') || {};
 
   $('#auth').classList.add('hidden');
   $('#app').classList.remove('hidden');
@@ -654,7 +788,7 @@ function applyBootstrap(data) {
     return;
   }
 
-  const last = store('view');
+  const last = accountStore('view');
   if (last?.type === 'hub' && state.hubs.has(last.hubId)) openHub(last.hubId, last.channelId);
   else if (last?.type === 'home' && last.channelId && state.dms.has(last.channelId)) openDm(last.channelId);
   else if (state.hubs.size) openHub(state.hubs.keys().next().value);
@@ -671,14 +805,14 @@ function setView(view) {
   state.replyTo = null;
   state.editingId = null;
   state.missed = 0;
-  store('view', view);
+  accountStore('view', view);
   input.value = state.drafts[view.channelId] || '';
   autosize(input);
   updateComposerState();
   hideSlash();
   if (view.type === 'hub' && view.channelId) {
     state.lastChannel[view.hubId] = view.channelId;
-    store('lastChannel', state.lastChannel);
+    accountStore('lastChannel', state.lastChannel);
   }
   if (view.channelId) state.unread.delete(view.channelId);
   $('#app').classList.remove('drawer-open', 'show-members');
@@ -905,8 +1039,10 @@ function renderMe() {
   card.innerHTML = `
     ${avatar(me, { dot: true })}
     <div class="who${exClass(me)}"><div class="name">${esc(me.displayName)}${verified(me)}</div><div class="handle">${esc(STATUS_LABEL[me.status] || '')} · @${esc(me.username)}</div></div>
+    <button class="icon-btn" data-act="accounts" title="${t('Account wechseln')}">${ICONS.switch}</button>
     <button class="icon-btn" data-act="bots" title="${t('Meine Bots')}">${ICONS.bot}</button>
     <button class="icon-btn" data-act="settings" title="${t('Einstellungen')}">${ICONS.gear}</button>`;
+  card.querySelector('[data-act=accounts]').onclick = (e) => openAccountSwitcher(e.currentTarget);
   card.querySelector('[data-act=bots]').onclick = () => openBotManager();
   card.querySelector('[data-act=settings]').onclick = openSettings;
   $('#admin-btn').classList.toggle('hidden', !me.official);
@@ -974,7 +1110,7 @@ function renderMembers() {
     panel.append(h(`<div class="section-label"><span>${label} — ${list.length}</span></div>`));
     for (const m of list) {
       const st = statusOf(m.id);
-      const sub = m.bot ? (m.disabled ? t('Gesperrt') : plural(m.commands?.length || 0, 'Befehl', 'Befehle')) : m.bio || STATUS_LABEL[st];
+      const sub = m.system ? t('Offizieller Bot') : m.bot ? (m.disabled ? t('Gesperrt') : plural(m.commands?.length || 0, 'Befehl', 'Befehle')) : m.bio || STATUS_LABEL[st];
       const row = h(`<button class="member ${st === 'offline' ? 'offline' : ''}" style="--c:${esc(m.color)}">
         ${avatar(m, { dot: true })}
         <div class="info"><div class="name">${esc(m.displayName)}${verified(m)}${m.id === hub.ownerId ? `<span class="crown" title="${t('Besitzer')}">👑</span>` : ''}</div>
@@ -1488,7 +1624,7 @@ function saveDraft() {
   if (!channelId) return;
   if (input.value.trim()) state.drafts[channelId] = input.value;
   else delete state.drafts[channelId];
-  store('drafts', state.drafts);
+  accountStore('drafts', state.drafts);
 }
 
 // Send button and character counter follow the text and the pending uploads.
@@ -1587,14 +1723,15 @@ async function sendMessage() {
 const slash = { items: [], sel: 0, botId: null, hideTimer: null };
 
 // Commands of all bots in the current hub, plus the Nexora Helper for official accounts (also in DMs).
+// Commands marked ownerOnly (inviting the helper) are only listed for @nexora.
 function availableCommands() {
   if (!state.view.channelId || isVoiceChannel(state.view.channelId)) return [];
   const hub = currentHub();
-  const bots = hub ? hub.members.map((m) => state.users.get(m)).filter((u) => u?.bot && !u.disabled) : [];
+  const bots = hub ? hub.members.map((m) => state.users.get(m)).filter((u) => u?.bot && !u.disabled && !u.system) : [];
   if (state.me?.official) bots.push(...[...state.users.values()].filter((u) => u.system));
   const out = [];
   for (const u of bots) {
-    for (const c of u.commands || []) out.push({ ...c, bot: u });
+    for (const c of u.commands || []) if (!c.ownerOnly || state.me?.owner) out.push({ ...c, bot: u });
   }
   return out.sort((a, b) => a.name.localeCompare(b.name) || a.bot.displayName.localeCompare(b.bot.displayName));
 }
@@ -1922,7 +2059,7 @@ function showProfile(userId, anchor) {
 }
 
 function showBotProfile(u, anchor) {
-  const commands = (u.commands || []).map((c) => `<li><code>/${esc(c.name)}</code><span>${esc(c.description ? tServer(c.description) : '')}</span></li>`).join('');
+  const commands = (u.commands || []).filter((c) => !c.ownerOnly || state.me.owner).map((c) => `<li><code>/${esc(c.name)}</code><span>${esc(c.description ? tServer(c.description) : '')}</span></li>`).join('');
   const mine = u.ownerId === state.me.id;
   const ex = exclusiveOf(u);
   const pop = h(`<div class="popover${exClass(u)}" style="--c:${esc(u.color)}">
@@ -3034,7 +3171,6 @@ document.addEventListener('visibilitychange', () => {
 
 // Boot
 state.showMembers = store('showMembers') ?? true;
-state.drafts = store('drafts') || {};
 const savedToken = store('token');
 if (savedToken) start(savedToken);
 else showAuth();
