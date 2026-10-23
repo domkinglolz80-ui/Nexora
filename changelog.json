@@ -1,5 +1,24 @@
 [
   {
+    "version": "V0.1.5.4 Beta",
+    "date": "2026-10-23",
+    "title": "Exklusive Accessoires für alle sichtbar",
+    "changes": [
+      {
+        "icon": "👀",
+        "text": "Kürbiskönig und Irrlicht-Wächter sind jetzt für **alle** sichtbar – Geräte mit einer veralteten Nexora-Version aktualisieren sich jetzt zuverlässig selbst"
+      },
+      {
+        "icon": "🔄",
+        "text": "Updates kommen sicherer an: Nexora prüft beim Zurückkehren in den Tab und alle paar Minuten, ob es eine neue Version gibt"
+      },
+      {
+        "icon": "👑",
+        "text": "Krone und Laterne sitzen wieder in der richtigen Größe über dem Avatar"
+      }
+    ]
+  },
+  {
     "version": "V0.1.5.3 Beta",
     "date": "2026-10-23",
     "title": "Der Kürbiskönig ist einzigartig",

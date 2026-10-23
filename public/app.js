@@ -2888,12 +2888,16 @@ function openChangelog() {
     <div class="modal-actions"><button class="btn primary" data-close>Los geht's</button></div>`, { className: 'changelog' });
 }
 
-// Runs after every (re)connect. A different server version means a new patch was
-// deployed while this tab was open: reload to get it, unless the user is typing.
+// The version of the code running in this tab, written into the page by the server.
+const CLIENT_VERSION = $('meta[name="nexora-version"]')?.content || null;
+
+// Runs after every (re)connect and when the tab comes back. A different server version
+// means a new patch was deployed: reload to get it, unless the user is typing.
 async function checkVersion(serverVersion) {
   await versionReady;
-  if (!state.version) return;
-  if (serverVersion && serverVersion !== state.version) {
+  const running = CLIENT_VERSION || state.version;
+  if (!running) return;
+  if (serverVersion && serverVersion !== running) {
     if (!input.value.trim() && !state.uploads.length && !$('.modal') && !state.editingId) return location.reload();
     if ($('.update-banner')) return;
     const banner = h(`<div class="update-banner"><span>🎃 <b>${esc(serverVersion)}</b> ist da!</span><button class="btn primary">Jetzt laden</button></div>`);
@@ -2936,6 +2940,18 @@ document.addEventListener('keydown', (e) => {
     closePopover();
   }
 });
+
+// Sockets on phones can stay asleep through a deploy, so also ask when the tab returns
+// and every few minutes.
+function pollVersion() {
+  if (!state.me || document.hidden) return;
+  fetch('/api/version', { cache: 'no-store' })
+    .then((r) => r.json())
+    .then((d) => checkVersion(d.version))
+    .catch(() => {});
+}
+setInterval(pollVersion, 5 * 60 * 1000);
+document.addEventListener('visibilitychange', pollVersion);
 
 document.addEventListener('visibilitychange', () => {
   if (!document.hidden && state.view.channelId) {

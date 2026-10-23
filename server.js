@@ -466,6 +466,19 @@ app.disable('x-powered-by');
 // Hosting providers like Render sit behind a proxy; trust it so req.ip is the real client.
 app.set('trust proxy', 1);
 app.use(express.json({ limit: '32kb' }));
+// The page names the version it belongs to, and its own scripts and styles carry that
+// version in their URL. A device can then never run an old app.js under a new page
+// (e.g. while Render briefly runs the old and the new server side by side), and the
+// client compares exactly the code it runs with the server.
+const INDEX_HTML = fs
+  .readFileSync(path.join(__dirname, 'public', 'index.html'), 'utf8')
+  .replace('<head>', `<head>\n  <meta name="nexora-version" content="${VERSION}" />`)
+  .replace(/(src|href)="\/(app|bots|admin|halloween)\.(js|css)"/g, `$1="/$2.$3?v=${encodeURIComponent(VERSION)}"`);
+app.get(['/', '/index.html'], (_req, res) => {
+  res.setHeader('Cache-Control', 'no-cache');
+  res.type('html').send(INDEX_HTML);
+});
+
 // "no-cache" makes browsers revalidate on every visit, so everyone gets the latest patch.
 app.use(express.static(path.join(__dirname, 'public'), {
   setHeaders: (res) => res.setHeader('Cache-Control', 'no-cache'),
