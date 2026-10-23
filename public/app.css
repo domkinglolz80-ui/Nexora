@@ -755,6 +755,67 @@ h1 .verified, h2 .verified, h4 .verified { width: 20px; height: 20px; font-size:
 .cl-ico { width: 22px; text-align: center; flex-shrink: 0; }
 .cl-entry code { font: 12px var(--mono); background: rgba(0, 0, 0, 0.4); padding: 1px 5px; border-radius: 5px; }
 .cl-entry .spoiler { background: #3a2a1f; border-radius: 4px; padding: 0 3px; }
+/* ---------- banned accounts (only the owner sees them) ---------- */
+.banned-tag {
+  display: inline-flex; align-items: center; gap: 3px; margin-left: 6px; padding: 1px 6px; border-radius: 5px;
+  background: rgba(255, 61, 87, 0.16); border: 1px solid rgba(255, 61, 87, 0.45);
+  color: #ff8a9a; font: 800 9px/1.4 var(--font); letter-spacing: 0.08em; vertical-align: 2px;
+}
+
+/* ---------- calls in direct messages ---------- */
+.call-btn.active { color: #fff; background: var(--dnd); }
+.call-btn.active:hover { background: #ff5a70; color: #fff; }
+.dm-call { display: grid; color: var(--success); margin-left: auto; }
+.dm-call svg { width: 15px; height: 15px; animation: call-wiggle 1.6s ease-in-out infinite; }
+.call-strip {
+  flex-shrink: 0; display: grid; justify-items: center; gap: 10px;
+  padding: 18px 16px 16px; border-bottom: 1px solid var(--line);
+  background: radial-gradient(circle at 50% 0, rgba(61, 220, 132, 0.12), transparent 70%), rgba(0, 0, 0, 0.25);
+}
+.call-strip.ringing { background: radial-gradient(circle at 50% 0, rgba(255, 122, 24, 0.16), transparent 70%), rgba(0, 0, 0, 0.25); }
+.call-people { display: flex; gap: 34px; }
+.call-person { display: grid; justify-items: center; gap: 6px; color: var(--text-2); font-size: 13px; font-weight: 600; transition: opacity 0.2s; }
+.call-person .avatar { transition: box-shadow 0.15s; }
+.call-person.away { opacity: 0.45; }
+.call-strip.ringing .call-person.away .avatar { animation: call-pulse 1.4s ease-in-out infinite; }
+.call-person.speaking .avatar { box-shadow: 0 0 0 3px var(--panel-solid), 0 0 0 6px var(--success), 0 0 24px var(--success); }
+.call-status { display: flex; align-items: center; gap: 6px; color: var(--text-2); font: 600 14px var(--font); }
+.call-time { font: 600 13px var(--mono); color: var(--success); }
+.call-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); box-shadow: 0 0 8px var(--success); animation: pulse-dot 1.6s infinite; }
+.call-actions { display: flex; gap: 12px; }
+.call-actions .stage-btn { width: 48px; height: 48px; }
+.call-actions .stage-btn svg { width: 20px; height: 20px; }
+.ci-btn { width: 56px; height: 56px; display: grid; place-items: center; border-radius: 50%; border: 0; color: #fff; cursor: pointer; transition: transform 0.15s, box-shadow 0.2s; }
+.ci-btn svg { width: 24px; height: 24px; }
+.ci-btn:hover { transform: scale(1.08); }
+.ci-btn.accept { background: var(--success); color: #062312; box-shadow: 0 0 0 0 rgba(61, 220, 132, 0.6); animation: call-glow 1.6s infinite; }
+.ci-btn.decline { background: var(--dnd); }
+.call-strip .ci-btn { width: 48px; height: 48px; }
+.call-incoming {
+  position: fixed; inset: 0; z-index: 70; display: grid; place-items: center; padding: 20px;
+  background: rgba(5, 3, 2, 0.6); backdrop-filter: blur(6px); animation: fade 0.2s;
+}
+.ci-card {
+  width: min(320px, 100%); display: grid; justify-items: center; gap: 6px; padding: 30px 24px 26px;
+  background: var(--panel-solid); border: 1px solid var(--line-strong); border-radius: 28px;
+  box-shadow: 0 30px 100px -20px rgba(0, 0, 0, 0.9), 0 0 80px -30px rgba(61, 220, 132, 0.6);
+  animation: pop 0.25s cubic-bezier(.2,.9,.3,1.2);
+}
+.ci-ring { padding: 8px; border-radius: 40%; margin-bottom: 8px; animation: call-pulse 1.4s ease-in-out infinite; }
+.ci-name { font: 700 20px var(--display); text-align: center; }
+.ci-sub { color: var(--muted); margin-bottom: 18px; }
+.ci-actions { display: flex; gap: 46px; }
+@keyframes call-pulse { 50% { box-shadow: 0 0 0 10px rgba(61, 220, 132, 0.18), 0 0 30px rgba(61, 220, 132, 0.45); } }
+@keyframes call-glow { 70% { box-shadow: 0 0 0 14px rgba(61, 220, 132, 0); } 100% { box-shadow: 0 0 0 0 rgba(61, 220, 132, 0); } }
+@keyframes call-wiggle { 0%, 60%, 100% { transform: rotate(0); } 70% { transform: rotate(-14deg); } 80% { transform: rotate(12deg); } 90% { transform: rotate(-8deg); } }
+@media (max-width: 760px) {
+  .call-people { gap: 22px; }
+  .call-strip { padding: 14px 12px 12px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ci-ring, .ci-btn.accept, .dm-call svg, .call-strip.ringing .call-person.away .avatar { animation: none; }
+}
+
 /* ---------- desktop app download ---------- */
 .rail-item.download { margin-top: auto; }
 .rail-item.download:not(.hidden) + .version-pill { margin-top: 0; }

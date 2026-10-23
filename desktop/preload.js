@@ -18,5 +18,6 @@ if (location.protocol === 'file:') {
     platform: process.platform,
     setBadge: (count) => ipcRenderer.send('app:badge', Number(count) || 0),
     focus: () => ipcRenderer.send('app:focus'),
+    attention: () => ipcRenderer.send('app:attention'),
   });
 }

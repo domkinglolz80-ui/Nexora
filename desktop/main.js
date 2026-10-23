@@ -118,6 +118,7 @@ function createWindow() {
   win.on('move', remember);
   win.on('close', () => { remember(); saveSettings(); });
   win.on('closed', () => { win = null; });
+  win.on('focus', () => win?.flashFrame(false));
 
   const contents = win.webContents;
   contents.setUserAgent(`${contents.getUserAgent()} NexoraDesktop/${app.getVersion()}`);
@@ -202,6 +203,13 @@ ipcMain.on('app:badge', (e, count) => {
   const n = Math.max(0, Math.min(9999, Number(count) || 0));
   app.setBadgeCount?.(n);
   if (n && win && !win.isFocused()) win.flashFrame(true);
+});
+
+// Incoming call: blink in the taskbar / bounce in the dock until the window is used.
+ipcMain.on('app:attention', (e) => {
+  if (!fromNexora(e) || !win || win.isFocused()) return;
+  win.flashFrame(true);
+  if (process.platform === 'darwin') app.dock?.bounce('critical');
 });
 
 ipcMain.on('app:focus', (e) => {

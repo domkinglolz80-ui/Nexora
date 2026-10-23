@@ -402,6 +402,7 @@ function publicUser(u) {
     accessory: (u.accessory && accessoryOf(u.accessory, u)) || '',
     ghosts: u.ghosts || 0,
     createdAt: u.createdAt,
+    banned: u.banned ? true : undefined,
   };
   if (u.system) {
     Object.assign(view, {
@@ -537,10 +538,10 @@ function hubView(hub) {
     icon: hub.icon,
     color: hub.color,
     ownerId: hub.ownerId,
-    admins: hub.members.filter((m) => canManage(hub, m)),
+    admins: hub.members.filter((m) => canManage(hub, m) && !db.users[m]?.banned),
     inviteCode: hub.inviteCode,
     isLounge: !!hub.isLounge,
-    members: hub.members,
+    members: hub.members.filter((m) => !db.users[m]?.banned),
     channels: hub.channels,
   };
 }
@@ -550,16 +551,45 @@ function dmView(dm) {
   return { id: dm.id, members: dm.members, lastActivity: msgs.length ? msgs[msgs.length - 1].createdAt : dm.createdAt };
 }
 
+// Banned accounts vanish from Nexora: profile, messages, DMs. Only the owner still sees them
+// (and can unban them). Their data stays, so an unban brings everything back.
+function hiddenFrom(user, viewerId) {
+  return Boolean(user?.banned) && user.id !== viewerId && !isOwner(db.users[viewerId]);
+}
+
 // Users that `userId` can see: everyone sharing a hub or DM.
 function visibleUserIds(userId) {
   const ids = new Set([userId]);
+  const add = (m) => { if (!hiddenFrom(db.users[m], userId)) ids.add(m); };
   for (const hub of Object.values(db.hubs)) {
-    if (hub.members.includes(userId)) hub.members.forEach((m) => ids.add(m));
+    if (hub.members.includes(userId)) hub.members.forEach(add);
   }
   for (const dm of Object.values(db.dms)) {
-    if (dm.members.includes(userId)) dm.members.forEach((m) => ids.add(m));
+    if (dm.members.includes(userId)) dm.members.forEach(add);
   }
   return ids;
+}
+
+// A DM is gone for someone when the other person is banned.
+const dmPartnerId = (dm, userId) => dm.members.find((m) => m !== userId) || userId;
+const dmVisible = (dm, userId) => dm.members.includes(userId) && !hiddenFrom(db.users[dmPartnerId(dm, userId)], userId);
+
+// Messages (and reactions) of banned accounts are left out for everyone but the owner.
+function messagesFor(list, viewerId) {
+  if (isOwner(db.users[viewerId])) return list;
+  const out = [];
+  for (const m of list) {
+    if (hiddenFrom(db.users[m.authorId], viewerId)) continue;
+    const reactions = {};
+    let changed = false;
+    for (const [emoji, users] of Object.entries(m.reactions || {})) {
+      const shown = users.filter((u) => !hiddenFrom(db.users[u], viewerId));
+      if (shown.length !== users.length) changed = true;
+      if (shown.length) reactions[emoji] = shown;
+    }
+    out.push(changed ? { ...m, reactions } : m);
+  }
+  return out;
 }
 
 // ---------------------------------------------------------------------------
@@ -834,7 +864,10 @@ function presenceOf(user) {
 }
 
 function broadcastToVisible(userId, event, payload) {
-  for (const uid of visibleUserIds(userId)) io.to(`user:${uid}`).emit(event, payload);
+  const subject = db.users[userId];
+  for (const uid of visibleUserIds(userId)) {
+    if (!hiddenFrom(subject, uid)) io.to(`user:${uid}`).emit(event, payload);
+  }
 }
 
 function emitPresence(user) {
@@ -863,8 +896,14 @@ function voiceMembers(channelId) {
 }
 
 function emitVoiceState(channelId) {
+  const payload = { channelId, members: voiceMembers(channelId) };
+  const dm = db.dms[channelId];
+  if (dm) {
+    for (const uid of dm.members) io.to(`user:${uid}`).emit('voice:state', payload);
+    return;
+  }
   const hub = hubForChannel(channelId);
-  if (hub) io.to(`hub:${hub.id}`).emit('voice:state', { channelId, members: voiceMembers(channelId) });
+  if (hub) io.to(`hub:${hub.id}`).emit('voice:state', payload);
 }
 
 function voiceLeave(socket) {
@@ -970,6 +1009,27 @@ function muteError(user) {
 function banUser(target, reason, byId) {
   target.banned = { reason: str(reason, 200), at: Date.now(), by: byId };
   endSessions(target.id, banMessage(target));
+  // Gone for everyone at once; the owner keeps seeing the account, marked as banned.
+  const owner = findUserByName(OWNER_USERNAME);
+  const ownerRoom = owner ? `user:${owner.id}` : null;
+  (ownerRoom ? io.except(ownerRoom) : io).emit('user:removed', { userId: target.id });
+  if (ownerRoom) io.to(ownerRoom).emit('user:update', publicUser(target));
+  for (const hub of Object.values(db.hubs)) {
+    if (hub.members.includes(target.id)) io.to(`hub:${hub.id}`).emit('hub:update', hubView(hub));
+  }
+}
+
+function unbanUser(target) {
+  delete target.banned;
+  save();
+  const user = publicUser(target);
+  broadcastToVisible(target.id, 'user:restored', { user, status: presenceOf(target) });
+  for (const hub of Object.values(db.hubs)) {
+    if (hub.members.includes(target.id)) io.to(`hub:${hub.id}`).emit('hub:update', hubView(hub));
+  }
+  for (const dm of Object.values(db.dms)) {
+    if (dm.members.includes(target.id)) for (const uid of dm.members) io.to(`user:${uid}`).emit('dm:update', dmView(dm));
+  }
 }
 
 // A banner on top of Nexora for everyone; an empty text removes it.
@@ -1377,7 +1437,7 @@ const HELPER_COMMANDS = [
       const { target, error } = moderatable(userByMention(options.nutzer));
       if (error) return { ephemeral: [error] };
       if (!target.banned) return { ephemeral: [`@${target.username} ist nicht gesperrt.`] };
-      delete target.banned;
+      unbanUser(target);
       audit(invoker.id, 'unban', `@${target.username} (Helper)`);
       return { ephemeral: [`✅ @${target.username} ist wieder entsperrt.`] };
     },
@@ -1694,14 +1754,17 @@ io.on('connection', (socket) => {
       announcement: db.announcement,
       me: publicUser(me()),
       hubs: Object.values(db.hubs).filter((h) => h.members.includes(userId)).map(hubView),
-      dms: Object.values(db.dms).filter((d) => d.members.includes(userId)).map(dmView),
+      dms: Object.values(db.dms).filter((d) => dmVisible(d, userId)).map(dmView),
       users,
       presence,
-      voice: Object.fromEntries(
-        Object.values(db.hubs)
+      voice: Object.fromEntries([
+        ...Object.values(db.hubs)
           .filter((h) => h.members.includes(userId))
           .flatMap((h) => h.channels.filter((c) => voice.has(c.id)).map((c) => [c.id, voiceMembers(c.id)])),
-      ),
+        ...Object.values(db.dms)
+          .filter((d) => voice.has(d.id) && dmVisible(d, userId))
+          .map((d) => [d.id, voiceMembers(d.id)]),
+      ]),
     };
   });
 
@@ -1725,8 +1788,9 @@ io.on('connection', (socket) => {
       // Make the newcomer and the existing members aware of each other.
       for (const uid of hub.members) {
         const u = db.users[uid];
-        if (u) io.to(`user:${userId}`).emit('user:update', publicUser(u));
-        if (u) io.to(`user:${userId}`).emit('presence', { userId: uid, status: presenceOf(u) });
+        if (!u || hiddenFrom(u, userId)) continue;
+        io.to(`user:${userId}`).emit('user:update', publicUser(u));
+        io.to(`user:${userId}`).emit('presence', { userId: uid, status: presenceOf(u) });
       }
       io.to(`hub:${hub.id}`).emit('user:update', publicUser(me()));
       io.to(`hub:${hub.id}`).emit('presence', { userId, status: presenceOf(me()) });
@@ -1823,7 +1887,7 @@ io.on('connection', (socket) => {
       if (idx >= 0) end = idx;
     }
     const start = Math.max(0, end - PAGE_SIZE);
-    return { messages: all.slice(start, end), hasMore: start > 0 };
+    return { messages: messagesFor(all.slice(start, end), userId), hasMore: start > 0 };
   });
 
   function rateLimited() {
@@ -1966,8 +2030,8 @@ io.on('connection', (socket) => {
   });
 
   on('dm:open', ({ userId: otherId }) => {
-    const other = db.users[otherId];
-    if (!other || otherId === userId) return { error: 'Benutzer nicht gefunden.' };
+    const other = own(db.users, otherId);
+    if (!other || otherId === userId || hiddenFrom(other, userId)) return { error: 'Benutzer nicht gefunden.' };
     if (other.bot) return { error: 'Bots antworten nur auf Slash-Befehle in Hubs.' };
     let dm = Object.values(db.dms).find((d) => d.members.includes(userId) && d.members.includes(otherId));
     if (!dm) {
@@ -1987,7 +2051,7 @@ io.on('connection', (socket) => {
     const q = str(query, 32).toLowerCase();
     if (q.length < 2) return { users: [] };
     const users = Object.values(db.users)
-      .filter((u) => u.id !== userId && (u.username.toLowerCase().includes(q) || u.displayName.toLowerCase().includes(q)))
+      .filter((u) => u.id !== userId && !hiddenFrom(u, userId) && (u.username.toLowerCase().includes(q) || u.displayName.toLowerCase().includes(q)))
       .slice(0, 10)
       .map(publicUser);
     return { users };
@@ -2022,7 +2086,12 @@ io.on('connection', (socket) => {
 
   on('voice:join', ({ channelId, muted, deafened }) => {
     const access = channelAccess(userId, channelId);
-    if (!access || !isVoice(channelId)) return { error: 'Sprachkanal nicht gefunden.' };
+    // A call in a DM uses the DM itself as its voice room.
+    const call = access?.type === 'dm';
+    if (call) {
+      const partner = db.users[dmPartnerId(access.dm, userId)];
+      if (!dmVisible(access.dm, userId) || !partner || partner.bot || partner.id === userId) return { error: 'Anruf nicht möglich.' };
+    } else if (!access || !isVoice(channelId)) return { error: 'Sprachkanal nicht gefunden.' };
     if (socket.data.voice === channelId) return { error: 'Du bist schon in diesem Sprachkanal.' };
     const room = voice.get(channelId) || new Map();
     if (room.size >= VOICE_LIMIT && !room.has(userId)) return { error: `Der Sprachkanal ist voll (max. ${VOICE_LIMIT}).` };
@@ -2040,7 +2109,18 @@ io.on('connection', (socket) => {
     socket.data.voice = channelId;
     socket.join(`voice:${channelId}`);
     emitVoiceState(channelId);
+    // Nobody else on the line yet: let the other person's devices ring.
+    if (call && !peers.length) {
+      io.to(`user:${dmPartnerId(access.dm, userId)}`).emit('call:incoming', { dmId: channelId, from: userId });
+    }
     return { peers, iceServers: ICE_SERVERS };
+  });
+
+  on('call:decline', ({ dmId }) => {
+    const access = channelAccess(userId, dmId);
+    if (access?.type !== 'dm') return { error: 'Anruf nicht gefunden.' };
+    for (const uid of access.dm.members) io.to(`user:${uid}`).emit('call:declined', { dmId, by: userId });
+    return {};
   });
 
   on('voice:leave', () => {
@@ -2318,7 +2398,7 @@ io.on('connection', (socket) => {
     for (const s of Object.values(db.sessions)) sessions.set(s.userId, (sessions.get(s.userId) || 0) + 1);
     const hubs = Object.values(db.hubs);
     const users = Object.values(db.users)
-      .filter((u) => !u.bot && (!q || u.username.toLowerCase().includes(q) || u.displayName.toLowerCase().includes(q)))
+      .filter((u) => !u.bot && !hiddenFrom(u, userId) && (!q || u.username.toLowerCase().includes(q) || u.displayName.toLowerCase().includes(q)))
       .sort((a, b) => b.createdAt - a.createdAt)
       .slice(0, 100)
       .map((u) => ({
@@ -2330,7 +2410,7 @@ io.on('connection', (socket) => {
         sessions: sessions.get(u.id) || 0,
         bots: Object.values(db.bots).filter((b) => b.ownerId === u.id).length,
       }));
-    return { users, total: Object.values(db.users).filter((u) => !u.bot).length };
+    return { users, total: Object.values(db.users).filter((u) => !u.bot && !hiddenFrom(u, userId)).length };
   });
 
   onAdmin('admin:ban', ({ userId: targetId, reason }) => {
@@ -2344,7 +2424,8 @@ io.on('connection', (socket) => {
   onAdmin('admin:unban', ({ userId: targetId }) => {
     const { target, error } = moderatable(own(db.users, targetId));
     if (error) return { error };
-    delete target.banned;
+    if (!isOwner(me())) return { error: 'Nur der Nexora-Owner kann Sperren aufheben.' };
+    unbanUser(target);
     audit(userId, 'unban', `@${target.username}`);
     return {};
   });

@@ -13,7 +13,7 @@ Nexora ist eine Echtzeit-Chat-Plattform mit eigenem Look: dunkles Glas-Design mi
 - **Dateien & Bilder** – per Büroklammer, Drag & Drop oder Einfügen teilen; Bilder mit Vorschau und Großansicht
 - **Umfragen** – bis zu 10 Antworten, Einfach- oder Mehrfachauswahl, Ergebnisse live, beendbar
 - **Formatierung** – `**fett**`, `*kursiv*`, `~~durch~~`, `` `code` ``, Codeblöcke, `> Zitat`, `||Spoiler||`, Links, `@erwähnungen`
-- **Direktnachrichten** – privat mit jedem Mitglied schreiben
+- **Direktnachrichten** – privat mit jedem Mitglied schreiben und per **Telefon-Symbol anrufen**
 - **Sprachkanäle** – in Echtzeit reden, mit Sprech-Anzeige, Stummschalten, Ton aus und Sprachleiste
 - **Präsenz** – Online / Abwesend / Nicht stören / Unsichtbar mit animierten Status-Punkten (pulsierend, schaukelnder Mond, atmend), Tipp-Anzeige
 - **Ungelesen-Markierungen** – Badges für Erwähnungen und DMs, Ton bei Erwähnung (stumm bei „Nicht stören“), optional Desktop-Benachrichtigungen
@@ -122,6 +122,8 @@ Offizielle Accounts sehen in der Hub-Leiste links ein Schild-Symbol (auch über 
 - **Bots** – alle Bots mit Besitzer und Befehlen; sperren, entsperren oder löschen
 
 Offizielle Accounts können selbst nicht gesperrt werden. Jede Aktion prüft der Server noch einmal – das Panel ist nur die Oberfläche.
+
+**Gesperrte Accounts verschwinden komplett** (ab V0.3.0 Beta): Profil, Profilbild, Nachrichten, Reaktionen und DMs sind für alle sofort weg – auch für das Team. Nur `@nexora` sieht sie noch, markiert mit 🔨 GESPERRT, und nur `@nexora` kann sie entsperren. Gelöscht wird dabei nichts: Nach dem Entsperren ist alles wieder da.
 
 ## Owner-Zentrale (@nexora)
 
@@ -239,6 +241,10 @@ Die Stimmen laufen per **WebRTC direkt zwischen den Geräten**; der Server vermi
 | `TURN_USERNAME`    | Benutzername vom TURN-Anbieter             |
 | `TURN_CREDENTIAL`  | Passwort vom TURN-Anbieter                 |
 
+### Anrufe
+
+In jeder Direktnachricht sitzt oben das **Telefon-Symbol**. Ein Klick startet den Anruf, bei der anderen Person klingelt es auf allen Geräten (mit Ton und Benachrichtigung, in der Desktop-App blinkt die Taskleiste). Annehmen oder Ablehnen geht im Anruf-Fenster oder im Chat; nach 45 Sekunden ohne Antwort hört es auf zu klingeln. Anrufe nutzen dieselbe Technik wie die Sprachkanäle (WebRTC, ggf. TURN-Server).
+
 ## Dateien
 
 - Max. **8 MB** pro Datei und **5 Dateien** pro Nachricht. PNG, JPEG, GIF und WebP werden als Bild angezeigt, alles andere als Download.
@@ -271,7 +277,7 @@ Selbst bauen: `cd desktop && npm install && npm start` (Testen) bzw. `npm run di
 
 ## Versionen & Updates
 
-Aktuelle Version: **V0.2.0 Beta**. Alle Änderungen stehen in [`changelog.json`](changelog.json) – der oberste Eintrag ist die laufende Version.
+Aktuelle Version: **V0.3.0 Beta** (Desktop-App 0.3.0). Alle Änderungen stehen in [`changelog.json`](changelog.json) – der oberste Eintrag ist die laufende Version.
 
 - Nach dem Login (und nach jedem Update) zeigt Nexora einmal das Fenster **„Was ist neu?“**. Über die Versionsanzeige unten in der Hub-Leiste lässt es sich jederzeit wieder öffnen.
 - Geht eine neue Version live, während jemand Nexora offen hat, lädt die Seite automatisch neu. Tippt die Person gerade etwas, erscheint stattdessen ein „Jetzt laden“-Hinweis.

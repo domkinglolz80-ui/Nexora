@@ -37,6 +37,7 @@ const ICONS = {
   shield: '<svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>',
   play: '<svg viewBox="0 0 24 24"><path d="M6 4l14 8-14 8z"/></svg>',
   megaphone: '<svg viewBox="0 0 24 24"><path d="M3 11v2a1 1 0 0 0 1 1h3l6 5V5L7 10H4a1 1 0 0 0-1 1zM17 8a5 5 0 0 1 0 8"/></svg>',
+  phone: '<svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>',
   hangup: '<svg viewBox="0 0 24 24"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"/><path d="m22 2-20 20"/></svg>',
 };
 
@@ -413,6 +414,7 @@ function isAdmin(hub, userId) {
 function verified(user) {
   const check = user.official ? `<span class="verified" title="${user.bot ? t('Offizieller Nexora-Bot') : t('Offizieller Nexora-Account')}">✓</span>` : '';
   if (user.bot) return `${check}<span class="bot-tag" title="Bot">BOT</span>`;
+  if (user.banned) return `${check}<span class="banned-tag" title="${t('Gesperrt – nur du siehst diesen Account')}">🔨 ${t('GESPERRT')}</span>`;
   return user.owner ? `${check}<span class="founder-tag" title="${t('Gründer von Nexora')}">👑 ${t('GRÜNDER')}</span>` : check;
 }
 
@@ -822,6 +824,44 @@ function start(token) {
     rerenderMessages();
   });
 
+  // A banned account disappears completely: profile, DMs and messages.
+  socket.on('user:removed', ({ userId }) => {
+    if (!state.users.has(userId)) return;
+    state.users.delete(userId);
+    state.presence.delete(userId);
+    for (const [dmId, dm] of [...state.dms]) {
+      if (!dm.members.includes(userId)) continue;
+      state.dms.delete(dmId);
+      state.channels.delete(dmId);
+      state.unread.delete(dmId);
+      if (vc.channelId === dmId) cleanupVoice();
+      closeIncomingCall(dmId);
+      if (state.view.channelId === dmId) openHome();
+    }
+    for (const ch of state.channels.values()) ch.list = ch.list.filter((m) => m.authorId !== userId);
+    if (state.replyTo && state.replyTo.authorId === userId) setReply(null);
+    renderAll();
+  });
+
+  // Unbanned: the account and its messages come back, so cached chats are loaded again.
+  socket.on('user:restored', ({ user, status }) => {
+    state.users.set(user.id, user);
+    state.presence.set(user.id, status);
+    state.channels.clear();
+    renderAll();
+    if (state.view.channelId && !isVoiceChannel(state.view.channelId)) loadChannel(state.view.channelId);
+  });
+
+  socket.on('call:incoming', ({ dmId, from }) => showIncomingCall(dmId, from));
+  socket.on('call:declined', ({ dmId, by }) => {
+    closeIncomingCall(dmId);
+    if (by === state.me.id || vc.channelId !== dmId) return;
+    const others = (state.voiceStates.get(dmId) || []).filter((m) => m.userId !== state.me.id);
+    if (others.length) return;
+    leaveVoice();
+    toast(t('{name} hat den Anruf abgelehnt.', { name: userOf(by).displayName }), 'error');
+  });
+
   socket.on('presence', ({ userId, status }) => {
     state.presence.set(userId, status);
     renderMembers();
@@ -1157,6 +1197,7 @@ function renderSidebar() {
       const u = state.unread.get(dm.id);
       const item = h(`<button class="nav-item ${dm.id === state.view.channelId ? 'active' : ''} ${u ? 'unread' : ''}">
         ${avatar(p, { dot: true, size: 32 })}<span class="label">${esc(p.displayName)}${verified(p)}</span>
+        ${state.voiceStates.has(dm.id) ? `<span class="dm-call" title="${t('Anruf läuft')}">${ICONS.phone}</span>` : ''}
         ${u ? `<span class="badge">${u.count}</span>` : ''}
       </button>`);
       item.onclick = () => openDm(dm.id);
@@ -1207,6 +1248,7 @@ function renderChatHeader() {
     composer.placeholder = t('Wähle eine Unterhaltung');
   }
   const hasTarget = Boolean(channel || dm);
+  renderCallUi();
   $('.composer-wrap').classList.toggle('hidden', !hasTarget || channel?.kind === 'voice');
   membersBtn.classList.toggle('active', state.showMembers);
   $('#app').classList.toggle('no-members', !state.showMembers || !hasTarget);
@@ -2957,6 +2999,7 @@ async function joinVoice(channelId) {
     vc.iceServers = res.iceServers || [];
     vc.localAnalyser = makeAnalyser(stream);
     for (const p of res.peers) startCall(p.socketId, p.userId);
+    if (state.dms.has(channelId)) onCallState(channelId, callMembers(channelId));
     voiceSound(true);
   } catch (ex) {
     toast(ex.message, 'error');
@@ -2970,7 +3013,7 @@ async function joinVoice(channelId) {
 async function rejoinVoice() {
   const channelId = vc.channelId;
   for (const id of [...vc.peers.keys()]) closePeer(id);
-  if (!isVoiceChannel(channelId)) return cleanupVoice();
+  if (!isVoiceChannel(channelId) && !state.dms.has(channelId)) return cleanupVoice();
   try {
     const res = await req('voice:join', { channelId, muted: vc.muted, deafened: vc.deafened });
     vc.iceServers = res.iceServers || [];
@@ -2996,6 +3039,7 @@ function cleanupVoice() {
   vc.localAnalyser = null;
   vc.channelId = null;
   vc.hubId = null;
+  stopRinging();
 }
 
 function createPeer(socketId, userId) {
@@ -3091,6 +3135,7 @@ function onVoiceState({ channelId, members }) {
   const before = (state.voiceStates.get(channelId) || []).map((m) => m.userId);
   if (members.length) state.voiceStates.set(channelId, members);
   else state.voiceStates.delete(channelId);
+  if (state.dms.has(channelId)) onCallState(channelId, members);
   if (channelId === vc.channelId) {
     const after = members.map((m) => m.userId).filter((id) => id !== state.me.id);
     const prev = before.filter((id) => id !== state.me.id);
@@ -3128,14 +3173,22 @@ function renderVoiceBar() {
   }
   const hub = state.hubs.get(vc.hubId);
   const channel = hub?.channels.find((c) => c.id === vc.channelId);
+  const dm = state.dms.get(vc.channelId);
   bar.classList.remove('hidden');
-  bar.innerHTML = `
+  bar.innerHTML = dm
+    ? `
+    <div class="vb-info" title="${t('Zum Anruf')}">
+      <span class="vb-status"><i></i>${callConnected(dm.id) ? t('Im Anruf') : t('Klingelt…')}</span>
+      <span class="vb-where">📞 ${esc(dmPartner(dm).displayName)}</span>
+    </div>
+    <div class="vb-actions">${voiceButtons()}</div>`
+    : `
     <div class="vb-info" title="${t('Zum Sprachkanal')}">
       <span class="vb-status"><i></i>${t('Sprachverbindung')}</span>
       <span class="vb-where">${esc(channel?.name || '')} · ${esc(hub?.name || '')}</span>
     </div>
     <div class="vb-actions">${voiceButtons()}</div>`;
-  bar.querySelector('.vb-info').onclick = () => vc.hubId && openHub(vc.hubId, vc.channelId);
+  bar.querySelector('.vb-info').onclick = () => (dm ? openDm(dm.id) : vc.hubId && openHub(vc.hubId, vc.channelId));
   bindVoiceButtons(bar);
 }
 
@@ -3178,12 +3231,206 @@ function renderStage() {
 
 function renderVoiceUi() {
   renderVoiceBar();
-  if (state.view.type === 'hub') renderSidebar();
+  renderCallUi();
+  renderSidebar();
   if (isVoiceChannel(state.view.channelId)) {
     renderStage();
     renderChatHeader();
   }
 }
+
+/* ---------- calls in direct messages ----------
+   A call uses the DM as its voice room: whoever starts it joins, the other person's
+   devices ring, and picking up simply joins the same room. */
+
+const CALL_TIMEOUT = 45_000;
+const call = { ringTimer: null, toneTimer: null, startedAt: null, incoming: null };
+
+const callMembers = (dmId) => state.voiceStates.get(dmId) || [];
+const callConnected = (dmId) => vc.channelId === dmId && callMembers(dmId).some((m) => m.userId !== state.me.id);
+
+// A soft repeating tone: ringback for the caller, a brighter ring for the person being called.
+function playTone(incoming) {
+  try {
+    const ctx = getAudioCtx();
+    const now = ctx.currentTime;
+    const notes = incoming ? [[784, 0], [988, 0.18], [784, 0.36], [988, 0.54]] : [[440, 0], [480, 0]];
+    for (const [freq, offset] of notes) {
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.frequency.value = freq;
+      const len = incoming ? 0.16 : 1.2;
+      g.gain.setValueAtTime(0.0001, now + offset);
+      g.gain.exponentialRampToValueAtTime(incoming ? 0.09 : 0.035, now + offset + 0.03);
+      g.gain.exponentialRampToValueAtTime(0.0001, now + offset + len);
+      o.connect(g).connect(ctx.destination);
+      o.start(now + offset);
+      o.stop(now + offset + len + 0.05);
+    }
+  } catch {
+    /* audio not available */
+  }
+}
+
+function startTone(incoming) {
+  clearInterval(call.toneTimer);
+  playTone(incoming);
+  call.toneTimer = setInterval(() => playTone(incoming), incoming ? 2000 : 3000);
+}
+
+function stopTone() {
+  clearInterval(call.toneTimer);
+  call.toneTimer = null;
+}
+
+function stopRinging() {
+  clearTimeout(call.ringTimer);
+  call.ringTimer = null;
+  call.startedAt = null;
+  if (!call.incoming) stopTone();
+}
+
+async function callUser(dmId) {
+  const dm = state.dms.get(dmId);
+  if (!dm) return;
+  const partner = dmPartner(dm);
+  if (partner.bot) return toast(t('Bots kann man nicht anrufen.'), 'error');
+  closeIncomingCall(dmId);
+  await joinVoice(dmId);
+  if (vc.channelId !== dmId || callConnected(dmId)) return;
+  startTone(false);
+  call.ringTimer = setTimeout(() => {
+    if (vc.channelId !== dmId || callConnected(dmId)) return;
+    leaveVoice();
+    toast(t('{name} geht gerade nicht ran.', { name: partner.displayName }), 'error');
+  }, CALL_TIMEOUT);
+  renderVoiceUi();
+}
+
+// Someone picked up or hung up.
+function onCallState(dmId, members) {
+  const others = members.filter((m) => m.userId !== state.me.id);
+  if (vc.channelId === dmId) {
+    if (others.length && !call.startedAt) {
+      clearTimeout(call.ringTimer);
+      call.ringTimer = null;
+      stopTone();
+      call.startedAt = Date.now();
+    } else if (!others.length && call.startedAt) {
+      // The other person hung up: the call is over.
+      leaveVoice();
+      toast(t('Anruf beendet'));
+    }
+  }
+  // The caller gave up, or we picked up on another device.
+  if (call.incoming?.dmId === dmId && (!others.length || members.some((m) => m.userId === state.me.id))) closeIncomingCall(dmId);
+}
+
+function showIncomingCall(dmId, fromId) {
+  if (vc.channelId === dmId || !state.dms.has(dmId)) return;
+  closeIncomingCall();
+  const from = userOf(fromId);
+  const node = h(`<div class="call-incoming" role="alertdialog" aria-label="${t('Eingehender Anruf')}">
+    <div class="ci-card">
+      <div class="ci-ring">${avatar(from, { size: 88 })}</div>
+      <div class="ci-name">${esc(from.displayName)}${verified(from)}</div>
+      <div class="ci-sub">${t('ruft dich an…')}</div>
+      <div class="ci-actions">
+        <button type="button" class="ci-btn decline" data-act="decline" title="${t('Ablehnen')}">${ICONS.hangup}</button>
+        <button type="button" class="ci-btn accept" data-act="accept" title="${t('Annehmen')}">${ICONS.phone}</button>
+      </div>
+    </div>
+  </div>`);
+  node.querySelector('[data-act=accept]').onclick = () => {
+    closeIncomingCall(dmId);
+    openDm(dmId);
+    joinVoice(dmId);
+  };
+  node.querySelector('[data-act=decline]').onclick = () => {
+    closeIncomingCall(dmId);
+    req('call:decline', { dmId }).catch(() => {});
+  };
+  document.body.append(node);
+  call.incoming = { dmId, node };
+  startTone(true);
+  DESKTOP?.attention?.();
+  if (document.hidden || (DESKTOP && !document.hasFocus())) {
+    try {
+      if ('Notification' in window && Notification.permission === 'granted') {
+        const n = new Notification(t('{name} ruft an', { name: from.displayName }), { body: t('Klick zum Annehmen oder Ablehnen'), tag: `call:${dmId}` });
+        n.onclick = () => {
+          window.focus();
+          DESKTOP?.focus();
+          n.close();
+        };
+      }
+    } catch {
+      /* notifications not available */
+    }
+  }
+}
+
+function closeIncomingCall(dmId) {
+  if (!call.incoming || (dmId && call.incoming.dmId !== dmId)) return;
+  call.incoming.node.remove();
+  call.incoming = null;
+  if (!call.ringTimer) stopTone();
+}
+
+function callDuration() {
+  const secs = Math.floor((Date.now() - call.startedAt) / 1000);
+  const mm = String(Math.floor(secs / 60)).padStart(2, '0');
+  const ss = String(secs % 60).padStart(2, '0');
+  return secs >= 3600 ? `${Math.floor(secs / 3600)}:${mm.slice(-2)}:${ss}` : `${mm}:${ss}`;
+}
+
+setInterval(() => {
+  const el = $('#call-strip .call-time');
+  if (el && call.startedAt) el.textContent = callDuration();
+}, 1000);
+
+// Phone button in the DM header and the call strip above the messages.
+function renderCallUi() {
+  const btn = $('#call-btn');
+  const strip = $('#call-strip');
+  const dm = currentDm();
+  const partner = dm && dmPartner(dm);
+  const inThis = Boolean(dm) && vc.channelId === dm.id;
+  btn.classList.toggle('hidden', !dm || Boolean(partner.bot));
+  btn.classList.toggle('active', inThis);
+  btn.title = inThis ? t('Auflegen') : t('Anrufen');
+  const members = dm ? callMembers(dm.id) : [];
+  if (!dm || (!inThis && !members.length)) {
+    strip.classList.add('hidden');
+    strip.innerHTML = '';
+    return;
+  }
+  const connected = callConnected(dm.id);
+  const status = inThis
+    ? connected
+      ? `<span class="call-dot"></span>${t('Verbunden')} · <span class="call-time">${call.startedAt ? callDuration() : '00:00'}</span>`
+      : t('Klingelt bei {name}…', { name: esc(partner.displayName) })
+    : t('{name} ruft an', { name: esc(partner.displayName) });
+  const people = [state.me, partner].map((u) => {
+    const here = members.some((m) => m.userId === u.id);
+    return `<div class="call-person ${here ? 'here' : 'away'} ${state.speaking.has(u.id) ? 'speaking' : ''}" data-voice-user="${esc(u.id)}">${avatar(u, { size: 56 })}<span>${esc(u.id === state.me.id ? t('Du') : u.displayName)}</span></div>`;
+  }).join('');
+  strip.classList.remove('hidden');
+  strip.classList.toggle('ringing', inThis && !connected);
+  strip.innerHTML = `
+    <div class="call-people">${people}</div>
+    <div class="call-status">${status}</div>
+    <div class="call-actions">${inThis ? voiceButtons(true) : `<button class="ci-btn accept" data-act="join" title="${t('Annehmen')}">${ICONS.phone}</button>`}</div>`;
+  if (inThis) bindVoiceButtons(strip);
+  else strip.querySelector('[data-act=join]').onclick = () => joinVoice(dm.id);
+}
+
+$('#call-btn').onclick = () => {
+  const dm = currentDm();
+  if (!dm) return;
+  if (vc.channelId === dm.id) leaveVoice();
+  else callUser(dm.id);
+};
 
 /* ---------- live broadcast from the Nexora owner ---------- */
 

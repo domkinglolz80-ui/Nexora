@@ -1,5 +1,38 @@
 [
   {
+    "version": "V0.3.0 Beta",
+    "date": "2026-10-23",
+    "title": "Anrufe & weg mit Gesperrten",
+    "titleEn": "Calls & banned accounts are gone",
+    "changes": [
+      {
+        "icon": "📞",
+        "text": "**Anrufe in Direktnachrichten**: Oben im Chat sitzt jetzt ein **Telefon-Symbol** – ein Klick, und bei der anderen Person klingelt es auf allen Geräten",
+        "textEn": "**Calls in direct messages**: there is now a **phone icon** at the top of the chat – one click and the other person's devices ring"
+      },
+      {
+        "icon": "🔔",
+        "text": "Eingehende Anrufe mit Klingelton, großem **Annehmen**/**Ablehnen** und Benachrichtigung – auch wenn Nexora im Hintergrund ist. Wer nicht rangeht, wird nach 45 Sekunden nicht mehr angeklingelt",
+        "textEn": "Incoming calls with a ringtone, big **Accept**/**Decline** buttons and a notification – even when Nexora is in the background. If nobody answers, the ringing stops after 45 seconds"
+      },
+      {
+        "icon": "⏱️",
+        "text": "Während des Anrufs: beide Profilbilder mit Sprech-Anzeige, Gesprächsdauer, Stummschalten, Ton aus und Auflegen – und unten links die Anrufleiste, auch wenn du woanders hinwechselst",
+        "textEn": "During a call: both profile pictures with a speaking indicator, the call duration, mute, deafen and hang up – plus the call bar at the bottom left, even when you switch elsewhere"
+      },
+      {
+        "icon": "🔨",
+        "text": "**Gesperrte Accounts verschwinden komplett**: Profil, Profilbild, Nachrichten, Reaktionen und DMs sind für alle sofort weg – nur **@nexora** sieht sie noch (markiert mit „GESPERRT“) und kann sie wieder entsperren",
+        "textEn": "**Banned accounts disappear completely**: profile, profile picture, messages, reactions and DMs are gone for everyone at once – only **@nexora** still sees them (marked “BANNED”) and can unban them"
+      },
+      {
+        "icon": "💻",
+        "text": "**Desktop-App 0.3.0**: Bei einem Anruf blinkt Nexora in der Taskleiste bzw. hüpft im Dock",
+        "textEn": "**Desktop app 0.3.0**: when someone calls, Nexora flashes in the taskbar or bounces in the dock"
+      }
+    ]
+  },
+  {
     "version": "V0.2.0 Beta",
     "date": "2026-10-23",
     "title": "Nexora für deinen PC",

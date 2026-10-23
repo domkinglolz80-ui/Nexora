@@ -570,6 +570,29 @@ const EN = {
   'Wirklich zurücksetzen?': 'Really reset?',
   'Wirklich löschen?': 'Really delete?',
 
+  // ---------- calls & banned accounts ----------
+  'Anrufen': 'Call',
+  'Auflegen': 'Hang up',
+  'Annehmen': 'Accept',
+  'Ablehnen': 'Decline',
+  'Eingehender Anruf': 'Incoming call',
+  'ruft dich an…': 'is calling you…',
+  '{name} ruft an': '{name} is calling',
+  'Klick zum Annehmen oder Ablehnen': 'Click to accept or decline',
+  'Klingelt bei {name}…': 'Ringing {name}…',
+  'Klingelt…': 'Ringing…',
+  'Verbunden': 'Connected',
+  'Im Anruf': 'In a call',
+  'Zum Anruf': 'Go to the call',
+  'Anruf läuft': 'Call in progress',
+  'Anruf beendet': 'Call ended',
+  'Du': 'You',
+  '{name} hat den Anruf abgelehnt.': '{name} declined the call.',
+  '{name} geht gerade nicht ran.': '{name} is not answering right now.',
+  'Bots kann man nicht anrufen.': 'You cannot call bots.',
+  'GESPERRT': 'BANNED',
+  'Gesperrt – nur du siehst diesen Account': 'Banned – only you can see this account',
+
   // ---------- desktop app ----------
   'Nexora für deinen PC': 'Nexora for your PC',
   'Neue Desktop-App verfügbar': 'New desktop app available',
@@ -620,6 +643,9 @@ const EN = {
   'Legende der Nacht': 'Legend of the Night',
 
   // ---------- server messages ----------
+  'Anruf nicht möglich.': 'This call is not possible.',
+  'Anruf nicht gefunden.': 'Call not found.',
+  'Nur der Nexora-Owner kann Sperren aufheben.': 'Only the Nexora owner can lift bans.',
   'Zu viele Versuche. Warte kurz.': 'Too many attempts. Please wait a moment.',
   'Benutzername: 3–20 Zeichen, nur Buchstaben, Zahlen, _ und .': 'Username: 3–20 characters, only letters, numbers, _ and .',
   'Passwort muss 6–128 Zeichen lang sein.': 'Your password must be 6–128 characters long.',
