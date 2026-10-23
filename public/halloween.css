@@ -7,9 +7,9 @@
 :root {
   --bg: #0a0610;
   --bg-2: #120a1a;
-  --panel: rgba(22, 13, 30, 0.74);
+  --panel: rgba(18, 10, 26, 0.46);
   --panel-solid: #170e20;
-  --panel-2: rgba(36, 21, 48, 0.78);
+  --panel-2: rgba(36, 21, 48, 0.5);
   --line: rgba(190, 120, 255, 0.13);
   --line-strong: rgba(255, 140, 60, 0.3);
   --text: #fbf3ff;
@@ -23,7 +23,13 @@
 }
 
 body { background: radial-gradient(ellipse at 50% 120%, #1c0d2a 0%, var(--bg) 60%); }
-.glass { box-shadow: 0 20px 60px -20px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(200, 150, 255, 0.07); }
+/* See-through glass: the moon, the bats and the fog stay visible behind every panel. */
+.glass {
+  backdrop-filter: blur(7px) saturate(150%); -webkit-backdrop-filter: blur(7px) saturate(150%);
+  border-color: rgba(220, 170, 255, 0.14);
+  box-shadow: 0 20px 60px -24px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 220, 255, 0.1);
+}
+.glass .msg-body { text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55); }
 ::selection { background: rgba(155, 93, 229, 0.55); }
 
 /* ---------- night sky backdrop ---------- */
@@ -33,7 +39,7 @@ body { background: radial-gradient(ellipse at 50% 120%, #1c0d2a 0%, var(--bg) 60
 .grid { opacity: 0.4; }
 
 .hw-moon {
-  position: absolute; top: 6vh; right: 8vw;
+  position: absolute; top: 7vh; right: max(22vw, 70px);
   width: 150px; height: 150px; border-radius: 50%;
   background: radial-gradient(circle at 38% 36%, #fff8e0 0%, #ffe2a0 45%, #e8b25c 100%);
   box-shadow: 0 0 60px 10px rgba(255, 214, 140, 0.35), 0 0 160px 40px rgba(255, 150, 60, 0.18);

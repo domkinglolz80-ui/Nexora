@@ -393,9 +393,10 @@ function ghostStats(user) {
 // Halloween decorations for the avatar, paid with caught ghosts. Cheapest first, the showpiece last.
 function openShop() {
   closePopover();
+  const free = (state.shop?.discount || 0) >= 1;
   const { modal } = openModal(`
     <div class="shop-hero"><span class="shop-ico">👻</span><div><h3>${t('Geister-Laden')}</h3>
-      <p class="sub">${t('Halloween-Dekoration für deinen Avatar. Du bezahlst mit gefangenen Geistern – die sind dann weg, die Dekoration gehört dir für immer.')}</p></div></div>
+      <p class="sub">${free ? t('Halloween-Dekoration für deinen Avatar – gerade ist alles gratis! Hol dir, was du willst, es gehört dir für immer.') : t('Halloween-Dekoration für deinen Avatar. Du bezahlst mit gefangenen Geistern – die sind dann weg, die Dekoration gehört dir für immer.')}</p></div></div>
     <div class="shop-wallet"></div>
     <div class="shop-grid"></div>
     <div class="modal-actions"><button type="button" class="btn" data-close>${t('Schließen')}</button></div>`, { className: 'shop' });
@@ -410,7 +411,7 @@ function openShop() {
     const me = state.me;
     const ghosts = me.ghosts || 0;
     modal.querySelector('.shop-wallet').innerHTML = `<span class="sw-ico">👻</span><div><b>${plural(ghosts, 'Geist', 'Geister')}</b><small>${t('zum Ausgeben · fang mehr, wenn sie vorbeischweben')}</small></div>
-      ${sale ? `<span class="shop-sale">${t('🎃 {n} % Rabatt auf alles!', { n: sale })}</span>` : ''}`;
+      ${sale >= 100 ? `<span class="shop-sale">${t('🎁 Alles gratis!')}</span>` : sale ? `<span class="shop-sale">${t('🎃 {n} % Rabatt auf alles!', { n: sale })}</span>` : ''}`;
     modal.querySelector('.shop-grid').innerHTML = items.map((a) => {
       const price = priceOf(a);
       const regular = regularOf(a);
@@ -419,13 +420,14 @@ function openShop() {
       const action = worn ? `<button type="button" class="btn block" disabled>✓ ${t('Trägst du gerade')}</button>`
         : owned ? `<button type="button" class="btn block" data-wear="${a.id}">${t('Anlegen')}</button>`
         : ghosts < price ? `<button type="button" class="btn block" disabled>${t('Noch {n} 👻', { n: price - ghosts })}</button>`
+        : !price ? `<button type="button" class="btn primary block" data-buy="${a.id}" data-free>🎁 ${t('Gratis holen')}</button>`
         : confirming === a.id ? `<button type="button" class="btn primary block confirm" data-buy="${a.id}">${t('Wirklich für 👻 {n} kaufen?', { n: price })}</button>`
         : `<button type="button" class="btn primary block" data-buy="${a.id}">👻 ${price}</button>`;
       return `<div class="shop-item r${a.r}${owned ? ' owned' : ''}">
         <i class="shop-rarity">${esc(tierLabel(a))}</i>${owned ? `<i class="shop-owned">${t('Gehört dir')}</i>` : ''}
         <div class="shop-preview">${avatar({ ...me, accessory: a.id }, { size: 64 })}</div>
         <b>${esc(a.name)}</b><small>${esc(a.desc)}</small>
-        <span class="shop-price">${price < regular ? `<s>👻 ${regular}</s> ` : ''}👻 ${price}</span>${action}</div>`;
+        <span class="shop-price">${price < regular ? `<s>👻 ${regular}</s> ` : ''}${price ? `👻 ${price}` : t('Gratis')}</span>${action}</div>`;
     }).join('');
   };
 
@@ -442,8 +444,8 @@ function openShop() {
       if (confirming) { confirming = null; render(); }
       return;
     }
-    // Spending can't be undone, so a purchase takes a second click.
-    if (buy && confirming !== buy.dataset.buy) {
+    // Spending can't be undone, so a purchase takes a second click (a free one doesn't).
+    if (buy && !('free' in buy.dataset) && confirming !== buy.dataset.buy) {
       confirming = buy.dataset.buy;
       return render();
     }
@@ -454,7 +456,7 @@ function openShop() {
         const item = ACCESSORIES.find((a) => a.id === buy.dataset.buy);
         const { user } = await req('shop:buy', { item: item.id });
         apply(user);
-        toast(t('🎃 Gekauft und angelegt: {name}', { name: item.name }), 'spooky');
+        toast(t(priceOf(item) ? '🎃 Gekauft und angelegt: {name}' : '🎁 Geschenkt und angelegt: {name}', { name: item.name }), 'spooky');
       } else {
         const { user } = await req('profile:update', { accessory: wear.dataset.wear });
         apply(user);

@@ -33,8 +33,8 @@ const SHOP = {
   geisterschwarm: 400,
   blutmond: 666,
 };
-// Sale in the Geister-Laden: 0.5 = 50 % off everything, 0 = regular prices.
-const SHOP_DISCOUNT = 0.5;
+// Sale in the Geister-Laden: 1 = everything free, 0.5 = 50 % off, 0 = regular prices.
+const SHOP_DISCOUNT = 1;
 const shopPrice = (item) => Math.ceil(SHOP[item] * (1 - SHOP_DISCOUNT));
 // What the shop shows: the price now and, during a sale, the regular one.
 const shopView = () => ({

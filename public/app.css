@@ -696,7 +696,7 @@ button.chip:hover { background: rgba(255, 122, 24, 0.24); }
   .mobile-only { display: grid; }
   .chat-head { padding: 0 8px; }
   .chat-title .topic { display: none; }
-  .msg { padding-left: 12px; padding-right: 12px; grid-template-columns: 38px minmax(0, 1fr); column-gap: 10px; }
+  .msg { padding-left: 18px; padding-right: 12px; grid-template-columns: 38px minmax(0, 1fr); column-gap: 12px; }
   .msg .avatar { --size: 38px; }
   .msg-tools { right: 8px; }
   .composer-wrap { padding: 0 10px calc(4px + env(safe-area-inset-bottom)); }
@@ -2312,3 +2312,13 @@ textarea.code:focus { border-color: var(--orange); box-shadow: 0 0 0 4px rgba(25
 @media (prefers-reduced-motion: reduce) {
   .msg-author.ex-firejason, .ex-firejason .ex-badge, .acc-opt.brutal .ex-tag { animation: none; }
 }
+
+/* Hotfix V0.6.1: next to a name (chat, member list, own card) the machete stands up
+   above the head instead of reaching into the name. */
+.msg .acc-firejason .machete, .member .acc-firejason .machete, #me-card .acc-firejason .machete {
+  width: calc(var(--s) * 0.3); height: calc(var(--s) * 0.86); right: calc(var(--s) * -0.14); top: calc(var(--s) * -0.5);
+  animation-name: fj-hack-up;
+}
+@keyframes fj-hack-up { 0%, 55% { transform: rotate(-22deg); } 63% { transform: rotate(-36deg); } 70% { transform: rotate(6deg); } 74% { transform: rotate(0deg); } 100% { transform: rotate(-22deg); } }
+/* the blood moon floats lower in the member list so it doesn't cover the "Online" heading */
+.member .acc-blutmond .bloodmoon { top: calc(var(--s) * -0.34); width: calc(var(--s) * 0.32); height: calc(var(--s) * 0.32); margin-left: calc(var(--s) * -0.16); }

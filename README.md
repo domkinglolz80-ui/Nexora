@@ -117,7 +117,7 @@ Der Rang zählt **alle jemals gefangenen Geister** – auch die, die du im Laden
 | 👻 Geisterschwarm       | 👻 400 | Mythisch | drei Geister kreisen im geisterhaften Ring; leuchtender Name, Abzeichen und Profilkarte mit Geisterfriedhof |
 | 🌕 Blutmond-Herrscher   | 👻 666 | Mythisch | Blutmond über dem Kopf, kreisende Runen, blutroter Ring, Glut und Fledermäuse; blutroter Name, Abzeichen und Profilkarte mit Schloss unter dem Blutmond |
 
-**Rabatt:** `SHOP_DISCOUNT` in `server.js` senkt alle Preise (aufgerundet); gerade läuft **50 % auf alles** (👻 13 bis 👻 333), der Laden zeigt den alten Preis durchgestrichen. Mit `0` gelten wieder die normalen Preise aus der Tabelle.
+**Rabatt:** `SHOP_DISCOUNT` in `server.js` senkt alle Preise (aufgerundet): `0.5` = 50 %, `0` = normale Preise aus der Tabelle. Gerade steht er auf `1` – **alles ist gratis** (ab V0.6.1 Beta): ein Klick auf „Gratis holen“, keine Geister werden abgezogen, die Dekoration gehört trotzdem für immer.
 
 Der Server prüft jeden Kauf (Preis, Kontostand, schon gekauft) und lässt gekaufte Dekoration nur von ihrem Besitzer tragen. Bots können nichts kaufen.
 
@@ -304,7 +304,7 @@ Selbst bauen: `cd desktop && npm install && npm start` (Testen) bzw. `npm run di
 
 ## Versionen & Updates
 
-Aktuelle Version: **V0.6.0 Beta** (Desktop-App 0.6.0). Alle Änderungen stehen in [`changelog.json`](changelog.json) – der oberste Eintrag ist die laufende Version.
+Aktuelle Version: **V0.6.1 Beta** (Desktop-App 0.6.0). Alle Änderungen stehen in [`changelog.json`](changelog.json) – der oberste Eintrag ist die laufende Version.
 
 - Nach dem Login (und nach jedem Update) zeigt Nexora einmal das Fenster **„Was ist neu?“**. Über die Versionsanzeige unten in der Hub-Leiste lässt es sich jederzeit wieder öffnen.
 - Geht eine neue Version live, während jemand Nexora offen hat, lädt die Seite automatisch neu. Tippt die Person gerade etwas, erscheint stattdessen ein „Jetzt laden“-Hinweis.

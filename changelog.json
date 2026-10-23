@@ -1,5 +1,28 @@
 [
   {
+    "version": "V0.6.1 Beta",
+    "date": "2026-10-23",
+    "title": "Alles gratis & durchsichtige Nacht",
+    "titleEn": "Everything free & a see-through night",
+    "changes": [
+      {
+        "icon": "🎁",
+        "text": "**Der Geister-Laden ist komplett gratis!** Jede Halloween-Dekoration mit einem Klick auf „Gratis holen“ – deine Geister behältst du, die Dekoration gehört dir für immer",
+        "textEn": "**The Ghost Shop is completely free!** Every Halloween decoration with one click on “Get it free” – you keep your ghosts, and the decoration is yours forever"
+      },
+      {
+        "icon": "🌕",
+        "text": "**Durchsichtiges Design**: Die Panels sind jetzt aus klarem Glas – Mond, Fledermäuse und Nebel schimmern überall durch. Der Mond steht dafür etwas weiter in der Mitte",
+        "textEn": "**See-through design**: the panels are now clear glass – the moon, the bats and the fog shine through everywhere. The moon has moved a bit towards the middle for it"
+      },
+      {
+        "icon": "🔧",
+        "text": "Behoben: Am Handy wurden Profilbilder mit Accessoire im Chat links abgeschnitten; die Machete von Fire Jason verdeckt im Chat und in der Mitgliederliste nicht mehr den Namen; der Blutmond verdeckt in der Mitgliederliste nicht mehr die Überschrift",
+        "textEn": "Fixed: on phones, profile pictures with an accessory were cut off on the left in the chat; Fire Jason's machete no longer covers the name in the chat and member list; the blood moon no longer covers the heading in the member list"
+      }
+    ]
+  },
+  {
     "version": "V0.6.0 Beta",
     "date": "2026-10-23",
     "title": "Fire Jason",
