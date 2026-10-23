@@ -95,6 +95,8 @@ const EN = {
   'Unbekannt': 'Unknown',
   'Offizieller Nexora-Bot': 'Official Nexora bot',
   'Offizieller Nexora-Account': 'Official Nexora account',
+  'Gründer von Nexora': 'Founder of Nexora',
+  'GRÜNDER': 'FOUNDER',
   'Heute': 'Today',
   'Gestern': 'Yesterday',
   'Heute um {time}': 'Today at {time}',
