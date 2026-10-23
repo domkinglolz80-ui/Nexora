@@ -30,6 +30,7 @@
         <li><span>⚡</span> Nachrichten ohne Verzögerung</li>
         <li><span>🛰️</span> Eigene Hubs mit Kanälen</li>
         <li><span>💬</span> Direktnachrichten & Reaktionen</li>
+        <li><span>📎</span> Dateien teilen & Umfragen starten</li>
         <li><span>⌘</span> Schnellsprung mit <kbd>Strg</kbd>+<kbd>K</kbd></li>
       </ul>
     </div>
@@ -86,6 +87,7 @@
 
     <!-- Chat -->
     <main class="chat glass" id="chat">
+      <div class="drop-hint" aria-hidden="true"><div><svg viewBox="0 0 24 24"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg><b>Datei hier ablegen</b><span>Bis zu 5 Dateien, je max. 8 MB</span></div></div>
       <header class="chat-head">
         <button class="icon-btn mobile-only" id="open-sidebar" title="Menü">
           <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
@@ -105,9 +107,18 @@
       <div class="messages" id="messages" aria-live="polite"></div>
 
       <div class="composer-wrap">
+        <button type="button" class="jump-btn hidden" id="jump-btn"></button>
         <div class="reply-bar hidden" id="reply-bar"></div>
+        <div class="attach-tray hidden" id="attach-tray"></div>
         <form class="composer" id="composer">
+          <button type="button" class="icon-btn" id="attach-btn" title="Datei anhängen">
+            <svg viewBox="0 0 24 24"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+          </button>
+          <input type="file" id="file-input" multiple hidden />
           <textarea id="composer-input" rows="1" maxlength="2000" placeholder="Nachricht…" autocomplete="off"></textarea>
+          <button type="button" class="icon-btn" id="poll-btn" title="Umfrage erstellen">
+            <svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
+          </button>
           <button type="button" class="icon-btn" id="emoji-btn" title="Emoji">
             <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/></svg>
           </button>
@@ -115,7 +126,10 @@
             <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
           </button>
         </form>
-        <div class="typing" id="typing"></div>
+        <div class="composer-foot">
+          <div class="typing" id="typing"></div>
+          <span class="char-count" id="char-count"></span>
+        </div>
       </div>
     </main>
 

@@ -10,11 +10,14 @@ Nexora ist eine Echtzeit-Chat-Plattform mit eigenem Look: dunkles Glas-Design mi
 - **Hubs** – eigene Hubs erstellen, per Einladungscode oder -link beitreten, verlassen, umbenennen, löschen
 - **Kanäle** – Textkanäle mit Thema erstellen, bearbeiten, löschen (Besitzer)
 - **Nachrichten in Echtzeit** – Antworten, Bearbeiten (auch mit ↑), Löschen, Emoji-Reaktionen
+- **Dateien & Bilder** – per Büroklammer, Drag & Drop oder Einfügen teilen; Bilder mit Vorschau und Großansicht
+- **Umfragen** – bis zu 10 Antworten, Einfach- oder Mehrfachauswahl, Ergebnisse live, beendbar
 - **Formatierung** – `**fett**`, `*kursiv*`, `~~durch~~`, `` `code` ``, Codeblöcke, `> Zitat`, `||Spoiler||`, Links, `@erwähnungen`
 - **Direktnachrichten** – privat mit jedem Mitglied schreiben
 - **Sprachkanäle** – in Echtzeit reden, mit Sprech-Anzeige, Stummschalten, Ton aus und Sprachleiste
 - **Präsenz** – Online / Abwesend / Nicht stören / Unsichtbar, Tipp-Anzeige
-- **Ungelesen-Markierungen** – Badges für Erwähnungen und DMs, Ton bei Erwähnung
+- **Ungelesen-Markierungen** – Badges für Erwähnungen und DMs, Ton bei Erwähnung (stumm bei „Nicht stören“), optional Desktop-Benachrichtigungen
+- **Komfort** – Entwürfe pro Kanal, „Zum Neuesten“-Knopf, Text kopieren, Zeichenzähler
 - **Befehlspalette** – `Strg`+`K` springt zu jedem Hub, Kanal oder Menschen
 - **Profile** – Anzeigename, Bio, Akzentfarbe
 - **Responsive** – funktioniert auch auf dem Handy
@@ -40,9 +43,17 @@ Die Stimmen laufen per **WebRTC direkt zwischen den Geräten**; der Server vermi
 | `TURN_USERNAME`    | Benutzername vom TURN-Anbieter             |
 | `TURN_CREDENTIAL`  | Passwort vom TURN-Anbieter                 |
 
+## Dateien
+
+- Max. **8 MB** pro Datei und **5 Dateien** pro Nachricht. PNG, JPEG, GIF und WebP werden als Bild angezeigt, alles andere als Download.
+- Gespeichert wird in MongoDB (Collection `files`), sonst im Ordner `data/uploads`. Ohne MongoDB sind Dateien auf Render – wie alle anderen Daten – nach einem Neustart weg.
+- Der kostenlose Atlas-Cluster (M0) hat **512 MB** Platz für alles zusammen. Wird es eng, alte Kanäle mit vielen Dateien löschen – deren Dateien werden mitgelöscht.
+- Dateien sind über ihren zufälligen, nicht erratbaren Link erreichbar (wie bei Discord). Wer den Link hat, kann die Datei öffnen.
+- Hochgeladene, aber nie gesendete Dateien werden nach einer Stunde bzw. beim nächsten Start automatisch entfernt.
+
 ## Versionen & Updates
 
-Aktuelle Version: **V0.1.1 Beta**. Alle Änderungen stehen in [`changelog.json`](changelog.json) – der oberste Eintrag ist die laufende Version.
+Aktuelle Version: **V0.1.2 Beta**. Alle Änderungen stehen in [`changelog.json`](changelog.json) – der oberste Eintrag ist die laufende Version.
 
 - Nach dem Login (und nach jedem Update) zeigt Nexora einmal das Fenster **„Was ist neu?“**. Über die Versionsanzeige unten in der Hub-Leiste lässt es sich jederzeit wieder öffnen.
 - Geht eine neue Version live, während jemand Nexora offen hat, lädt die Seite automatisch neu. Tippt die Person gerade etwas, erscheint stattdessen ein „Jetzt laden“-Hinweis.

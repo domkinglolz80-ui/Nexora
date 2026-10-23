@@ -12,6 +12,9 @@ const DATA_DIR = process.env.NEXORA_DATA_DIR || path.join(__dirname, 'data');
 const DB_FILE = path.join(DATA_DIR, 'db.json');
 const PAGE_SIZE = 50;
 const MAX_MESSAGE = 2000;
+const MAX_FILE = 8 * 1024 * 1024;
+const MAX_ATTACHMENTS = 5;
+const MAX_POLL_OPTIONS = 10;
 // The newest changelog entry is the running version; clients compare it to reload on updates.
 const CHANGELOG = require('./changelog.json');
 const VERSION = CHANGELOG[0].version;
@@ -89,7 +92,9 @@ const mongoStore = {
     const { MongoClient } = require('mongodb');
     const client = new MongoClient(MONGODB_URI, { serverSelectionTimeoutMS: 15000 });
     await client.connect();
-    this.col = client.db(process.env.MONGODB_DB || 'nexora').collection('state');
+    const mongoDb = client.db(process.env.MONGODB_DB || 'nexora');
+    this.col = mongoDb.collection('state');
+    fileStore.col = mongoDb.collection('files');
     for (const doc of await this.col.find().toArray()) {
       if (doc._id === 'meta') Object.assign(db, doc.data);
       else if (doc._id.startsWith('ch:')) db.messages[doc._id.slice(3)] = doc.list;
@@ -139,6 +144,71 @@ const mongoStore = {
     for (const docId of removed) this.saved.delete(docId);
   },
 };
+
+// Uploaded files live outside the main state: in the "files" collection when
+// MongoDB is used, otherwise as plain files in DATA_DIR/uploads.
+const UPLOAD_DIR = path.join(DATA_DIR, 'uploads');
+
+const fileStore = {
+  col: null,
+
+  async put(fileId, meta, data) {
+    if (this.col) return void (await this.col.insertOne({ _id: fileId, meta, data }));
+    await fs.promises.mkdir(UPLOAD_DIR, { recursive: true });
+    await fs.promises.writeFile(path.join(UPLOAD_DIR, fileId), data);
+    await fs.promises.writeFile(path.join(UPLOAD_DIR, fileId + '.json'), JSON.stringify(meta));
+  },
+
+  async get(fileId) {
+    if (this.col) {
+      const doc = await this.col.findOne({ _id: fileId });
+      return doc && { meta: doc.meta, data: Buffer.from(doc.data.buffer) };
+    }
+    try {
+      const meta = JSON.parse(await fs.promises.readFile(path.join(UPLOAD_DIR, fileId + '.json'), 'utf8'));
+      return { meta, data: await fs.promises.readFile(path.join(UPLOAD_DIR, fileId)) };
+    } catch (err) {
+      if (err.code === 'ENOENT') return null;
+      throw err;
+    }
+  },
+
+  async remove(fileId) {
+    if (this.col) return void (await this.col.deleteOne({ _id: fileId }));
+    await fs.promises.rm(path.join(UPLOAD_DIR, fileId), { force: true });
+    await fs.promises.rm(path.join(UPLOAD_DIR, fileId + '.json'), { force: true });
+  },
+
+  async ids() {
+    if (this.col) return (await this.col.find({}, { projection: { _id: 1 } }).toArray()).map((d) => d._id);
+    try {
+      return (await fs.promises.readdir(UPLOAD_DIR)).filter((f) => f.endsWith('.json')).map((f) => f.slice(0, -5));
+    } catch (err) {
+      if (err.code === 'ENOENT') return [];
+      throw err;
+    }
+  },
+};
+
+// Deletes the uploaded files of messages that are gone for good.
+function discardFiles(messages) {
+  for (const m of messages) {
+    for (const a of m.attachments || []) {
+      fileStore.remove(a.id).catch((err) => console.error('[nexora] Datei konnte nicht gelöscht werden:', err.message));
+    }
+  }
+}
+
+// Files nobody sent (upload abandoned, or the server restarted in between) are removed.
+async function sweepOrphanFiles() {
+  const used = new Set();
+  for (const list of Object.values(db.messages)) {
+    for (const m of list) for (const a of m.attachments || []) used.add(a.id);
+  }
+  const orphans = (await fileStore.ids()).filter((fileId) => !used.has(fileId));
+  for (const fileId of orphans) await fileStore.remove(fileId);
+  if (orphans.length) console.log(`[nexora] ${orphans.length} verwaiste Datei(en) entfernt`);
+}
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -405,6 +475,116 @@ app.post('/api/logout', (req, res) => {
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
 
 // ---------------------------------------------------------------------------
+// File uploads: the client uploads first and gets an attachment back, which it
+// then sends along with a message. Unsent uploads expire after an hour.
+// ---------------------------------------------------------------------------
+
+const PENDING_TTL = 60 * 60 * 1000;
+const pendingFiles = new Map(); // fileId -> { attachment, uploaderId, createdAt }
+const uploadTimes = new Map(); // userId -> recent upload timestamps
+
+setInterval(() => {
+  const now = Date.now();
+  for (const [fileId, p] of pendingFiles) {
+    if (now - p.createdAt < PENDING_TTL) continue;
+    pendingFiles.delete(fileId);
+    fileStore.remove(fileId).catch(() => {});
+  }
+  for (const [uid, list] of uploadTimes) if (!list.some((t) => now - t < 60_000)) uploadTimes.delete(uid);
+}, 10 * 60 * 1000).unref();
+
+// Only these are shown inline; everything else is offered as a download.
+function sniffImage(buf) {
+  if (buf.length < 12) return null;
+  if (buf[0] === 0x89 && buf.toString('latin1', 1, 4) === 'PNG') return 'image/png';
+  if (buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff) return 'image/jpeg';
+  if (buf.toString('latin1', 0, 4) === 'GIF8') return 'image/gif';
+  if (buf.toString('latin1', 0, 4) === 'RIFF' && buf.toString('latin1', 8, 12) === 'WEBP') return 'image/webp';
+  return null;
+}
+
+function fileName(name) {
+  // eslint-disable-next-line no-control-regex
+  return str(name, 120).replace(/[\u0000-\u001f\\/:*?"<>|]/g, '_') || 'datei';
+}
+
+function dimension(v) {
+  const n = Math.round(Number(v));
+  return n >= 1 && n <= 20000 ? n : null;
+}
+
+// Authenticates before the body is read, so strangers cannot make the server buffer 8 MB.
+function uploadAuth(req, res, next) {
+  const token = (req.get('authorization') || '').replace(/^Bearer\s+/i, '');
+  const session = db.sessions[token];
+  if (!session || !db.users[session.userId]) return res.status(401).json({ error: 'Nicht angemeldet.' });
+  const now = Date.now();
+  const list = (uploadTimes.get(session.userId) || []).filter((t) => now - t < 60_000);
+  if (list.length >= 20) return res.status(429).json({ error: 'Zu viele Uploads. Warte kurz.' });
+  list.push(now);
+  uploadTimes.set(session.userId, list);
+  req.userId = session.userId;
+  next();
+}
+
+app.post('/api/upload', uploadAuth, express.raw({ type: () => true, limit: MAX_FILE }), async (req, res) => {
+  const data = req.body;
+  if (!Buffer.isBuffer(data) || !data.length) return res.status(400).json({ error: 'Die Datei ist leer.' });
+  const image = sniffImage(data);
+  const declared = String(req.get('content-type') || '').toLowerCase().split(';')[0].trim();
+  const attachment = {
+    id: id(),
+    name: fileName(req.query.name),
+    size: data.length,
+    type: image || (/^[\w.+-]+\/[\w.+-]+$/.test(declared) ? declared : 'application/octet-stream'),
+    image: Boolean(image),
+  };
+  if (image) {
+    const width = dimension(req.query.w);
+    const height = dimension(req.query.h);
+    if (width && height) Object.assign(attachment, { width, height });
+  }
+  try {
+    await fileStore.put(attachment.id, { ...attachment, uploaderId: req.userId, createdAt: Date.now() }, data);
+  } catch (err) {
+    console.error('[nexora] Upload fehlgeschlagen:', err.message);
+    return res.status(500).json({ error: 'Upload fehlgeschlagen. Versuch es nochmal.' });
+  }
+  pendingFiles.set(attachment.id, { attachment, uploaderId: req.userId, createdAt: Date.now() });
+  res.json({ attachment });
+});
+
+app.get('/files/:fileId/:name?', async (req, res) => {
+  const { fileId } = req.params;
+  try {
+    const file = /^[\w-]{12}$/.test(fileId) && (await fileStore.get(fileId));
+    if (!file) return res.status(404).type('text').send('Datei nicht gefunden.');
+    const { meta, data } = file;
+    const inline = meta.image && req.query.download === undefined;
+    res.set({
+      'Content-Type': meta.image ? meta.type : 'application/octet-stream',
+      'Content-Length': data.length,
+      'Content-Disposition': `${inline ? 'inline' : 'attachment'}; filename*=UTF-8''${encodeURIComponent(meta.name)}`,
+      // File ids never change their content, so browsers may keep them forever.
+      'Cache-Control': 'private, max-age=31536000, immutable',
+      'X-Content-Type-Options': 'nosniff',
+      'Content-Security-Policy': "default-src 'none'; img-src 'self'; style-src 'unsafe-inline'; sandbox",
+    });
+    res.end(data);
+  } catch (err) {
+    console.error('[nexora] Datei konnte nicht gelesen werden:', err.message);
+    res.status(500).type('text').send('Datei konnte nicht geladen werden.');
+  }
+});
+
+// Errors from the body parsers (e.g. a file over the limit) as readable JSON.
+app.use((err, _req, res, next) => {
+  if (res.headersSent) return next(err);
+  const tooLarge = err.type === 'entity.too.large';
+  res.status(err.status || 500).json({ error: tooLarge ? `Die Datei ist zu groß (max. ${MAX_FILE / 1024 / 1024} MB).` : 'Anfrage fehlgeschlagen.' });
+});
+
+// ---------------------------------------------------------------------------
 // Realtime
 // ---------------------------------------------------------------------------
 
@@ -611,7 +791,10 @@ io.on('connection', (socket) => {
     voiceKickHub(hub);
     io.to(`hub:${hub.id}`).emit('hub:removed', { hubId: hub.id });
     io.in(`hub:${hub.id}`).socketsLeave(`hub:${hub.id}`);
-    for (const c of hub.channels) delete db.messages[c.id];
+    for (const c of hub.channels) {
+      discardFiles(db.messages[c.id] || []);
+      delete db.messages[c.id];
+    }
     delete db.hubs[hub.id];
     save();
     return {};
@@ -653,6 +836,7 @@ io.on('connection', (socket) => {
     }
     for (const [, v] of voice.get(channelId) || []) voiceKick(v.socketId, 'deleted');
     hub.channels = hub.channels.filter((c) => c.id !== channelId);
+    discardFiles(db.messages[channelId] || []);
     delete db.messages[channelId];
     save();
     io.to(`hub:${hub.id}`).emit('hub:update', hubView(hub));
@@ -671,40 +855,73 @@ io.on('connection', (socket) => {
     return { messages: all.slice(start, end), hasMore: start > 0 };
   });
 
-  on('message:send', ({ channelId, content, replyTo }) => {
-    const access = channelAccess(userId, channelId);
-    if (!access || isVoice(channelId)) return { error: 'Kein Zugriff.' };
-    const text = typeof content === 'string' ? content.trim() : '';
-    if (!text) return { error: 'Leere Nachricht.' };
-    if (text.length > MAX_MESSAGE) return { error: `Maximal ${MAX_MESSAGE} Zeichen.` };
-
+  function rateLimited() {
     const now = Date.now();
     while (sendTimes.length && now - sendTimes[0] > 5000) sendTimes.shift();
-    if (sendTimes.length >= 8) return { error: 'Langsam! Du sendest zu schnell.' };
+    if (sendTimes.length >= 8) return true;
     sendTimes.push(now);
+    return false;
+  }
 
+  // Stores a new message in a channel and delivers it to everyone who can see it.
+  function postMessage(access, channelId, fields) {
     const list = (db.messages[channelId] ||= []);
-    const reply = replyTo && list.find((m) => m.id === replyTo);
     const message = {
       id: id(),
       channelId,
       authorId: userId,
-      content: text,
-      createdAt: now,
+      content: '',
+      createdAt: Date.now(),
       editedAt: null,
-      replyTo: reply ? reply.id : null,
+      replyTo: null,
       reactions: {},
+      ...fields,
     };
     list.push(message);
-    if (list.length > 5000) list.splice(0, list.length - 5000);
+    if (list.length > 5000) discardFiles(list.splice(0, list.length - 5000));
     save();
+    emitToChannel(access, 'message:new', message);
+    return message;
+  }
 
-    if (access.type === 'hub') {
-      io.to(`hub:${access.hub.id}`).emit('message:new', message);
-    } else {
-      for (const uid of access.dm.members) io.to(`user:${uid}`).emit('message:new', message);
+  on('message:send', ({ channelId, content, replyTo, attachments }) => {
+    const access = channelAccess(userId, channelId);
+    if (!access || isVoice(channelId)) return { error: 'Kein Zugriff.' };
+    const text = typeof content === 'string' ? content.trim() : '';
+    if (text.length > MAX_MESSAGE) return { error: `Maximal ${MAX_MESSAGE} Zeichen.` };
+
+    const fileIds = [...new Set(Array.isArray(attachments) ? attachments : [])];
+    if (fileIds.length > MAX_ATTACHMENTS) return { error: `Maximal ${MAX_ATTACHMENTS} Anhänge pro Nachricht.` };
+    const pending = fileIds.map((fileId) => pendingFiles.get(fileId));
+    if (pending.some((p) => !p || p.uploaderId !== userId)) {
+      return { error: 'Ein Anhang ist abgelaufen. Entferne ihn und lade ihn neu hoch.' };
     }
-    return { message };
+    if (!text && !pending.length) return { error: 'Leere Nachricht.' };
+    if (rateLimited()) return { error: 'Langsam! Du sendest zu schnell.' };
+
+    for (const fileId of fileIds) pendingFiles.delete(fileId);
+    const reply = replyTo && (db.messages[channelId] || []).find((m) => m.id === replyTo);
+    const fields = { content: text, replyTo: reply ? reply.id : null };
+    if (pending.length) fields.attachments = pending.map((p) => p.attachment);
+    return { message: postMessage(access, channelId, fields) };
+  });
+
+  on('poll:create', ({ channelId, question, options, multi }) => {
+    const access = channelAccess(userId, channelId);
+    if (!access || isVoice(channelId)) return { error: 'Kein Zugriff.' };
+    const q = str(question, 200);
+    if (!q) return { error: 'Die Umfrage braucht eine Frage.' };
+    const answers = [...new Set((Array.isArray(options) ? options : []).map((o) => str(o, 80)).filter(Boolean))];
+    if (answers.length < 2) return { error: 'Eine Umfrage braucht mindestens 2 verschiedene Antworten.' };
+    if (answers.length > MAX_POLL_OPTIONS) return { error: `Maximal ${MAX_POLL_OPTIONS} Antworten.` };
+    if (rateLimited()) return { error: 'Langsam! Du sendest zu schnell.' };
+    const poll = {
+      question: q,
+      multi: Boolean(multi),
+      closed: false,
+      options: answers.map((text) => ({ id: id(), text, votes: [] })),
+    };
+    return { message: postMessage(access, channelId, { poll }) };
   });
 
   function emitToChannel(access, event, payload) {
@@ -722,8 +939,9 @@ io.on('connection', (socket) => {
   on('message:edit', ({ channelId, messageId, content }) => {
     const { access, message } = findMessage(channelId, messageId);
     if (!message || message.authorId !== userId) return { error: 'Nicht erlaubt.' };
+    if (message.poll) return { error: 'Umfragen können nicht bearbeitet werden.' };
     const text = typeof content === 'string' ? content.trim() : '';
-    if (!text || text.length > MAX_MESSAGE) return { error: 'Ungültiger Inhalt.' };
+    if ((!text && !message.attachments?.length) || text.length > MAX_MESSAGE) return { error: 'Ungültiger Inhalt.' };
     message.content = text;
     message.editedAt = Date.now();
     save();
@@ -737,6 +955,7 @@ io.on('connection', (socket) => {
     const isHubOwner = access.type === 'hub' && canManage(access.hub, userId);
     if (message.authorId !== userId && !isHubOwner) return { error: 'Nicht erlaubt.' };
     db.messages[channelId] = db.messages[channelId].filter((m) => m.id !== messageId);
+    discardFiles([message]);
     save();
     emitToChannel(access, 'message:remove', { channelId, messageId });
     return {};
@@ -755,6 +974,34 @@ io.on('connection', (socket) => {
       users.push(userId);
     }
     if (!users.length) delete message.reactions[e];
+    save();
+    emitToChannel(access, 'message:update', message);
+    return {};
+  });
+
+  on('poll:vote', ({ channelId, messageId, optionId }) => {
+    const { access, message } = findMessage(channelId, messageId);
+    if (!message?.poll) return { error: 'Umfrage nicht gefunden.' };
+    const { poll } = message;
+    if (poll.closed) return { error: 'Die Umfrage ist schon beendet.' };
+    const option = poll.options.find((o) => o.id === optionId);
+    if (!option) return { error: 'Antwort nicht gefunden.' };
+    const hadVote = option.votes.includes(userId);
+    // Single choice: a new vote replaces the old one.
+    if (!poll.multi) for (const o of poll.options) o.votes = o.votes.filter((v) => v !== userId);
+    if (hadVote) option.votes = option.votes.filter((v) => v !== userId);
+    else option.votes.push(userId);
+    save();
+    emitToChannel(access, 'message:update', message);
+    return {};
+  });
+
+  on('poll:close', ({ channelId, messageId }) => {
+    const { access, message } = findMessage(channelId, messageId);
+    if (!message?.poll) return { error: 'Umfrage nicht gefunden.' };
+    const isHubOwner = access.type === 'hub' && canManage(access.hub, userId);
+    if (message.authorId !== userId && !isHubOwner) return { error: 'Nur wer die Umfrage gestartet hat, kann sie beenden.' };
+    message.poll.closed = true;
     save();
     emitToChannel(access, 'message:update', message);
     return {};
@@ -895,6 +1142,7 @@ async function main() {
     console.log(`[nexora] Daten werden in ${DB_FILE} gespeichert`);
   }
   ensureLounge();
+  await sweepOrphanFiles().catch((err) => console.error('[nexora] Aufräumen der Dateien fehlgeschlagen:', err.message));
   server.listen(PORT, () => {
     console.log(`[nexora] läuft auf http://localhost:${PORT}`);
   });

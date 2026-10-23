@@ -1,5 +1,48 @@
 [
   {
+    "version": "V0.1.2 Beta",
+    "date": "2026-10-23",
+    "title": "Dateien & Umfragen",
+    "changes": [
+      {
+        "icon": "📎",
+        "text": "Dateien und Bilder teilen – per Büroklammer, Drag & Drop oder Einfügen mit Strg+V (bis 8 MB, bis zu 5 pro Nachricht)"
+      },
+      {
+        "icon": "🖼️",
+        "text": "Bilder erscheinen direkt im Chat – ein Tipp öffnet die Großansicht mit Download"
+      },
+      {
+        "icon": "📊",
+        "text": "Umfragen erstellen: bis zu 10 Antworten, eine oder mehrere Stimmen, Ergebnisse live"
+      },
+      {
+        "icon": "📝",
+        "text": "Entwürfe: Angefangene Nachrichten bleiben pro Kanal erhalten, auch nach einem Neuladen"
+      },
+      {
+        "icon": "⬇️",
+        "text": "„Zum Neuesten“-Knopf zeigt beim Hochscrollen, wie viele neue Nachrichten da sind"
+      },
+      {
+        "icon": "🔔",
+        "text": "Desktop-Benachrichtigungen für Erwähnungen und DMs – in den Profileinstellungen einschalten"
+      },
+      {
+        "icon": "🌙",
+        "text": "„Nicht stören“ schaltet jetzt auch den Erwähnungston stumm"
+      },
+      {
+        "icon": "📋",
+        "text": "Nachrichtentext mit einem Klick kopieren"
+      },
+      {
+        "icon": "🔢",
+        "text": "Zeichenzähler kurz vor dem Limit von 2000 Zeichen"
+      }
+    ]
+  },
+  {
     "version": "V0.1.1 Beta",
     "date": "2026-10-22",
     "title": "Sprachkanäle sind da",

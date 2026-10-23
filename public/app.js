@@ -25,6 +25,11 @@ const ICONS = {
   micOff: '<svg viewBox="0 0 24 24"><path d="m2 2 20 20M9 9v2a3 3 0 0 0 5.12 2.12M15 9.34V5a3 3 0 0 0-5.94-.6"/><path d="M17 16.95A7 7 0 0 1 5 11v-1m14 0v1a7 7 0 0 1-.11 1.23M12 18v4M8 22h8"/></svg>',
   headphones: '<svg viewBox="0 0 24 24"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>',
   headphonesOff: '<svg viewBox="0 0 24 24"><path d="m2 2 20 20M3 18v-6a9 9 0 0 1 2.64-6.36M8.4 3.6A9 9 0 0 1 21 12v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3M3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>',
+  file: '<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>',
+  download: '<svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>',
+  poll: '<svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
+  check: '<svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>',
+  arrowDown: '<svg viewBox="0 0 24 24"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>',
   hangup: '<svg viewBox="0 0 24 24"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"/><path d="m22 2-20 20"/></svg>',
 };
 
@@ -35,6 +40,10 @@ const EMOJIS = ('🔥 ⚡ 🚀 💯 ❤️ 🧡 💛 👍 👎 👏 🙌 🤝 �
 const HUB_ICONS = ['', '🔥', '⚡', '🚀', '🎮', '🎧', '🎨', '💻', '📚', '⚽', '🍕', '🌙', '🦊', '👾', '💎', '🏆'];
 const QUICK_REACTIONS = ['🔥', '👍', '😂'];
 const ACCENTS = ['#ff7a18', '#ff9f1c', '#ff5e3a', '#ffb347', '#ff6b00', '#f9a03f', '#ff8c42', '#e85d04', '#ffd166', '#ef476f'];
+const MAX_FILE = 8 * 1024 * 1024;
+const MAX_ATTACHMENTS = 5;
+const MAX_POLL_OPTIONS = 10;
+const MAX_MESSAGE = 2000;
 const STATUS_LABEL = { online: 'Online', idle: 'Abwesend', dnd: 'Nicht stören', invisible: 'Unsichtbar', offline: 'Offline' };
 
 const state = {
@@ -54,6 +63,9 @@ const state = {
   showMembers: true,
   voiceStates: new Map(), // channelId -> [{ userId, muted, deafened }]
   speaking: new Set(), // userIds currently speaking (measured locally)
+  uploads: [], // attachments waiting in the composer
+  drafts: {}, // channelId -> unsent text
+  missed: 0, // new messages that arrived while scrolled up
 };
 
 let socket = null;
@@ -161,6 +173,24 @@ function stamp(ts) {
   if (sameDay(ts, now)) return `Heute um ${timeFmt.format(ts)}`;
   if (sameDay(ts, now - 86400000)) return `Gestern um ${timeFmt.format(ts)}`;
   return fullFmt.format(ts);
+}
+
+function formatSize(bytes) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(bytes < 10240 ? 1 : 0).replace('.', ',')} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1).replace('.', ',')} MB`;
+}
+
+// One line describing a message, also when it has no text (poll, files).
+function previewText(m) {
+  if (m.content) return m.content;
+  if (m.poll) return `📊 ${m.poll.question}`;
+  if (m.attachments?.length) return `📎 ${m.attachments.map((a) => a.name).join(', ')}`;
+  return '';
+}
+
+function fileUrl(a) {
+  return `/files/${encodeURIComponent(a.id)}/${encodeURIComponent(a.name)}`;
 }
 
 /* ---------- message formatting ---------- */
@@ -397,7 +427,7 @@ function start(token) {
         node.replaceWith(messageNode(msg, prev));
       }
       // replies quoting this message show its new content
-      $$(`.msg-reply[data-ref="${msg.id}"] span`).forEach((s) => (s.textContent = msg.content));
+      $$(`.msg-reply[data-ref="${msg.id}"] span`).forEach((s) => (s.textContent = previewText(msg)));
     }
   });
 
@@ -469,10 +499,15 @@ function applyBootstrap(data) {
    ========================================================================= */
 
 function setView(view) {
+  if (view.channelId !== state.view.channelId) clearUploads();
   state.view = view;
   state.replyTo = null;
   state.editingId = null;
+  state.missed = 0;
   store('view', view);
+  input.value = state.drafts[view.channelId] || '';
+  autosize(input);
+  updateComposerState();
   if (view.type === 'hub' && view.channelId) {
     state.lastChannel[view.hubId] = view.channelId;
     store('lastChannel', state.lastChannel);
@@ -500,6 +535,13 @@ function openHome() {
 
 function openDm(dmId) {
   setView({ type: 'home', hubId: null, channelId: dmId });
+}
+
+function openChannel(channelId) {
+  if (state.dms.has(channelId)) return openDm(channelId);
+  for (const hub of state.hubs.values()) {
+    if (hub.channels.some((c) => c.id === channelId)) return openHub(hub.id, channelId);
+  }
 }
 
 async function openDmWith(userId) {
@@ -882,11 +924,58 @@ function rerenderMessages(scrollToBottom = false) {
   box.append(frag);
   if (scrollToBottom || atBottom) box.scrollTop = box.scrollHeight;
   else box.scrollTop = prevTop;
+  updateJumpBtn();
 }
 
 function isContinuation(m, prev) {
   return prev && prev.authorId === m.authorId && !m.replyTo &&
     m.createdAt - prev.createdAt < 7 * 60 * 1000 && sameDay(prev.createdAt, m.createdAt);
+}
+
+function attachmentsHtml(m) {
+  if (!m.attachments?.length) return '';
+  const items = m.attachments.map((a) => {
+    if (a.image) {
+      // Reserve the final size up front so loading images do not make the chat jump.
+      let style = '';
+      if (a.width && a.height) {
+        const scale = Math.min(1, 400 / a.width, 300 / a.height);
+        style = `width:${Math.max(1, Math.round(a.width * scale))}px;aspect-ratio:${a.width}/${a.height}`;
+      }
+      return `<a class="att-image" href="${fileUrl(a)}" target="_blank" rel="noopener" data-name="${esc(a.name)}"><img src="${fileUrl(a)}" alt="${esc(a.name)}" style="${style}" /></a>`;
+    }
+    return `<a class="att-file" href="${fileUrl(a)}?download" download="${esc(a.name)}" title="${esc(a.name)} herunterladen">
+      <span class="att-ico">${ICONS.file}</span>
+      <span class="att-meta"><span class="att-name">${esc(a.name)}</span><span class="att-size">${formatSize(a.size)}</span></span>
+      <span class="att-dl">${ICONS.download}</span></a>`;
+  });
+  return `<div class="attachments">${items.join('')}</div>`;
+}
+
+function pollHtml(m, canClose) {
+  const p = m.poll;
+  if (!p) return '';
+  const voters = new Set(p.options.flatMap((o) => o.votes));
+  const top = Math.max(...p.options.map((o) => o.votes.length));
+  const options = p.options.map((o) => {
+    const mine = o.votes.includes(state.me.id);
+    const pct = voters.size ? Math.round((o.votes.length / voters.size) * 100) : 0;
+    const win = p.closed && top > 0 && o.votes.length === top;
+    const names = o.votes.map((id) => userOf(id).displayName).join(', ');
+    return `<button class="poll-opt ${mine ? 'mine' : ''} ${win ? 'win' : ''}" data-act="vote" data-option="${esc(o.id)}" ${p.closed ? 'disabled' : ''} title="${esc(names || 'Noch keine Stimmen')}">
+      <span class="poll-bar" style="width:${pct}%"></span>
+      <span class="poll-check">${mine ? ICONS.check : ''}</span>
+      <span class="poll-text">${esc(o.text)}</span>
+      <span class="poll-pct">${o.votes.length} · ${pct}%</span>
+    </button>`;
+  }).join('');
+  return `<div class="poll ${p.closed ? 'closed' : ''}">
+    <div class="poll-head">${ICONS.poll}<span>${p.closed ? 'Umfrage beendet' : p.multi ? 'Umfrage · Mehrfachauswahl' : 'Umfrage · eine Antwort'}</span></div>
+    <div class="poll-q">${esc(p.question)}</div>
+    <div class="poll-opts">${options}</div>
+    <div class="poll-foot"><span>${voters.size} ${voters.size === 1 ? 'Stimme' : 'Stimmen'}</span>
+      ${canClose && !p.closed ? '<button class="poll-close" data-act="close-poll">Umfrage beenden</button>' : ''}</div>
+  </div>`;
 }
 
 function messageNode(m, prev) {
@@ -903,19 +992,24 @@ function messageNode(m, prev) {
     return `<button class="reaction ${users.includes(state.me.id) ? 'mine' : ''}" data-emoji="${esc(emoji)}" title="${esc(names)}">${esc(emoji)}<span class="n">${users.length}</span></button>`;
   }).join('');
 
+  const edited = m.editedAt ? `<span class="edited" title="${esc(fullFmt.format(m.editedAt))}">(bearbeitet)</span>` : '';
   const node = h(`<div class="msg ${cont ? '' : 'first'} ${mentionsMe(m.content) ? 'mention' : ''}" data-id="${esc(m.id)}">
     ${cont ? `<div class="gutter-time" title="${esc(stamp(m.createdAt))}">${timeFmt.format(m.createdAt)}</div>` : avatar(author)}
     <div class="msg-main">
-      ${m.replyTo ? `<div class="msg-reply" data-ref="${esc(m.replyTo)}">${ref ? `<b>${esc(userOf(ref.authorId).displayName)}</b><span>${esc(ref.content)}</span>` : '<span><i>Ursprüngliche Nachricht nicht geladen oder gelöscht</i></span>'}</div>` : ''}
+      ${m.replyTo ? `<div class="msg-reply" data-ref="${esc(m.replyTo)}">${ref ? `<b>${esc(userOf(ref.authorId).displayName)}</b><span>${esc(previewText(ref))}</span>` : '<span><i>Ursprüngliche Nachricht nicht geladen oder gelöscht</i></span>'}</div>` : ''}
       ${cont ? '' : `<div class="msg-head"><span class="msg-author" style="--c:${esc(author.color)}">${esc(author.displayName)}</span>${verified(author)}${hub && hub.ownerId === author.id ? '<span class="owner-tag">OWNER</span>' : ''}<span class="msg-time" title="${esc(fullFmt.format(m.createdAt))}">${esc(stamp(m.createdAt))}</span></div>`}
-      <div class="msg-body ${isJumbo(m.content) ? 'jumbo' : ''}">${formatMessage(m.content)}${m.editedAt ? `<span class="edited" title="${esc(fullFmt.format(m.editedAt))}">(bearbeitet)</span>` : ''}</div>
+      ${m.content ? `<div class="msg-body ${isJumbo(m.content) ? 'jumbo' : ''}">${formatMessage(m.content)}${edited}</div>` : ''}
+      ${pollHtml(m, canDelete)}
+      ${attachmentsHtml(m)}
+      ${!m.content && edited ? `<div class="msg-body">${edited}</div>` : ''}
       ${reactions ? `<div class="reactions">${reactions}</div>` : ''}
     </div>
     <div class="msg-tools">
       ${QUICK_REACTIONS.map((e) => `<button class="icon-btn quick" data-act="react" data-emoji="${e}" title="Mit ${e} reagieren">${e}</button>`).join('')}
       <button class="icon-btn" data-act="pick" title="Reaktion hinzufügen">${ICONS.smile}</button>
       <button class="icon-btn" data-act="reply" title="Antworten">${ICONS.reply}</button>
-      ${mine ? `<button class="icon-btn" data-act="edit" title="Bearbeiten">${ICONS.edit}</button>` : ''}
+      ${m.content ? `<button class="icon-btn" data-act="copy" title="Text kopieren">${ICONS.copy}</button>` : ''}
+      ${mine && m.content ? `<button class="icon-btn" data-act="edit" title="Bearbeiten">${ICONS.edit}</button>` : ''}
       ${canDelete ? `<button class="icon-btn danger" data-act="delete" title="Löschen">${ICONS.trash}</button>` : ''}
     </div>
   </div>`);
@@ -937,6 +1031,12 @@ $('#messages').addEventListener('click', (e) => {
   const replyEl = e.target.closest('.msg-reply');
   if (replyEl) return jumpTo(replyEl.dataset.ref);
 
+  const imageEl = e.target.closest('.att-image');
+  if (imageEl && !e.ctrlKey && !e.metaKey) {
+    e.preventDefault();
+    return openLightbox(imageEl.getAttribute('href'), imageEl.dataset.name);
+  }
+
   const reaction = e.target.closest('.reaction');
   if (reaction && msgEl) return react(msgEl.dataset.id, reaction.dataset.emoji);
 
@@ -951,8 +1051,11 @@ $('#messages').addEventListener('click', (e) => {
       return openEmojiPicker(act, (emoji) => react(id, emoji), () => tools.classList.remove('open'));
     }
     case 'reply': return setReply(findMsg(id));
+    case 'copy': return copyText(findMsg(id)?.content || '');
     case 'edit': return startEdit(id);
     case 'delete': return deleteMessage(id);
+    case 'vote': return votePoll(id, act.dataset.option);
+    case 'close-poll': return closePoll(id);
   }
 });
 
@@ -960,6 +1063,24 @@ $('#messages').addEventListener('scroll', () => {
   const box = $('#messages');
   const ch = state.channels.get(state.view.channelId);
   if (box.scrollTop < 60 && ch && ch.hasMore && !ch.loading) loadChannel(state.view.channelId, true);
+  updateJumpBtn();
+});
+
+function updateJumpBtn() {
+  const box = $('#messages');
+  const btn = $('#jump-btn');
+  const far = box.scrollHeight - box.scrollTop - box.clientHeight > 300;
+  if (!far) state.missed = 0;
+  btn.classList.toggle('hidden', !far || !state.channels.has(state.view.channelId));
+  btn.classList.toggle('has-new', state.missed > 0);
+  btn.innerHTML = state.missed
+    ? `${state.missed > 99 ? '99+' : state.missed} neue Nachricht${state.missed === 1 ? '' : 'en'} ${ICONS.arrowDown}`
+    : `Zum Neuesten ${ICONS.arrowDown}`;
+}
+
+$('#jump-btn').addEventListener('click', () => {
+  const box = $('#messages');
+  box.scrollTo({ top: box.scrollHeight, behavior: 'smooth' });
 });
 
 function findMsg(id) {
@@ -994,6 +1115,8 @@ function onMessageNew(msg) {
     node.classList.add('new');
     box.append(node);
     if (atBottom || mine) box.scrollTop = box.scrollHeight;
+    else state.missed += 1;
+    updateJumpBtn();
   }
 
   const typers = state.typing.get(msg.channelId);
@@ -1011,7 +1134,11 @@ function onMessageNew(msg) {
       u.mention ||= mention;
       state.unread.set(msg.channelId, u);
     }
-    if (mention) ping();
+    // "Nicht stören" keeps the badges but stays silent.
+    if (mention && state.me.status !== 'dnd') {
+      ping();
+      notify(msg);
+    }
   }
 
   if (!viewing || dm) {
@@ -1029,10 +1156,49 @@ async function react(messageId, emoji) {
   }
 }
 
+function notify(msg) {
+  if (!store('notify') || !document.hidden || !('Notification' in window) || Notification.permission !== 'granted') return;
+  try {
+    const author = userOf(msg.authorId);
+    const where = state.dms.has(msg.channelId) ? '' : ` · ${channelLabel(msg.channelId)}`;
+    const text = previewText(msg);
+    const n = new Notification(`${author.displayName}${where}`, {
+      body: text.length > 140 ? text.slice(0, 139) + '…' : text,
+      tag: msg.channelId,
+    });
+    n.onclick = () => {
+      window.focus();
+      openChannel(msg.channelId);
+      n.close();
+    };
+  } catch {
+    /* notifications not available (e.g. some mobile browsers) */
+  }
+}
+
+async function votePoll(messageId, optionId) {
+  try {
+    await req('poll:vote', { channelId: state.view.channelId, messageId, optionId });
+  } catch (ex) {
+    toast(ex.message, 'error');
+  }
+}
+
+async function closePoll(messageId) {
+  const channelId = state.view.channelId;
+  if (!(await confirmDialog('Umfrage beenden?', 'Danach kann niemand mehr abstimmen. Das Ergebnis bleibt sichtbar.', 'Beenden'))) return;
+  try {
+    await req('poll:close', { channelId, messageId });
+  } catch (ex) {
+    toast(ex.message, 'error');
+  }
+}
+
 async function deleteMessage(id) {
   const msg = findMsg(id);
   if (!msg) return;
-  const ok = await confirmDialog('Nachricht löschen?', `„${msg.content.slice(0, 120)}${msg.content.length > 120 ? '…' : ''}“ wird für alle entfernt.`, 'Löschen');
+  const text = previewText(msg);
+  const ok = await confirmDialog('Nachricht löschen?', `„${text.slice(0, 120)}${text.length > 120 ? '…' : ''}“ wird für alle entfernt.`, 'Löschen');
   if (!ok) return;
   try {
     await req('message:delete', { channelId: state.view.channelId, messageId: id });
@@ -1064,7 +1230,7 @@ function startEdit(id, node = $(`.msg[data-id="${id}"]`)) {
   };
   const save = async () => {
     const text = ta.value.trim();
-    if (!text) return deleteMessage(id).then(finish);
+    if (!text && !msg.attachments?.length) return deleteMessage(id).then(finish);
     if (text !== msg.content) {
       try {
         await req('message:edit', { channelId: state.view.channelId, messageId: id, content: text });
@@ -1111,9 +1277,29 @@ function renderReplyBar() {
   bar.querySelector('.x').onclick = () => setReply(null);
 }
 
+function saveDraft() {
+  const channelId = state.view.channelId;
+  if (!channelId) return;
+  if (input.value.trim()) state.drafts[channelId] = input.value;
+  else delete state.drafts[channelId];
+  store('drafts', state.drafts);
+}
+
+// Send button and character counter follow the text and the pending uploads.
+function updateComposerState() {
+  const uploading = state.uploads.some((u) => !u.attachment && !u.error);
+  const ready = state.uploads.some((u) => u.attachment);
+  $('#send-btn').disabled = uploading || (!input.value.trim() && !ready);
+  const left = MAX_MESSAGE - input.value.length;
+  const counter = $('#char-count');
+  counter.textContent = left <= 200 ? String(left) : '';
+  counter.classList.toggle('low', left <= 50);
+}
+
 input.addEventListener('input', () => {
   autosize(input);
-  $('#send-btn').disabled = !input.value.trim();
+  updateComposerState();
+  saveDraft();
   const now = Date.now();
   if (input.value.trim() && now - lastTypingSent > 2500 && state.view.channelId) {
     lastTypingSent = now;
@@ -1129,9 +1315,16 @@ input.addEventListener('keydown', (e) => {
     setReply(null);
   } else if (e.key === 'ArrowUp' && !input.value) {
     const ch = state.channels.get(state.view.channelId);
-    const last = ch && [...ch.list].reverse().find((m) => m.authorId === state.me.id);
+    const last = ch && [...ch.list].reverse().find((m) => m.authorId === state.me.id && m.content);
     if (last) { e.preventDefault(); startEdit(last.id); }
   }
+});
+
+input.addEventListener('paste', (e) => {
+  const files = [...(e.clipboardData?.files || [])];
+  if (!files.length) return;
+  e.preventDefault();
+  addFiles(files);
 });
 
 $('#composer').addEventListener('submit', (e) => {
@@ -1142,20 +1335,155 @@ $('#composer').addEventListener('submit', (e) => {
 async function sendMessage() {
   const text = input.value.trim();
   const channelId = state.view.channelId;
-  if (!text || !channelId) return;
+  if (!channelId) return;
+  if (state.uploads.some((u) => !u.attachment && !u.error)) return toast('Warte kurz, die Dateien werden noch hochgeladen.');
+  const sent = state.uploads.filter((u) => u.attachment);
+  if (!text && !sent.length) return;
   const replyTo = state.replyTo?.id;
   input.value = '';
   autosize(input);
+  saveDraft();
   $('#send-btn').disabled = true;
   setReply(null);
   lastTypingSent = 0;
   try {
-    await req('message:send', { channelId, content: text, replyTo });
+    await req('message:send', { channelId, content: text, replyTo, attachments: sent.map((u) => u.attachment.id) });
+    if (state.view.channelId === channelId) sent.forEach(removeUpload);
   } catch (ex) {
     toast(ex.message, 'error');
-    if (!input.value) { input.value = text; autosize(input); $('#send-btn').disabled = false; }
+    if (!input.value && state.view.channelId === channelId) { input.value = text; autosize(input); saveDraft(); }
   }
+  updateComposerState();
 }
+
+/* ---------- attachments ---------- */
+
+function addFiles(files) {
+  const channelId = state.view.channelId;
+  if (!channelId || isVoiceChannel(channelId)) return;
+  for (const file of files) {
+    if (state.uploads.length >= MAX_ATTACHMENTS) {
+      toast(`Maximal ${MAX_ATTACHMENTS} Dateien pro Nachricht.`, 'error');
+      break;
+    }
+    if (file.size > MAX_FILE) {
+      toast(`„${file.name}“ ist zu groß (max. ${MAX_FILE / 1024 / 1024} MB).`, 'error');
+      continue;
+    }
+    if (!file.size) {
+      toast(`„${file.name}“ ist leer.`, 'error');
+      continue;
+    }
+    const up = { file, name: file.name || 'bild.png', progress: 0, attachment: null, error: null, xhr: null, preview: null };
+    if (file.type.startsWith('image/')) up.preview = URL.createObjectURL(file);
+    state.uploads.push(up);
+    upload(up);
+  }
+  renderAttachTray();
+  updateComposerState();
+  input.focus();
+}
+
+async function upload(up) {
+  let size = '';
+  if (up.preview && window.createImageBitmap) {
+    try {
+      const bmp = await createImageBitmap(up.file);
+      size = `&w=${bmp.width}&h=${bmp.height}`;
+      bmp.close();
+    } catch {
+      /* format the browser cannot decode – the server treats it as a normal file */
+    }
+  }
+  if (!state.uploads.includes(up)) return;
+  const xhr = new XMLHttpRequest();
+  up.xhr = xhr;
+  xhr.open('POST', `/api/upload?name=${encodeURIComponent(up.name)}${size}`);
+  xhr.setRequestHeader('Authorization', `Bearer ${state.token}`);
+  xhr.setRequestHeader('Content-Type', up.file.type || 'application/octet-stream');
+  xhr.upload.onprogress = (e) => {
+    if (!e.lengthComputable) return;
+    up.progress = e.loaded / e.total;
+    const bar = $(`.att-chip[data-key="${state.uploads.indexOf(up)}"] .att-progress i`);
+    if (bar) bar.style.width = `${Math.round(up.progress * 100)}%`;
+  };
+  const done = () => {
+    up.xhr = null;
+    let data = {};
+    try { data = JSON.parse(xhr.responseText); } catch { /* not JSON */ }
+    if (xhr.status === 200 && data.attachment) up.attachment = data.attachment;
+    else up.error = data.error || 'Upload fehlgeschlagen.';
+    if (up.error) toast(`${up.name}: ${up.error}`, 'error');
+    renderAttachTray();
+    updateComposerState();
+  };
+  xhr.onload = done;
+  xhr.onerror = done;
+  xhr.send(up.file);
+}
+
+function removeUpload(up) {
+  up.xhr?.abort();
+  if (up.preview) URL.revokeObjectURL(up.preview);
+  state.uploads = state.uploads.filter((u) => u !== up);
+  renderAttachTray();
+  updateComposerState();
+}
+
+function clearUploads() {
+  [...state.uploads].forEach(removeUpload);
+}
+
+function renderAttachTray() {
+  const tray = $('#attach-tray');
+  tray.classList.toggle('hidden', !state.uploads.length);
+  tray.innerHTML = '';
+  state.uploads.forEach((up, i) => {
+    const status = up.error ? 'error' : up.attachment ? 'done' : 'busy';
+    const chip = h(`<div class="att-chip ${status}" data-key="${i}" title="${esc(up.error || up.name)}">
+      ${up.preview ? `<img src="${up.preview}" alt="" />` : `<span class="att-ico">${ICONS.file}</span>`}
+      <span class="att-meta"><span class="att-name">${esc(up.name)}</span><span class="att-size">${up.error ? esc(up.error) : formatSize(up.file.size)}</span></span>
+      <button type="button" class="icon-btn" title="Entfernen">${ICONS.x}</button>
+      ${status === 'busy' ? `<span class="att-progress"><i style="width:${Math.round(up.progress * 100)}%"></i></span>` : ''}
+    </div>`);
+    chip.querySelector('button').onclick = () => removeUpload(up);
+    tray.append(chip);
+  });
+}
+
+$('#attach-btn').addEventListener('click', () => $('#file-input').click());
+$('#file-input').addEventListener('change', (e) => {
+  addFiles([...e.target.files]);
+  e.target.value = '';
+});
+
+// Drag & drop files anywhere onto the chat.
+let dragDepth = 0;
+const chatEl = $('#chat');
+const hasFiles = (e) => [...(e.dataTransfer?.types || [])].includes('Files');
+const canDrop = () => state.view.channelId && !isVoiceChannel(state.view.channelId);
+chatEl.addEventListener('dragenter', (e) => {
+  if (!hasFiles(e) || !canDrop()) return;
+  e.preventDefault();
+  dragDepth += 1;
+  chatEl.classList.add('dragging');
+});
+chatEl.addEventListener('dragover', (e) => {
+  if (hasFiles(e) && canDrop()) e.preventDefault();
+});
+chatEl.addEventListener('dragleave', () => {
+  dragDepth = Math.max(0, dragDepth - 1);
+  if (!dragDepth) chatEl.classList.remove('dragging');
+});
+chatEl.addEventListener('drop', (e) => {
+  dragDepth = 0;
+  chatEl.classList.remove('dragging');
+  if (!hasFiles(e) || !canDrop()) return;
+  e.preventDefault();
+  addFiles([...e.dataTransfer.files]);
+});
+
+$('#poll-btn').addEventListener('click', openPollCreator);
 
 $('#emoji-btn').addEventListener('click', (e) => {
   openEmojiPicker(e.currentTarget, (emoji) => {
@@ -1505,6 +1833,70 @@ function openChannelEditor(hubId, channelId, initialKind = 'text') {
   });
 }
 
+function openPollCreator() {
+  const channelId = state.view.channelId;
+  if (!channelId || isVoiceChannel(channelId)) return;
+  const { modal, close } = openModal(`
+    <h3>Umfrage erstellen</h3>
+    <p class="sub">Frag deine Crew – alle sehen die Ergebnisse live.</p>
+    <form>
+      <label class="field"><span>Frage</span><input name="question" maxlength="200" required placeholder="z. B. Wann zocken wir heute?" /></label>
+      <div class="field"><span>Antworten</span></div>
+      <div class="poll-inputs"></div>
+      <button type="button" class="btn poll-add" data-act="add">${ICONS.plus} Antwort hinzufügen</button>
+      <label class="check-row"><input type="checkbox" name="multi" /><span>Mehrfachauswahl erlauben</span></label>
+      <p class="form-error"></p>
+      <div class="modal-actions"><button type="button" class="btn" data-close>Abbrechen</button><button type="submit" class="btn primary">${ICONS.poll} Umfrage starten</button></div>
+    </form>`);
+  const form = modal.querySelector('form');
+  const list = modal.querySelector('.poll-inputs');
+  const addBtn = modal.querySelector('[data-act=add]');
+  const sync = () => {
+    const rows = $$('.poll-input', list);
+    rows.forEach((row, i) => {
+      row.querySelector('input').placeholder = `Antwort ${i + 1}`;
+      row.querySelector('button').disabled = rows.length <= 2;
+    });
+    addBtn.classList.toggle('hidden', rows.length >= MAX_POLL_OPTIONS);
+  };
+  const addRow = (focus = false) => {
+    const row = h(`<div class="poll-input"><input maxlength="80" /><button type="button" class="icon-btn" title="Entfernen">${ICONS.x}</button></div>`);
+    row.querySelector('button').onclick = () => { row.remove(); sync(); };
+    // Enter jumps to the next answer (and adds one at the end) instead of submitting.
+    row.querySelector('input').addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter') return;
+      e.preventDefault();
+      const next = row.nextElementSibling?.querySelector('input');
+      if (next) next.focus();
+      else if ($$('.poll-input', list).length < MAX_POLL_OPTIONS) addRow(true);
+    });
+    list.append(row);
+    sync();
+    if (focus) row.querySelector('input').focus();
+  };
+  addRow();
+  addRow();
+  addBtn.onclick = () => addRow(true);
+  form.onsubmit = (e) => {
+    e.preventDefault();
+    submitting(form, async () => {
+      const options = $$('.poll-input input', list).map((i) => i.value.trim()).filter(Boolean);
+      if (options.length < 2) throw new Error('Gib mindestens 2 Antworten ein.');
+      await req('poll:create', { channelId, question: form.question.value, options, multi: form.multi.checked });
+      close();
+    });
+  };
+}
+
+function openLightbox(url, name) {
+  const { modal } = openModal(`
+    <img src="${esc(url)}" alt="${esc(name)}" />
+    <div class="lightbox-bar"><span>${esc(name)}</span>
+      <a class="btn" href="${esc(url)}?download" download="${esc(name)}">${ICONS.download} Herunterladen</a>
+      <button class="btn" data-close>Schließen</button></div>`, { className: 'lightbox' });
+  modal.querySelector('img').onclick = () => modal.querySelector('[data-close]').click();
+}
+
 function openNewDm() {
   const { modal, close } = openModal(`
     <h3>Neue Direktnachricht</h3>
@@ -1555,6 +1947,7 @@ function openSettings() {
         <input type="color" value="${esc(me.color)}" title="Eigene Farbe" /></div>
       <div class="field"><span>Status</span></div>
       <div class="status-row">${['online', 'idle', 'dnd', 'invisible'].map((s) => `<button type="button" class="status-opt ${s === me.status ? 'sel' : ''}" data-s="${s}"><span class="dot ${s === 'invisible' ? 'offline' : s}"></span>${STATUS_LABEL[s]}</button>`).join('')}</div>
+      <label class="check-row"><input type="checkbox" name="notify" /><span>Desktop-Benachrichtigungen bei Erwähnungen und DMs <em>(auf diesem Gerät)</em></span></label>
       <p class="form-error"></p>
       <div class="modal-actions">
         <button type="button" class="btn danger" data-act="logout">${ICONS.logout} Abmelden</button><span class="spacer"></span>
@@ -1585,6 +1978,22 @@ function openSettings() {
     modal.querySelectorAll('.status-opt').forEach((x) => x.classList.toggle('sel', x === s));
   });
   modal.querySelector('[data-act=logout]').onclick = logout;
+  const notifyBox = form.notify;
+  notifyBox.checked = Boolean(store('notify')) && 'Notification' in window && Notification.permission === 'granted';
+  notifyBox.addEventListener('change', async () => {
+    if (!notifyBox.checked) return store('notify', false);
+    if (!('Notification' in window)) {
+      notifyBox.checked = false;
+      return toast('Dein Browser unterstützt keine Benachrichtigungen.', 'error');
+    }
+    const permission = Notification.permission === 'default' ? await Notification.requestPermission() : Notification.permission;
+    if (permission !== 'granted') {
+      notifyBox.checked = false;
+      return toast('Benachrichtigungen sind im Browser blockiert. Erlaube sie in den Website-Einstellungen.', 'error');
+    }
+    store('notify', true);
+    toast('Benachrichtigungen sind an');
+  });
   form.onsubmit = (e) => {
     e.preventDefault();
     submitting(form, async () => {
@@ -2049,7 +2458,7 @@ async function checkVersion(serverVersion) {
   await versionReady;
   if (!state.version) return;
   if (serverVersion && serverVersion !== state.version) {
-    if (!input.value.trim() && !$('.modal') && !state.editingId) return location.reload();
+    if (!input.value.trim() && !state.uploads.length && !$('.modal') && !state.editingId) return location.reload();
     if ($('.update-banner')) return;
     const banner = h(`<div class="update-banner"><span>🔥 <b>${esc(serverVersion)}</b> ist da!</span><button class="btn primary">Jetzt laden</button></div>`);
     banner.querySelector('button').onclick = () => location.reload();
@@ -2100,6 +2509,7 @@ document.addEventListener('visibilitychange', () => {
 
 // Boot
 state.showMembers = store('showMembers') ?? true;
+state.drafts = store('drafts') || {};
 const savedToken = store('token');
 if (savedToken) start(savedToken);
 else showAuth();
