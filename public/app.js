@@ -140,6 +140,29 @@ function exClass(user) {
   return ex ? ` ex-${ex.id}` : '';
 }
 
+// Performance: accessories animate only while their avatar is on screen. Long chats can hold
+// hundreds of avatars; the ones scrolled away or in closed panels are paused.
+const accVisibility = 'IntersectionObserver' in window
+  ? new IntersectionObserver((entries) => {
+    for (const e of entries) e.target.classList.toggle('acc-paused', !e.isIntersecting);
+  }, { rootMargin: '80px' })
+  : null;
+
+function forEachAccAvatar(node, fn) {
+  if (node.nodeType !== 1) return;
+  if (node.matches('.avatar.has-acc')) fn(node);
+  node.querySelectorAll('.avatar.has-acc').forEach(fn);
+}
+
+if (accVisibility) {
+  new MutationObserver((records) => {
+    for (const r of records) {
+      r.addedNodes.forEach((n) => forEachAccAvatar(n, (a) => accVisibility.observe(a)));
+      r.removedNodes.forEach((n) => forEachAccAvatar(n, (a) => accVisibility.unobserve(a)));
+    }
+  }).observe(document.body, { childList: true, subtree: true });
+}
+
 // "Legendär" for one-of-a-kind accessories, "Exklusiv" for the rest of the special ones.
 function tierLabel(acc) {
   return acc.tier === 'legendary' ? t('Legendär') : t('Exklusiv');

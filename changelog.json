@@ -1,5 +1,28 @@
 [
   {
+    "version": "V0.1.6.7 Beta",
+    "date": "2026-10-23",
+    "title": "Hotfix: flüssige Accessoires",
+    "titleEn": "Hotfix: smooth accessories",
+    "changes": [
+      {
+        "icon": "⚡",
+        "text": "Alle Accessoires laufen deutlich flüssiger: Die drehenden Feuerringe übernimmt jetzt die Grafikkarte, teure Leucht-Effekte werden nur noch einmal gezeichnet",
+        "textEn": "All accessories run much more smoothly: the spinning fire rings are now handled by the graphics card, and costly glow effects are drawn only once"
+      },
+      {
+        "icon": "⏸️",
+        "text": "Accessoires außerhalb des Bildschirms und auf kleinen Avataren pausieren – lange Chats bleiben flüssig",
+        "textEn": "Accessories outside the screen and on small avatars pause – long chats stay smooth"
+      },
+      {
+        "icon": "♿",
+        "text": "Wer im System „Bewegung reduzieren“ eingeschaltet hat, sieht die Accessoires ohne Animation",
+        "textEn": "If “reduce motion” is turned on in your system, accessories are shown without animation"
+      }
+    ]
+  },
+  {
     "version": "V0.1.6.6 Beta",
     "date": "2026-10-23",
     "title": "Der Höllenfürst",
