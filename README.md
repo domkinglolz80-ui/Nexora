@@ -18,6 +18,8 @@ Nexora ist eine Echtzeit-Chat-Plattform mit eigenem Look: dunkles Glas-Design mi
 - **Präsenz** – Online / Abwesend / Nicht stören / Unsichtbar, Tipp-Anzeige
 - **Ungelesen-Markierungen** – Badges für Erwähnungen und DMs, Ton bei Erwähnung (stumm bei „Nicht stören“), optional Desktop-Benachrichtigungen
 - **Komfort** – Entwürfe pro Kanal, „Zum Neuesten“-Knopf, Text kopieren, Zeichenzähler
+- **Bots & Slash-Befehle** – eigene Bots mit Befehlen wie `/wuerfel`, als Textantwort oder als JavaScript-Skript
+- **Admin-Panel** – für offizielle Accounts: Statistiken, Ankündigungen, Nutzer, Hubs und Bots verwalten
 - **Befehlspalette** – `Strg`+`K` springt zu jedem Hub, Kanal oder Menschen
 - **Profile** – Anzeigename, Bio, Akzentfarbe
 - **Responsive** – funktioniert auch auf dem Handy
@@ -29,6 +31,54 @@ Neue Nutzer landen automatisch in der **Nexora Lounge** (Code `NEXORA`).
 Accounts mit dem Benutzernamen `nexora` sind **offiziell**: Sie bekommen ein orangenes ✓-Abzeichen und dürfen die **Nexora Lounge** verwalten (Kanäle anlegen, bearbeiten, löschen, Nachrichten entfernen). Andere Namen mit „Nexora“ (z. B. `NexoraFan`) sind gesperrt, damit sich niemand als offiziell ausgeben kann.
 
 Weitere offizielle Accounts per Umgebungsvariable, kommagetrennt: `NEXORA_OFFICIAL=nexora,dom`
+
+## Admin-Panel
+
+Offizielle Accounts sehen in der Hub-Leiste links ein Schild-Symbol (auch über `Strg`+`K` → „Admin-Panel“). Dort gibt es:
+
+- **Übersicht** – Nutzer, Online, Nachrichten (gesamt und 24 Std.), Hubs, Bots, Sprachkanäle, Speicher, RAM, Version
+- **Ankündigung** – ein Hinweis oben im Chat für alle (z. B. Wartung); jede Person kann ihn wegblenden
+- **Nutzer** – suchen, **sperren** (mit Grund, den die Person beim Login sieht), entsperren, überall **abmelden**, **Passwort zurücksetzen** (das neue Passwort wird einmal angezeigt)
+- **Hubs** – alle Hubs mit Besitzer, Mitgliedern und Nachrichten; beitreten oder löschen (die Lounge ist geschützt)
+- **Bots** – alle Bots mit Besitzer und Befehlen; sperren, entsperren oder löschen
+
+Offizielle Accounts können selbst nicht gesperrt werden. Jede Aktion prüft der Server noch einmal – das Panel ist nur die Oberfläche.
+
+## Bots & Slash-Befehle
+
+Über den Roboter-Knopf unten links (**Meine Bots**) kann jede Person bis zu **5 Bots** anlegen. Ein Bot ist ein eigener Account mit `BOT`-Abzeichen, der sich nicht einloggen kann und nur auf Slash-Befehle antwortet.
+
+1. Bot erstellen – er bekommt gleich einen `/hallo`-Befehl.
+2. Unter **Hubs** in einen Hub holen, den du verwaltest (oder in den Hub-Einstellungen unter „Bots“).
+3. Im Chat `/` tippen – Nexora schlägt alle Befehle der Bots im Hub vor.
+
+**Befehle** (bis zu 25 pro Bot) haben einen Namen, eine Beschreibung und bis zu 5 **Optionen**. Optionen werden der Reihe nach gefüllt, die letzte bekommt den Rest: `/wetter Berlin morgen früh` → `stadt = Berlin`, `wann = morgen früh`. Eine Antwort kann sein:
+
+- **Text** mit Platzhaltern: `{user}`, `{mention}`, `{args}`, `{1}`, `{2}`, `{optionsname}`, `{random:1-6}`, `{choose:Ja|Nein}`, `{channel}`, `{hub}`
+- **Skript** in JavaScript:
+
+```js
+// /punkte – jede Person sammelt Punkte, sie bleiben gespeichert
+const punkte = store.get('punkte', {});
+punkte[ctx.user.id] = (punkte[ctx.user.id] || 0) + 1;
+store.set('punkte', punkte);
+return `${ctx.user.mention} hat jetzt **${punkte[ctx.user.id]}** Punkte ⭐`;
+```
+
+| Im Skript                         | Bedeutung                                                     |
+| --------------------------------- | ------------------------------------------------------------- |
+| `ctx.user`                        | wer den Befehl nutzt (`id`, `username`, `displayName`, `mention`) |
+| `ctx.text`, `ctx.args`, `ctx.options` | Eingabe als Text, als Wörter, als Optionen                |
+| `ctx.channel`, `ctx.hub`, `ctx.bot` | wo der Befehl genutzt wurde und welcher Bot antwortet       |
+| `reply(text)` / `return text`     | Nachricht in den Kanal (bis zu 3 pro Aufruf)                  |
+| `whisper(text)`                   | Antwort, die nur die aufrufende Person sieht                  |
+| `random(min, max)`, `pick(liste)` | Zufall                                                        |
+| `store.get/set/delete/keys`       | dauerhafter Speicher des Bots (max. 32 KB)                    |
+| `console.log()`                   | erscheint beim Testen im Editor                               |
+
+Skripte laufen in **QuickJS** (WebAssembly), einer abgeschotteten JavaScript-Engine: kein Zugriff auf Server, Dateien, Internet oder Umgebungsvariablen, max. **250 ms** und 16 MB pro Aufruf, max. 10 Skript-Aufrufe pro Person in 10 Sekunden. Im Befehls-Editor lässt sich jeder Befehl testen, ohne etwas zu posten oder zu speichern.
+
+**Öffentliche Bots** (Profil → „Öffentlich“) dürfen auch andere Hub-Besitzer über den Bot-Namen hinzufügen. Hub-Besitzer können Bots jederzeit wieder entfernen.
 
 ## Sprachkanäle
 
@@ -53,7 +103,7 @@ Die Stimmen laufen per **WebRTC direkt zwischen den Geräten**; der Server vermi
 
 ## Versionen & Updates
 
-Aktuelle Version: **V0.1.2 Beta**. Alle Änderungen stehen in [`changelog.json`](changelog.json) – der oberste Eintrag ist die laufende Version.
+Aktuelle Version: **V0.1.3 Beta**. Alle Änderungen stehen in [`changelog.json`](changelog.json) – der oberste Eintrag ist die laufende Version.
 
 - Nach dem Login (und nach jedem Update) zeigt Nexora einmal das Fenster **„Was ist neu?“**. Über die Versionsanzeige unten in der Hub-Leiste lässt es sich jederzeit wieder öffnen.
 - Geht eine neue Version live, während jemand Nexora offen hat, lädt die Seite automatisch neu. Tippt die Person gerade etwas, erscheint stattdessen ein „Jetzt laden“-Hinweis.
@@ -120,9 +170,12 @@ Kann der Server die Datenbank nicht erreichen, startet er absichtlich nicht (sta
 
 ```
 server.js          Express + Socket.IO Server, Daten in MongoDB oder data/db.json
+bots.js            Bot-Befehle: Text-Platzhalter und Skript-Sandbox (QuickJS)
 public/index.html  Oberfläche
 public/app.css     Design (Ember-Theme)
 public/app.js      Client-Logik
+public/bots.js     Bots verwalten, Befehle und Skripte bearbeiten
+public/admin.js    Admin-Panel
 ```
 
 Alle Daten werden im Arbeitsspeicher gehalten und gebündelt gespeichert – ideal für kleine bis mittlere Gruppen.

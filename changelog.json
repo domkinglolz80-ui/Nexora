@@ -1,5 +1,44 @@
 [
   {
+    "version": "V0.1.3 Beta",
+    "date": "2026-10-23",
+    "title": "Bots & Admin-Panel",
+    "changes": [
+      {
+        "icon": "🤖",
+        "text": "Eigene Bots: Erstelle bis zu 5 Bots unter „Meine Bots“ (Roboter-Knopf unten links) und hol sie in deine Hubs"
+      },
+      {
+        "icon": "⌨️",
+        "text": "Slash-Befehle: Tippe `/` im Chat und wähle einen Befehl – mit Vorschlägen, Beschreibung und Hinweisen zu den Optionen"
+      },
+      {
+        "icon": "🛠️",
+        "text": "Befehle selbst einstellen: Name, Beschreibung, bis zu 5 Optionen und eine Antwort mit Platzhaltern wie `{user}` oder `{random:1-6}`"
+      },
+      {
+        "icon": "📜",
+        "text": "Skripte: Befehle können eigenes JavaScript ausführen – mit Zufall, dauerhaftem Speicher und Antworten nur für dich. Sicher abgeschottet auf dem Server"
+      },
+      {
+        "icon": "🧪",
+        "text": "Befehle direkt im Editor testen, bevor sie live gehen – inklusive Beispielen wie Würfel, 8-Ball und Punktesystem"
+      },
+      {
+        "icon": "🌍",
+        "text": "Öffentliche Bots können auch andere Hub-Besitzer über den Namen hinzufügen"
+      },
+      {
+        "icon": "🛡️",
+        "text": "Admin-Panel für @Nexora: Statistiken, Nutzer sperren, abmelden und Passwörter zurücksetzen, Hubs und Bots verwalten"
+      },
+      {
+        "icon": "📣",
+        "text": "Ankündigungen: Das Nexora-Team kann wichtige Infos oben im Chat für alle einblenden"
+      }
+    ]
+  },
+  {
     "version": "V0.1.2 Beta",
     "date": "2026-10-23",
     "title": "Dateien & Umfragen",

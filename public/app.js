@@ -30,6 +30,10 @@ const ICONS = {
   poll: '<svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
   check: '<svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>',
   arrowDown: '<svg viewBox="0 0 24 24"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>',
+  bot: '<svg viewBox="0 0 24 24"><rect x="4" y="8" width="16" height="12" rx="3"/><path d="M12 8V4M9 4h6M9 13h.01M15 13h.01M9 17h6"/></svg>',
+  shield: '<svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>',
+  play: '<svg viewBox="0 0 24 24"><path d="M6 4l14 8-14 8z"/></svg>',
+  megaphone: '<svg viewBox="0 0 24 24"><path d="M3 11v2a1 1 0 0 0 1 1h3l6 5V5L7 10H4a1 1 0 0 0-1 1zM17 8a5 5 0 0 1 0 8"/></svg>',
   hangup: '<svg viewBox="0 0 24 24"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"/><path d="m22 2-20 20"/></svg>',
 };
 
@@ -143,6 +147,7 @@ function isAdmin(hub, userId) {
 }
 
 function verified(user) {
+  if (user.bot) return '<span class="bot-tag" title="Bot">BOT</span>';
   return user.official ? '<span class="verified" title="Offizieller Nexora-Account">✓</span>' : '';
 }
 
@@ -354,7 +359,22 @@ function start(token) {
     }
   });
 
-  socket.on('disconnect', () => {
+  // Banned, signed out or password reset by an admin: back to the login screen.
+  let endedMessage = '';
+  socket.on('account:ended', ({ message }) => (endedMessage = message));
+
+  socket.on('disconnect', (reason) => {
+    if (reason === 'io server disconnect') {
+      banner?.remove();
+      banner = null;
+      store('token', null);
+      socket = null;
+      cleanupVoice();
+      closeAllModals();
+      showAuth();
+      $('#auth-error').textContent = endedMessage || 'Du wurdest abgemeldet.';
+      return;
+    }
     if (!banner && socket) {
       banner = h('<div class="conn-banner">Verbindung verloren – verbinde neu…</div>');
       document.body.append(banner);
@@ -439,6 +459,11 @@ function start(token) {
     if (channelId === state.view.channelId) rerenderMessages();
   });
 
+  socket.on('announcement', (a) => {
+    state.announcement = a;
+    renderAnnouncement();
+  });
+
   socket.on('voice:state', onVoiceState);
   socket.on('voice:signal', (msg) => handleSignal(msg).catch((err) => console.warn('[voice] signal', err)));
   socket.on('voice:peer-left', ({ socketId }) => closePeer(socketId));
@@ -469,6 +494,7 @@ function applyBootstrap(data) {
   state.users = new Map(Object.entries(data.users));
   state.presence = new Map(Object.entries(data.presence));
   state.voiceStates = new Map(Object.entries(data.voice || {}));
+  state.announcement = data.announcement || null;
   // After a reconnect the cache may be stale — drop it and refetch lazily.
   state.channels.clear();
   state.lastChannel = store('lastChannel') || {};
@@ -477,6 +503,7 @@ function applyBootstrap(data) {
   $('#app').classList.remove('hidden');
   $('#splash').classList.add('out');
   renderMe();
+  renderAnnouncement();
   checkVersion(data.version);
 
   const params = new URLSearchParams(location.search);
@@ -508,6 +535,7 @@ function setView(view) {
   input.value = state.drafts[view.channelId] || '';
   autosize(input);
   updateComposerState();
+  hideSlash();
   if (view.type === 'hub' && view.channelId) {
     state.lastChannel[view.hubId] = view.channelId;
     store('lastChannel', state.lastChannel);
@@ -736,8 +764,11 @@ function renderMe() {
   card.innerHTML = `
     ${avatar(me, { dot: true })}
     <div class="who"><div class="name">${esc(me.displayName)}${verified(me)}</div><div class="handle">${esc(STATUS_LABEL[me.status] || '')} · @${esc(me.username)}</div></div>
-    <button class="icon-btn" title="Einstellungen">${ICONS.gear}</button>`;
-  card.querySelector('.icon-btn').onclick = openSettings;
+    <button class="icon-btn" data-act="bots" title="Meine Bots">${ICONS.bot}</button>
+    <button class="icon-btn" data-act="settings" title="Einstellungen">${ICONS.gear}</button>`;
+  card.querySelector('[data-act=bots]').onclick = () => openBotManager();
+  card.querySelector('[data-act=settings]').onclick = openSettings;
+  $('#admin-btn').classList.toggle('hidden', !me.official);
   card.querySelector('.who').onclick = openSettings;
   card.querySelector('.avatar').onclick = openSettings;
 }
@@ -788,7 +819,9 @@ function renderMembers() {
   }
   if (!hub) { panel.innerHTML = ''; return; }
 
-  const members = hub.members.map(userOf);
+  const everyone = hub.members.map(userOf);
+  const members = everyone.filter((m) => !m.bot);
+  const botList = everyone.filter((m) => m.bot).sort((a, b) => a.displayName.localeCompare(b.displayName));
   const rank = { online: 0, idle: 1, dnd: 2, offline: 3 };
   members.sort((a, b) => (rank[statusOf(a.id)] - rank[statusOf(b.id)]) || a.displayName.localeCompare(b.displayName));
   const onlineList = members.filter((m) => statusOf(m.id) !== 'offline');
@@ -800,10 +833,11 @@ function renderMembers() {
     panel.append(h(`<div class="section-label"><span>${label} — ${list.length}</span></div>`));
     for (const m of list) {
       const st = statusOf(m.id);
+      const sub = m.bot ? (m.disabled ? 'Gesperrt' : `${m.commands?.length || 0} Befehl${m.commands?.length === 1 ? '' : 'e'}`) : m.bio || STATUS_LABEL[st];
       const row = h(`<button class="member ${st === 'offline' ? 'offline' : ''}" style="--c:${esc(m.color)}">
         ${avatar(m, { dot: true })}
         <div class="info"><div class="name">${esc(m.displayName)}${verified(m)}${m.id === hub.ownerId ? '<span class="crown" title="Besitzer">👑</span>' : ''}</div>
-        <div class="bio">${esc(m.bio || STATUS_LABEL[st])}</div></div>
+        <div class="bio">${esc(sub)}</div></div>
       </button>`);
       row.onclick = () => showProfile(m.id, row);
       panel.append(row);
@@ -811,6 +845,7 @@ function renderMembers() {
   };
   section('Online', onlineList);
   section('Offline', offlineList);
+  section('Bots', botList);
 }
 
 function renderTyping() {
@@ -823,6 +858,21 @@ function renderTyping() {
   else if (names.length <= 3) text = `<b>${names.map(esc).join(', ')}</b> schreiben`;
   else text = 'Mehrere Leute schreiben';
   box.innerHTML = `<span class="typing-dots"><i></i><i></i><i></i></span><span>${text}…</span>`;
+}
+
+// A message from the Nexora team on top of the chat, until it is dismissed.
+function renderAnnouncement() {
+  $('#announce-bar')?.remove();
+  const a = state.announcement;
+  if (!a || store('dismissedAnnouncement') === a.id) return;
+  const bar = h(`<div class="announce-bar" id="announce-bar">${ICONS.megaphone}
+    <div class="announce-text"><b>Nexora</b><span>${formatMessage(a.text)}</span></div>
+    <button class="icon-btn" title="Ausblenden">${ICONS.x}</button></div>`);
+  bar.querySelector('button').onclick = () => {
+    store('dismissedAnnouncement', a.id);
+    bar.remove();
+  };
+  $('#chat').prepend(bar);
 }
 
 function updateTitle() {
@@ -928,7 +978,7 @@ function rerenderMessages(scrollToBottom = false) {
 }
 
 function isContinuation(m, prev) {
-  return prev && prev.authorId === m.authorId && !m.replyTo &&
+  return prev && prev.authorId === m.authorId && !m.replyTo && !m.interaction && !m.ephemeral && !prev.ephemeral &&
     m.createdAt - prev.createdAt < 7 * 60 * 1000 && sameDay(prev.createdAt, m.createdAt);
 }
 
@@ -993,9 +1043,22 @@ function messageNode(m, prev) {
   }).join('');
 
   const edited = m.editedAt ? `<span class="edited" title="${esc(fullFmt.format(m.editedAt))}">(bearbeitet)</span>` : '';
+  const used = m.interaction ? `<div class="msg-interaction"><b>${esc(userOf(m.interaction.userId).displayName)}</b> hat <code>/${esc(m.interaction.command)}</code> benutzt</div>` : '';
+  if (m.ephemeral) {
+    return h(`<div class="msg first ephemeral" data-id="${esc(m.id)}">
+      ${avatar(author)}
+      <div class="msg-main">
+        ${used}
+        <div class="msg-head"><span class="msg-author" style="--c:${esc(author.color)}">${esc(author.displayName)}</span>${verified(author)}<span class="msg-time">${esc(stamp(m.createdAt))}</span></div>
+        <div class="msg-body">${formatMessage(m.content)}</div>
+        <div class="ephemeral-note">Nur für dich sichtbar · <button data-act="dismiss">Ausblenden</button></div>
+      </div>
+    </div>`);
+  }
   const node = h(`<div class="msg ${cont ? '' : 'first'} ${mentionsMe(m.content) ? 'mention' : ''}" data-id="${esc(m.id)}">
     ${cont ? `<div class="gutter-time" title="${esc(stamp(m.createdAt))}">${timeFmt.format(m.createdAt)}</div>` : avatar(author)}
     <div class="msg-main">
+      ${used}
       ${m.replyTo ? `<div class="msg-reply" data-ref="${esc(m.replyTo)}">${ref ? `<b>${esc(userOf(ref.authorId).displayName)}</b><span>${esc(previewText(ref))}</span>` : '<span><i>Ursprüngliche Nachricht nicht geladen oder gelöscht</i></span>'}</div>` : ''}
       ${cont ? '' : `<div class="msg-head"><span class="msg-author" style="--c:${esc(author.color)}">${esc(author.displayName)}</span>${verified(author)}${hub && hub.ownerId === author.id ? '<span class="owner-tag">OWNER</span>' : ''}<span class="msg-time" title="${esc(fullFmt.format(m.createdAt))}">${esc(stamp(m.createdAt))}</span></div>`}
       ${m.content ? `<div class="msg-body ${isJumbo(m.content) ? 'jumbo' : ''}">${formatMessage(m.content)}${edited}</div>` : ''}
@@ -1056,6 +1119,7 @@ $('#messages').addEventListener('click', (e) => {
     case 'delete': return deleteMessage(id);
     case 'vote': return votePoll(id, act.dataset.option);
     case 'close-poll': return closePoll(id);
+    case 'dismiss': return dismissEphemeral(id);
   }
 });
 
@@ -1300,6 +1364,7 @@ input.addEventListener('input', () => {
   autosize(input);
   updateComposerState();
   saveDraft();
+  renderSlash();
   const now = Date.now();
   if (input.value.trim() && now - lastTypingSent > 2500 && state.view.channelId) {
     lastTypingSent = now;
@@ -1308,6 +1373,23 @@ input.addEventListener('input', () => {
 });
 
 input.addEventListener('keydown', (e) => {
+  if (slash.items.length && !e.isComposing) {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      const n = slash.items.length;
+      slash.sel = (slash.sel + (e.key === 'ArrowDown' ? 1 : n - 1)) % n;
+      return renderSlash(false);
+    }
+    if (e.key === 'Tab' || (e.key === 'Enter' && !e.shiftKey)) {
+      e.preventDefault();
+      return chooseSlash(slash.items[slash.sel], e.key === 'Enter');
+    }
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopPropagation();
+      return hideSlash();
+    }
+  }
   if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
     e.preventDefault();
     sendMessage();
@@ -1339,6 +1421,8 @@ async function sendMessage() {
   if (state.uploads.some((u) => !u.attachment && !u.error)) return toast('Warte kurz, die Dateien werden noch hochgeladen.');
   const sent = state.uploads.filter((u) => u.attachment);
   if (!text && !sent.length) return;
+  const match = !sent.length && matchCommand(text);
+  if (match) return runCommand(channelId, match.command, match.text, text);
   const replyTo = state.replyTo?.id;
   input.value = '';
   autosize(input);
@@ -1354,6 +1438,149 @@ async function sendMessage() {
     if (!input.value && state.view.channelId === channelId) { input.value = text; autosize(input); saveDraft(); }
   }
   updateComposerState();
+}
+
+/* ---------- slash commands ---------- */
+
+const slash = { items: [], sel: 0, botId: null, hideTimer: null };
+
+// Commands of all bots in the current hub.
+function availableCommands() {
+  const hub = currentHub();
+  if (!hub || isVoiceChannel(state.view.channelId)) return [];
+  const out = [];
+  for (const memberId of hub.members) {
+    const u = state.users.get(memberId);
+    if (!u?.bot || u.disabled) continue;
+    for (const c of u.commands || []) out.push({ ...c, bot: u });
+  }
+  return out.sort((a, b) => a.name.localeCompare(b.name) || a.bot.displayName.localeCompare(b.bot.displayName));
+}
+
+function commandUsage(c) {
+  return [`/${c.name}`, ...c.options.map((o) => (o.required ? `<${o.name}>` : `[${o.name}]`))].join(' ');
+}
+
+// The command a "/name …" text refers to; the bot picked in the list wins when two share a name.
+function matchCommand(text) {
+  const m = /^\/(\S+)(?:\s+([\s\S]*))?$/.exec(text);
+  if (!m) return null;
+  const name = m[1].toLowerCase();
+  const list = availableCommands().filter((c) => c.name === name);
+  const command = list.find((c) => c.bot.id === slash.botId) || list[0];
+  return command ? { command, text: (m[2] || '').trim() } : null;
+}
+
+function hideSlash() {
+  slash.items = [];
+  $('#slash-pop').classList.add('hidden');
+}
+
+function renderSlash(resetSelection = true) {
+  const pop = $('#slash-pop');
+  const value = input.value;
+  if (resetSelection) slash.sel = 0;
+  slash.items = [];
+  if (!value.startsWith('/') || !state.view.channelId) return hideSlash();
+  const all = availableCommands();
+
+  if (/^\/\S*$/.test(value)) {
+    const term = value.slice(1).toLowerCase();
+    slash.items = all.filter((c) => c.name.startsWith(term)).concat(all.filter((c) => !c.name.startsWith(term) && c.name.includes(term))).slice(0, 8);
+    slash.sel = Math.min(slash.sel, Math.max(0, slash.items.length - 1));
+    if (!slash.items.length) {
+      pop.innerHTML = `<div class="slash-empty">${all.length ? 'Kein passender Befehl.' : currentHub() ? `In diesem Hub gibt es noch keine Bots. Erstelle einen unter ${ICONS.bot} <b>Meine Bots</b>.` : 'Slash-Befehle gibt es nur in Hubs.'}</div>`;
+      pop.classList.remove('hidden');
+      return;
+    }
+    pop.innerHTML = `<div class="slash-head">Befehle</div>${slash.items.map((c, i) => `<button type="button" class="slash-item ${i === slash.sel ? 'sel' : ''}" data-i="${i}">
+      ${avatar(c.bot, { size: 26 })}
+      <span class="slash-main"><span class="slash-name">${esc(commandUsage(c))}</span><span class="slash-desc">${esc(c.description || 'Keine Beschreibung')}</span></span>
+      <span class="slash-bot">${esc(c.bot.displayName)}</span>
+    </button>`).join('')}`;
+    pop.classList.remove('hidden');
+    pop.querySelector('.slash-item.sel')?.scrollIntoView({ block: 'nearest' });
+    return;
+  }
+
+  // While typing the options: show which one comes next.
+  const match = matchCommand(value);
+  if (!match || !match.command.options.length) return hideSlash();
+  const { command } = match;
+  const words = match.text ? match.text.split(/\s+/).length : 0;
+  const current = Math.min(command.options.length - 1, /\s$/.test(value) ? words : Math.max(0, words - 1));
+  const opt = command.options[current];
+  pop.innerHTML = `<div class="slash-hint"><code>/${esc(command.name)}</code> ${command.options.map((o, i) => `<span class="slash-opt ${i === current ? 'sel' : ''}">${o.required ? '&lt;' : '['}${esc(o.name)}${o.required ? '&gt;' : ']'}</span>`).join(' ')}
+    ${opt.description ? `<div class="slash-desc">${esc(opt.name)}: ${esc(opt.description)}${opt.required ? '' : ' (optional)'}</div>` : ''}</div>`;
+  pop.classList.remove('hidden');
+}
+
+function chooseSlash(c, viaEnter = false) {
+  slash.botId = c.bot.id;
+  // A command without required options runs straight away on Enter.
+  if (viaEnter && input.value.trim().toLowerCase() === `/${c.name}` && !c.options.some((o) => o.required)) {
+    hideSlash();
+    return sendMessage();
+  }
+  input.value = `/${c.name} `;
+  autosize(input);
+  updateComposerState();
+  saveDraft();
+  renderSlash();
+  input.focus();
+}
+
+$('#slash-pop').addEventListener('mousedown', (e) => e.preventDefault());
+$('#slash-pop').addEventListener('click', (e) => {
+  const item = e.target.closest('.slash-item');
+  if (item) chooseSlash(slash.items[Number(item.dataset.i)]);
+});
+input.addEventListener('blur', () => {
+  clearTimeout(slash.hideTimer);
+  slash.hideTimer = setTimeout(hideSlash, 150);
+});
+input.addEventListener('focus', () => {
+  clearTimeout(slash.hideTimer);
+  if (input.value.startsWith('/')) renderSlash();
+});
+
+async function runCommand(channelId, command, args, raw) {
+  input.value = '';
+  autosize(input);
+  saveDraft();
+  hideSlash();
+  setReply(null);
+  slash.botId = null;
+  $('#send-btn').disabled = true;
+  try {
+    const res = await req('command:run', { channelId, botId: command.bot.id, name: command.name, text: args });
+    for (const text of res.ephemeral || []) addEphemeral(channelId, res.botId, res.command || command.name, text);
+  } catch (ex) {
+    toast(ex.message, 'error');
+    if (!input.value && state.view.channelId === channelId) { input.value = raw; autosize(input); saveDraft(); }
+  }
+  updateComposerState();
+}
+
+// Answers only the invoking person sees; they live in this tab until reloaded.
+function addEphemeral(channelId, botId, command, content) {
+  if (!state.channels.has(channelId)) return;
+  onMessageNew({
+    id: `eph-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`,
+    channelId,
+    authorId: botId,
+    content,
+    createdAt: Date.now(),
+    reactions: {},
+    ephemeral: true,
+    interaction: { userId: state.me.id, command },
+  });
+}
+
+function dismissEphemeral(messageId) {
+  const ch = state.channels.get(state.view.channelId);
+  if (ch) ch.list = ch.list.filter((m) => m.id !== messageId);
+  $(`.msg[data-id="${messageId}"]`)?.remove();
 }
 
 /* ---------- attachments ---------- */
@@ -1533,6 +1760,7 @@ function showProfile(userId, anchor) {
   const u = userOf(userId);
   const st = statusOf(u.id);
   const isMe = u.id === state.me.id;
+  if (u.bot) return showBotProfile(u, anchor);
   const pop = h(`<div class="popover" style="--c:${esc(u.color)}">
     <div class="profile-banner"></div>
     <div class="profile-body">
@@ -1545,6 +1773,24 @@ function showProfile(userId, anchor) {
     </div>
   </div>`);
   pop.querySelector('[data-act]').onclick = () => (isMe ? (closePopover(), openSettings()) : openDmWith(u.id));
+  placePopover(pop, anchor);
+}
+
+function showBotProfile(u, anchor) {
+  const commands = (u.commands || []).map((c) => `<li><code>/${esc(c.name)}</code><span>${esc(c.description || '')}</span></li>`).join('');
+  const mine = u.ownerId === state.me.id;
+  const pop = h(`<div class="popover" style="--c:${esc(u.color)}">
+    <div class="profile-banner"></div>
+    <div class="profile-body">
+      ${avatar(u, { dot: true })}
+      <h4>${esc(u.displayName)}${verified(u)}</h4>
+      <div class="handle">@${esc(u.username)} · ${u.disabled ? 'Gesperrt' : 'Bot'}${u.ownerId ? ` · von ${esc(userOf(u.ownerId).displayName)}` : ''}</div>
+      ${u.bio ? `<div class="bio">${esc(u.bio)}</div>` : '<div style="height:12px"></div>'}
+      ${commands ? `<div class="field"><span>Befehle</span></div><ul class="bot-cmd-list">${commands}</ul>` : '<div class="meta">Noch keine Befehle.</div>'}
+      ${mine ? `<button class="btn block" data-act="edit">${ICONS.bot} Bot bearbeiten</button>` : ''}
+    </div>
+  </div>`);
+  pop.querySelector('[data-act=edit]')?.addEventListener('click', () => { closePopover(); openBotEditor(u.id); });
   placePopover(pop, anchor);
 }
 
@@ -1586,6 +1832,11 @@ function openModal(html, { className = '', backdropClass = '' } = {}) {
   modal.querySelectorAll('[data-close]').forEach((b) => (b.onclick = close));
   requestAnimationFrame(() => modal.querySelector('input:not([type=color]), textarea')?.focus());
   return { modal, close };
+}
+
+function closeAllModals() {
+  // Each modal removes its own key handler when its backdrop is clicked.
+  $$('#modal-root .modal-backdrop').forEach((b) => b.dispatchEvent(new MouseEvent('mousedown', { bubbles: true })));
 }
 
 function confirmDialog(title, text, confirmLabel = 'Bestätigen') {
@@ -1737,6 +1988,14 @@ function openHubSettings(hubId) {
       <button class="btn" data-act="copy" title="Link kopieren">${ICONS.copy}</button>
       <button class="btn" data-act="regen">Neu</button></div>
     <hr />
+    <div class="field"><span>Bots</span></div>
+    <div class="hub-bots"></div>
+    <form class="bot-add-row">
+      <input class="input" name="bot" maxlength="32" placeholder="Bot-Name, z. B. wuerfelbot" autocomplete="off" />
+      <button type="submit" class="btn">${ICONS.plus} Hinzufügen</button>
+    </form>
+    <div class="my-bot-chips"></div>
+    <hr />
     <div class="modal-actions">${hub.isLounge ? '' : `<button class="btn danger" data-act="delete">${ICONS.trash} Hub löschen</button>`}<span class="spacer"></span><button class="btn" data-close>Schließen</button></div>`);
   const form = modal.querySelector('form');
   form.name.value = hub.name;
@@ -1758,12 +2017,79 @@ function openHubSettings(hubId) {
       toast(ex.message, 'error');
     }
   };
+  renderHubBots(modal, hubId);
+  const addForm = modal.querySelector('.bot-add-row');
+  addForm.onsubmit = async (e) => {
+    e.preventDefault();
+    const name = addForm.bot.value.trim();
+    if (!name) return;
+    try {
+      await addBotToHub(hubId, name);
+      addForm.bot.value = '';
+      renderHubBots(modal, hubId);
+    } catch (ex) {
+      toast(ex.message, 'error');
+    }
+  };
   const deleteBtn = modal.querySelector('[data-act=delete]');
   if (deleteBtn) deleteBtn.onclick = async () => {
     close();
     if (!(await confirmDialog('Hub endgültig löschen?', `„${hub.name}“ und alle Nachrichten werden für alle Mitglieder gelöscht. Das kann nicht rückgängig gemacht werden.`, 'Endgültig löschen'))) return;
     req('hub:delete', { hubId }).catch((ex) => toast(ex.message, 'error'));
   };
+}
+
+async function addBotToHub(hubId, bot) {
+  const res = await req('bot:hub:add', { hubId, bot });
+  state.users.set(res.bot.id, res.bot);
+  state.presence.set(res.bot.id, res.bot.disabled ? 'offline' : 'online');
+  const hub = state.hubs.get(hubId);
+  if (hub && !hub.members.includes(res.bot.id)) hub.members.push(res.bot.id);
+  toast(`${res.bot.displayName} ist jetzt in „${hub?.name || 'dem Hub'}“`);
+}
+
+// The bots of a hub inside its settings, plus one-click chips for the user's own bots.
+async function renderHubBots(modal, hubId) {
+  const hub = state.hubs.get(hubId);
+  const list = modal.querySelector('.hub-bots');
+  if (!hub || !list) return;
+  const inHub = hub.members.map((m) => state.users.get(m)).filter((u) => u?.bot);
+  list.innerHTML = inHub.length ? '' : '<div class="empty-hint" style="padding:4px 0 12px">Noch keine Bots in diesem Hub.</div>';
+  for (const u of inHub) {
+    const row = h(`<div class="bot-row">${avatar(u, { size: 30 })}<div class="info"><div class="name">${esc(u.displayName)}${verified(u)}</div>
+      <div class="bio">@${esc(u.username)} · ${u.commands?.length || 0} Befehle</div></div>
+      <button class="icon-btn" title="Aus dem Hub entfernen">${ICONS.x}</button></div>`);
+    row.querySelector('button').onclick = async () => {
+      try {
+        await req('bot:hub:remove', { hubId, botId: u.id });
+        hub.members = hub.members.filter((m) => m !== u.id);
+        renderHubBots(modal, hubId);
+      } catch (ex) {
+        toast(ex.message, 'error');
+      }
+    };
+    list.append(row);
+  }
+  const chips = modal.querySelector('.my-bot-chips');
+  try {
+    const { bots } = await req('bot:list');
+    const addable = bots.filter((b) => !hub.members.includes(b.id) && !b.disabled);
+    chips.innerHTML = addable.length ? '<span class="chips-label">Deine Bots:</span>' : '';
+    for (const b of addable) {
+      const chip = h(`<button type="button" class="chip">${ICONS.plus} ${esc(b.displayName)}</button>`);
+      chip.onclick = async () => {
+        try {
+          await addBotToHub(hubId, b.id);
+          renderHubBots(modal, hubId);
+        } catch (ex) {
+          toast(ex.message, 'error');
+        }
+      };
+      chips.append(chip);
+    }
+  } catch {
+    chips.innerHTML = '';
+  }
 }
 
 function openChannelEditor(hubId, channelId, initialKind = 'text') {
@@ -2022,7 +2348,8 @@ function openPalette() {
   let sel = 0;
 
   const all = () => {
-    const out = [];
+    const out = [{ label: 'Meine Bots', kind: 'Bots & Slash-Befehle', ico: '🤖', go: () => openBotManager() }];
+    if (state.me.official) out.push({ label: 'Admin-Panel', kind: 'Nexora verwalten', ico: '🛡️', go: () => openAdminPanel() });
     for (const hub of state.hubs.values()) {
       out.push({ label: hub.name, kind: 'Hub', ico: hub.icon || initials(hub.name), go: () => openHub(hub.id) });
       for (const c of hub.channels) {
@@ -2477,6 +2804,7 @@ $('#create-hub-btn').onclick = openCreateHub;
 $('#join-hub-btn').onclick = openJoinHub;
 $('#palette-btn').onclick = openPalette;
 $('#version-btn').onclick = openChangelog;
+$('#admin-btn').onclick = () => openAdminPanel();
 $('#auth-version').onclick = openChangelog;
 $('#toggle-members').onclick = () => {
   if (window.matchMedia('(max-width: 1100px)').matches) {

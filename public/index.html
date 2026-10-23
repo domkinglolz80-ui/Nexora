@@ -31,6 +31,7 @@
         <li><span>🛰️</span> Eigene Hubs mit Kanälen</li>
         <li><span>💬</span> Direktnachrichten & Reaktionen</li>
         <li><span>📎</span> Dateien teilen & Umfragen starten</li>
+        <li><span>🤖</span> Eigene Bots mit Slash-Befehlen</li>
         <li><span>⌘</span> Schnellsprung mit <kbd>Strg</kbd>+<kbd>K</kbd></li>
       </ul>
     </div>
@@ -74,6 +75,9 @@
       <button class="rail-item action" id="join-hub-btn" title="Hub beitreten">
         <svg viewBox="0 0 24 24"><path d="M10 14 21 3M15 3h6v6M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5"/></svg>
       </button>
+      <button class="rail-item action admin hidden" id="admin-btn" title="Admin-Panel">
+        <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+      </button>
       <button class="version-pill" id="version-btn" data-version hidden title="Was ist neu?"></button>
     </nav>
 
@@ -108,6 +112,7 @@
 
       <div class="composer-wrap">
         <button type="button" class="jump-btn hidden" id="jump-btn"></button>
+        <div class="slash-pop hidden" id="slash-pop"></div>
         <div class="reply-bar hidden" id="reply-bar"></div>
         <div class="attach-tray hidden" id="attach-tray"></div>
         <form class="composer" id="composer">
@@ -149,5 +154,7 @@
 
   <script src="/socket.io/socket.io.js"></script>
   <script src="/app.js"></script>
+  <script src="/bots.js"></script>
+  <script src="/admin.js"></script>
 </body>
 </html>
