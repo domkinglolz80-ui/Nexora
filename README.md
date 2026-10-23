@@ -51,6 +51,14 @@ Ab **V0.1.5 Beta** trägt Nexora Halloween: Vollmond, Nebel, Spinnennetz und Fle
 | 👑 Kürbiskönig          | nur `@nexora`                        | Feuerring, goldene Krone mit Kürbis-Juwel, Funken; Profilkarte mit Kürbis-Hügel bei Vollmond, Name in Feuerfarben |
 | 🏮 Irrlicht-Wächter     | nur der Nexora Helper                | grüner Geisterring, schwingende Laterne, Irrlichter; Profilkarte mit Friedhof im grünen Nebel, Name in Geistergrün |
 
+**Gründer-Accessoire** – nur für den Gründer von Nexora:
+
+| Accessoire              | Wer                                  | Was passiert                                                                 |
+| ----------------------- | ------------------------------------ | ---------------------------------------------------------------------------- |
+| 💠 Nexus-Krone          | nur `@nexora`                        | Weltall im Profilbild, schillernder Ring, drehendes Nexora-Sechseck, drei kreisende Kristalle, funkelnde Sterne, schwebende Kristallkrone; Profilkarte mit Sternenportal, Nebel und Kometen |
+
+`@nexora` bekommt die Nexus-Krone einmal automatisch angelegt und kann jederzeit zum Kürbiskönig oder einem anderen Accessoire wechseln.
+
 **Legendäre Accessoires** – gibt es genau einmal, für einen einzigen Account:
 
 | Accessoire              | Wer                                  | Was passiert                                                                 |
@@ -130,6 +138,7 @@ Nur **@nexora** kann den Helper mit `/einladen` als sichtbares Mitglied in einen
 | `/loeschen <anzahl>`           | löscht die letzten 1–100 Nachrichten im Kanal                        |
 | `/einladen [code]`             | nur @nexora: holt den Helper sichtbar in diesen oder einen anderen Hub |
 | `/ausladen [code]`             | nur @nexora: holt den Helper wieder aus dem Hub                       |
+| `/status <status>`             | nur @nexora: `online`, `abwesend`, `nichtstoeren` oder `unsichtbar` (englisch geht auch: `idle`, `dnd`, `invisible`) |
 
 `<nutzer>` ist der Benutzername, mit oder ohne `@`. Offizielle Accounts und Bots können nicht moderiert werden. Sperren, Verwarnungen und Kicks schreibt der Helper sichtbar in den Kanal, alles andere sieht nur die Person, die den Befehl nutzt.
 
@@ -192,7 +201,7 @@ Die Stimmen laufen per **WebRTC direkt zwischen den Geräten**; der Server vermi
 
 ## Versionen & Updates
 
-Aktuelle Version: **V0.1.6.7 Beta**. Alle Änderungen stehen in [`changelog.json`](changelog.json) – der oberste Eintrag ist die laufende Version.
+Aktuelle Version: **V0.1.6.8 Beta**. Alle Änderungen stehen in [`changelog.json`](changelog.json) – der oberste Eintrag ist die laufende Version.
 
 - Nach dem Login (und nach jedem Update) zeigt Nexora einmal das Fenster **„Was ist neu?“**. Über die Versionsanzeige unten in der Hub-Leiste lässt es sich jederzeit wieder öffnen.
 - Geht eine neue Version live, während jemand Nexora offen hat, lädt die Seite automatisch neu. Tippt die Person gerade etwas, erscheint stattdessen ein „Jetzt laden“-Hinweis.

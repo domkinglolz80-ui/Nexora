@@ -293,6 +293,7 @@ const AUDIT_LABELS = {
   hubOwner: ['👑', 'hat einen Hub übertragen'],
   helperInvite: ['🛡️', 'hat den Nexora Helper eingeladen'],
   helperRemove: ['🛡️', 'hat den Nexora Helper ausgeladen'],
+  helperStatus: ['🟢', 'hat den Status des Nexora Helpers geändert'],
   botDisable: ['⛔', 'hat einen Bot gesperrt'],
   botEnable: ['🤖', 'hat einen Bot entsperrt'],
   deleteBot: ['🗑️', 'hat einen Bot gelöscht'],

@@ -1283,20 +1283,20 @@ textarea.code:focus { border-color: var(--orange); box-shadow: 0 0 0 4px rgba(25
 /* ---------- EXCLUSIVE: Kürbiskönig (Nexora team) & Irrlicht-Wächter (Nexora Helper) ---------- */
 .acc-kuerbiskoenig, .acc-irrlicht { inset: 0; }
 .acc-kuerbiskoenig > *, .acc-irrlicht > * { position: absolute; display: block; }
-.acc-kuerbiskoenig .ring, .acc-irrlicht .ring, .acc-hoellenfuerst .ring {
+.acc-kuerbiskoenig .ring, .acc-irrlicht .ring, .acc-hoellenfuerst .ring, .acc-nexuskrone .ring {
   inset: calc(var(--s) * -0.11); border-radius: 38%; overflow: hidden;
   padding: calc(var(--s) * 0.05 + 1.5px);
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor; mask-composite: exclude;
 }
 /* The gradient is drawn once; only its square turns, which the graphics card does for free. */
-.acc-kuerbiskoenig .ring::before, .acc-irrlicht .ring::before, .acc-hoellenfuerst .ring::before {
+.acc-kuerbiskoenig .ring::before, .acc-irrlicht .ring::before, .acc-hoellenfuerst .ring::before, .acc-nexuskrone .ring::before {
   content: ''; position: absolute; inset: -30%;
   animation: ex-spin 2.6s linear infinite;
 }
 @keyframes ex-spin { to { transform: rotate(360deg); } }
 /* glow: a still shadow behind the ring instead of a filter on the moving part */
-.acc-kuerbiskoenig, .acc-irrlicht, .acc-hoellenfuerst { border-radius: 38%; }
+.acc-kuerbiskoenig, .acc-irrlicht, .acc-hoellenfuerst, .acc-nexuskrone { border-radius: 38%; }
 
 /* Kürbiskönig: fire ring, golden crown with a pumpkin jewel, rising embers */
 .acc-kuerbiskoenig .ring::before { background: conic-gradient(#ffd166, #ff7a18, #ff2e1a, #9b5de5, #ff7a18, #ffd166); }
@@ -1486,6 +1486,109 @@ textarea.code:focus { border-color: var(--orange); box-shadow: 0 0 0 4px rgba(25
 @keyframes hf-spark { 0% { opacity: 0; transform: translate(0, 0) scale(1); } 15% { opacity: 1; } 100% { opacity: 0; transform: translate(calc(var(--s) * -0.15), calc(var(--s) * -1.4)) scale(0.3); } }
 .avatar.tiny .acc-hoellenfuerst .spark, .avatar.tiny .acc-hoellenfuerst .flame,
 .avatar.tiny .acc-hoellenfuerst .r2, .avatar.tiny .acc-hoellenfuerst .tail, .avatar.tiny .acc-hoellenfuerst .aura { display: none; }
+
+/* ---------- FOUNDER: Nexus-Krone (only @nexora) ----------
+   A piece of space in the avatar, a gold-cyan-violet ring, the Nexora hexagon turning
+   around it, three crystals in orbit, twinkling stars and a hovering crystal crown.
+   Only transform and opacity move, so it stays smooth. */
+.avatar:has(> .acc-nexuskrone) {
+  color: #fff6d6; text-shadow: 0 0 8px rgba(255, 210, 110, 0.9);
+  background:
+    radial-gradient(1.5px 1.5px at 22% 30%, #fff 50%, transparent 51%),
+    radial-gradient(1px 1px at 70% 22%, #fff 50%, transparent 51%),
+    radial-gradient(1.2px 1.2px at 78% 72%, #cdf 50%, transparent 51%),
+    radial-gradient(1px 1px at 30% 80%, #fff 50%, transparent 51%),
+    radial-gradient(80% 70% at 30% 25%, #6b3cff 0%, transparent 60%),
+    radial-gradient(90% 80% at 80% 90%, #00c2ff 0%, transparent 55%),
+    linear-gradient(160deg, #1a0d3d, #070417 70%);
+}
+.acc-nexuskrone { inset: 0; box-shadow: 0 0 calc(var(--s) * 0.24) rgba(120, 180, 255, 0.75), 0 0 calc(var(--s) * 0.5) rgba(255, 200, 80, 0.3); }
+.acc-nexuskrone > * { position: absolute; display: block; }
+.acc-nexuskrone .aura {
+  inset: calc(var(--s) * -0.36); border-radius: 50%; z-index: -1;
+  background: radial-gradient(circle, rgba(0, 194, 255, 0.4) 25%, rgba(140, 80, 255, 0.25) 50%, rgba(255, 200, 80, 0.12) 62%, transparent 72%);
+  animation: nk-aura 3s ease-in-out infinite alternate;
+}
+@keyframes nk-aura { from { transform: scale(0.9) rotate(0deg); opacity: 0.65; } to { transform: scale(1.08) rotate(40deg); opacity: 1; } }
+.acc-nexuskrone .ring { padding: calc(var(--s) * 0.055 + 1.5px); }
+.acc-nexuskrone .ring::before { background: conic-gradient(#ffd36b, #fff4c2, #00e5ff, #7b5cff, #ff5cf0, #ffd36b); animation-duration: 3.2s; }
+.acc-nexuskrone .hexring { inset: calc(var(--s) * -0.3); animation: nk-hex 14s linear infinite; }
+.acc-nexuskrone .hexring svg { width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 0 3px rgba(0, 229, 255, 0.9)); }
+.acc-nexuskrone .hexring polygon { fill: none; stroke: #7fe9ff; stroke-width: 1.6; stroke-dasharray: 10 6 2 6; stroke-linejoin: round; }
+@keyframes nk-hex { to { transform: rotate(360deg); } }
+.acc-nexuskrone .orbit { inset: calc(var(--s) * -0.2); animation: nk-orbit 4s linear infinite; }
+.acc-nexuskrone .orbit i {
+  position: absolute; left: 50%; top: 0; width: calc(var(--s) * 0.13 + 2px); height: calc(var(--s) * 0.2 + 2px); margin-left: calc(var(--s) * -0.065 - 1px);
+  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+  background: linear-gradient(160deg, #ffffff, #7fe9ff 40%, #7b5cff);
+}
+.acc-nexuskrone .o2 { animation-duration: 6s; animation-direction: reverse; inset: calc(var(--s) * -0.28); }
+.acc-nexuskrone .o2 i { background: linear-gradient(160deg, #fff, #ffd36b 45%, #ff8a00); }
+.acc-nexuskrone .o3 { animation-duration: 5s; animation-delay: -2.5s; inset: calc(var(--s) * -0.12); }
+.acc-nexuskrone .o3 i { background: linear-gradient(160deg, #fff, #ff9cf5 45%, #b44cff); transform: scale(0.8); }
+@keyframes nk-orbit { to { transform: rotate(360deg); } }
+.acc-nexuskrone .star {
+  width: calc(var(--s) * 0.12 + 2px); height: calc(var(--s) * 0.12 + 2px);
+  clip-path: polygon(50% 0, 60% 40%, 100% 50%, 60% 60%, 50% 100%, 40% 60%, 0 50%, 40% 40%);
+  background: #fff; opacity: 0; animation: nk-twinkle 2.4s ease-in-out infinite;
+}
+.acc-nexuskrone .t1 { left: -18%; top: 12%; }
+.acc-nexuskrone .t2 { right: -20%; top: 40%; animation-delay: 0.6s; }
+.acc-nexuskrone .t3 { left: 8%; bottom: -20%; animation-delay: 1.2s; }
+.acc-nexuskrone .t4 { right: 4%; top: -18%; animation-delay: 1.8s; }
+@keyframes nk-twinkle { 0%, 100% { opacity: 0; transform: scale(0.4) rotate(0deg); } 50% { opacity: 1; transform: scale(1) rotate(45deg); } }
+.avatar .acc-nexuskrone .crown {
+  width: calc(var(--s) * 0.82); height: calc(var(--s) * 0.55); left: 50%; top: calc(var(--s) * -0.5); margin-left: calc(var(--s) * -0.41);
+  filter: drop-shadow(0 0 calc(var(--s) * 0.07) rgba(127, 233, 255, 0.95)) drop-shadow(0 2px 2px rgba(0, 0, 0, 0.6));
+  animation: nk-crown 3s ease-in-out infinite;
+}
+.acc-nexuskrone .spike { fill: #ffd36b; stroke: #a8670a; stroke-width: 0.7; stroke-linejoin: round; }
+.acc-nexuskrone .band { fill: #ffc23d; stroke: #a8670a; stroke-width: 0.7; }
+.acc-nexuskrone .gem { fill: #2fd6ff; stroke: #fff; stroke-width: 0.8; }
+.acc-nexuskrone .gem-core { fill: #fff; animation: nk-gem 1.6s ease-in-out infinite alternate; }
+.acc-nexuskrone .pearl { fill: #b28cff; stroke: #fff; stroke-width: 0.4; }
+@keyframes nk-crown { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10%); } }
+@keyframes nk-gem { from { opacity: 0.25; } to { opacity: 0.95; } }
+.avatar.tiny .acc-nexuskrone .orbit, .avatar.tiny .acc-nexuskrone .star,
+.avatar.tiny .acc-nexuskrone .hexring, .avatar.tiny .acc-nexuskrone .aura { display: none; }
+
+/* name, member list, profile card */
+.msg-author.ex-nexuskrone {
+  background: linear-gradient(90deg, #fff4c2, #ffd36b 25%, #7fe9ff 55%, #b28cff 80%, #ff9cf5);
+  -webkit-background-clip: text; background-clip: text; color: transparent; font-weight: 800;
+  filter: drop-shadow(0 0 6px rgba(127, 233, 255, 0.6));
+}
+.member.ex-nexuskrone .name, .who.ex-nexuskrone .name { color: #ffe08a; text-shadow: 0 0 10px rgba(127, 233, 255, 0.9); }
+.popover.ex-nexuskrone { border-color: rgba(255, 211, 107, 0.8); box-shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.9), 0 0 60px -8px rgba(0, 194, 255, 0.7), 0 0 0 1px rgba(178, 140, 255, 0.5); }
+.popover.ex-nexuskrone .profile-banner { background: linear-gradient(180deg, #03020c 0%, #120a35 55%, #2a1468 100%); }
+.popover.ex-nexuskrone h4 { color: #ffe9a8; text-shadow: 0 0 14px rgba(127, 233, 255, 0.9); }
+.ex-nexuskrone .ex-badge { color: #fff6d6; border: 1px solid rgba(255, 211, 107, 0.8); text-shadow: 0 0 6px rgba(0, 194, 255, 0.9); background: linear-gradient(90deg, rgba(123, 92, 255, 0.45), rgba(0, 194, 255, 0.35), rgba(255, 211, 107, 0.4)); }
+
+/* cosmos */
+.ex-nexuskrone .profile-banner .nebula { fill: #6b3cff; opacity: 0.45; filter: blur(14px); }
+.ex-nexuskrone .profile-banner .nebula.n2 { fill: #00a8e8; opacity: 0.35; }
+.ex-nexuskrone .profile-banner .sky circle { fill: #fff; }
+.ex-nexuskrone .profile-banner .sky { animation: nk-sky 2.6s ease-in-out infinite alternate; }
+.ex-nexuskrone .profile-banner .sky.s2 { animation-delay: -1.3s; }
+@keyframes nk-sky { from { opacity: 0.35; } to { opacity: 1; } }
+.ex-nexuskrone .profile-banner .portal circle { fill: none; stroke-linecap: round; }
+.ex-nexuskrone .profile-banner .portal { transform-box: fill-box; transform-origin: center; animation: nk-hex 12s linear infinite; }
+.ex-nexuskrone .profile-banner .p1 circle { stroke: #ffd36b; stroke-width: 1.5; stroke-dasharray: 18 8 4 8; }
+.ex-nexuskrone .profile-banner .p2 { animation-duration: 8s; animation-direction: reverse; }
+.ex-nexuskrone .profile-banner .p2 circle { stroke: #7fe9ff; stroke-width: 2; stroke-dasharray: 6 5; }
+.ex-nexuskrone .profile-banner .p3 { animation-duration: 5s; }
+.ex-nexuskrone .profile-banner .p3 circle { stroke: #b28cff; stroke-width: 1.4; stroke-dasharray: 3 3; }
+.ex-nexuskrone .profile-banner .core-hex { fill: #2fd6ff; stroke: #fff; stroke-width: 1; animation: nk-gem 1.4s ease-in-out infinite alternate; }
+.ex-nexuskrone .profile-banner .comet { stroke: #fff; stroke-width: 1.4; stroke-linecap: round; opacity: 0; animation: nk-comet 5s ease-in infinite; }
+@keyframes nk-comet {
+  0%, 70% { opacity: 0; transform: translate(40px, 4px) rotate(18deg); }
+  74% { opacity: 1; }
+  100% { opacity: 0; transform: translate(200px, 64px) rotate(18deg); }
+}
+
+/* picker tile */
+.acc-opt.founder { border-color: rgba(255, 211, 107, 0.75); background: linear-gradient(160deg, rgba(123, 92, 255, 0.25), rgba(0, 194, 255, 0.14) 55%, rgba(0, 0, 0, 0.3)); box-shadow: inset 0 0 18px -6px rgba(127, 233, 255, 0.8); }
+.acc-opt.founder .ex-tag { color: #ffe08a; text-shadow: 0 0 6px rgba(0, 194, 255, 0.9); }
 
 /* Performance: small avatars and avatars outside the screen don't animate at all. */
 .avatar.tiny .acc, .avatar.tiny .acc *, .avatar.tiny .acc *::before,

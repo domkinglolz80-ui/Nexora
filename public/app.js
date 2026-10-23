@@ -127,6 +127,25 @@ const ACCESSORIES = [
       <circle class="ash a1" cx="40" cy="96" r="1.6"/><circle class="ash a2" cx="110" cy="98" r="1.2"/><circle class="ash a3" cx="170" cy="96" r="1.8"/>
       <circle class="ash a4" cx="220" cy="99" r="1.3"/><circle class="ash a5" cx="275" cy="97" r="1.5"/><circle class="ash a6" cx="80" cy="99" r="1"/></svg>`,
   },
+  // Founder: only the founder of Nexora (@nexora) owns it.
+  {
+    id: 'nexuskrone', name: t('Nexus-Krone'), badge: t('💠 Nexus-Krone'), tier: 'founder', allowed: (u) => !u.bot && u.username?.toLowerCase() === 'nexora',
+    svg: `<span class="aura"></span><span class="ring"></span>
+      <span class="hexring"><svg viewBox="0 0 100 100"><polygon points="50,3 91,26.5 91,73.5 50,97 9,73.5 9,26.5"/></svg></span>
+      <span class="orbit o1"><i></i></span><span class="orbit o2"><i></i></span><span class="orbit o3"><i></i></span>
+      <span class="star t1"></span><span class="star t2"></span><span class="star t3"></span><span class="star t4"></span>
+      <svg class="crown" viewBox="0 0 48 32"><path class="spike" d="M6 24 3 9l9 7zM42 24l3-15-9 7z"/><path class="spike" d="M14 22 16 4l6 12zM34 22 32 4l-6 12z"/>
+      <path class="band" d="M5 22h38l-2 8H7z"/><polygon class="gem" points="24,1 31,5 31,13 24,17 17,13 17,5"/><polygon class="gem-core" points="24,5 27.5,7 27.5,11 24,13 20.5,11 20.5,7"/>
+      <circle class="pearl" cx="12" cy="26" r="1.6"/><circle class="pearl" cx="24" cy="26" r="1.8"/><circle class="pearl" cx="36" cy="26" r="1.6"/></svg>`,
+    scene: `<svg viewBox="0 0 300 104" preserveAspectRatio="xMidYMid slice">
+      <ellipse class="nebula n1" cx="70" cy="40" rx="90" ry="34"/><ellipse class="nebula n2" cx="230" cy="62" rx="100" ry="30"/>
+      <g class="sky"><circle cx="20" cy="14" r="1"/><circle cx="48" cy="70" r=".8"/><circle cx="96" cy="22" r="1.2"/><circle cx="128" cy="84" r=".9"/><circle cx="182" cy="12" r="1"/>
+      <circle cx="262" cy="20" r="1.3"/><circle cx="286" cy="80" r=".8"/><circle cx="214" cy="92" r="1"/><circle cx="12" cy="94" r="1.1"/><circle cx="150" cy="44" r=".7"/></g>
+      <g class="sky s2"><circle cx="36" cy="40" r="1.1"/><circle cx="76" cy="90" r="1"/><circle cx="118" cy="8" r=".8"/><circle cx="200" cy="40" r="1.2"/><circle cx="244" cy="96" r=".9"/><circle cx="292" cy="44" r="1"/></g>
+      <g transform="translate(222 46)"><g class="portal p1"><circle r="30"/></g><g class="portal p2"><circle r="22"/></g><g class="portal p3"><circle r="14"/></g>
+      <polygon class="core-hex" points="0,-9 7.8,-4.5 7.8,4.5 0,9 -7.8,4.5 -7.8,-4.5"/></g>
+      <path class="comet" d="M0 0h-34"/></svg>`,
+  },
 ];
 
 function exclusiveOf(user) {
@@ -165,6 +184,7 @@ if (accVisibility) {
 
 // "Legendär" for one-of-a-kind accessories, "Exklusiv" for the rest of the special ones.
 function tierLabel(acc) {
+  if (acc.tier === 'founder') return t('Gründer');
   return acc.tier === 'legendary' ? t('Legendär') : t('Exklusiv');
 }
 

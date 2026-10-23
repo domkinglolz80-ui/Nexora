@@ -312,6 +312,12 @@ const EN = {
   'Höllenfürst': 'Hell Prince',
   '😈 Höllenfürst': '😈 Hell Prince',
   'Legendär': 'Legendary',
+  'Nexus-Krone': 'Nexus Crown',
+  '💠 Nexus-Krone': '💠 Nexus Crown',
+  'hat den Status des Nexora Helpers geändert': "changed the Nexora Helper's status",
+  'Setzt den Status des Nexora Helpers für alle': "Sets the Nexora Helper's status for everyone",
+  'online, abwesend, nichtstoeren oder unsichtbar': 'online, abwesend (away), nichtstoeren (do not disturb) or unsichtbar (invisible)',
+  'Unbekannter Status. Möglich: `online`, `abwesend`, `nichtstoeren`, `unsichtbar`.': 'Unknown status. Possible: `online`, `abwesend` (away), `nichtstoeren` (do not disturb), `unsichtbar` (invisible).',
   'Irrlicht-Wächter': 'Will-o’-the-Wisp Warden',
   '🏮 Irrlicht-Wächter': '🏮 Will-o’-the-Wisp Warden',
 
@@ -672,7 +678,7 @@ const EN = {
   'Lädt den Nexora Helper in einen Hub ein – für alle sichtbar': 'Invites the Nexora Helper into a hub – visible to everyone',
   'Holt den Nexora Helper wieder aus einem Hub': 'Takes the Nexora Helper out of a hub again',
   'Einladungscode – ohne Code: dieser Hub': 'Invite code – without a code: this hub',
-  'Nur @nexora kann den Nexora Helper ein- und ausladen.': 'Only @nexora can invite or remove the Nexora Helper.',
+  'Diesen Befehl kann nur @nexora benutzen.': 'Only @nexora can use this command.',
 };
 
 // Server messages that contain a value. Matched only when no exact translation exists.
@@ -701,6 +707,7 @@ const EN_PATTERNS = [
   [/^Löscht die letzten Nachrichten in diesem Kanal \(max\. (\d+)\)$/, 'Deletes the latest messages in this channel (max. $1)'],
   [/^Wie viele \(1–(\d+)\)$/, 'How many (1–$1)'],
   [/^Gib den Einladungscode des Hubs an, z\. B\. (`.*`)\.$/, "Enter the hub's invite code, e.g. $1."],
+  [/^(\S+) Der Nexora Helper ist jetzt \*\*(online|abwesend|auf „Nicht stören“|unsichtbar)\*\*\.$/, (m, icon, st) => `${icon} The Nexora Helper is now **${{ online: 'online', abwesend: 'away', 'auf „Nicht stören“': 'on “Do not disturb”', unsichtbar: 'invisible' }[st]}**.`],
   [/^Der Nexora Helper ist schon in „(.*)“\.$/, 'The Nexora Helper is already in "$1".'],
   [/^✅ Der Nexora Helper ist jetzt in „(.*)“ – alle Mitglieder sehen ihn\.$/, '✅ The Nexora Helper is now in "$1" – all members can see it.'],
   [/^Der Nexora Helper ist nicht in „(.*)“\.$/, 'The Nexora Helper is not in "$1".'],

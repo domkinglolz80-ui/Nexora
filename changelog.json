@@ -1,5 +1,33 @@
 [
   {
+    "version": "V0.1.6.8 Beta",
+    "date": "2026-10-23",
+    "title": "Die Nexus-Krone",
+    "titleEn": "The Nexus Crown",
+    "changes": [
+      {
+        "icon": "💠",
+        "text": "Das erste **Gründer**-Accessoire: die **Nexus-Krone** – nur der Gründer von Nexora (@nexora) trägt sie",
+        "textEn": "The first **founder** accessory: the **Nexus Crown** – only the founder of Nexora (@nexora) wears it"
+      },
+      {
+        "icon": "🌌",
+        "text": "Ein Stück Weltall im Profilbild, ein schillernder Ring, das Nexora-Sechseck dreht sich drumherum, drei Kristalle kreisen, Sterne funkeln und eine Kristallkrone schwebt darüber – alles animiert und trotzdem flüssig",
+        "textEn": "A piece of space in the profile picture, a shimmering ring, the Nexora hexagon turning around it, three orbiting crystals, twinkling stars and a floating crystal crown – all animated and still smooth"
+      },
+      {
+        "icon": "🌀",
+        "text": "Die Profilkarte öffnet ein Sternenportal mit Nebel, Kometen und dem leuchtenden Nexora-Kern",
+        "textEn": "The profile card opens a star portal with nebulae, comets and the glowing Nexora core"
+      },
+      {
+        "icon": "🟢",
+        "text": "@nexora stellt den **Nexora Helper** mit `/status` auf online, abwesend, nicht stören oder unsichtbar – alle sehen es sofort, auch nach einem Neustart",
+        "textEn": "@nexora sets the **Nexora Helper** to online, away, do not disturb or invisible with `/status` – everyone sees it right away, even after a restart"
+      }
+    ]
+  },
+  {
     "version": "V0.1.6.7 Beta",
     "date": "2026-10-23",
     "title": "Hotfix: flüssige Accessoires",

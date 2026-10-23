@@ -297,12 +297,14 @@ const EXCLUSIVE_ACCESSORIES = {
   kuerbiskoenig: (u) => isOwner(u), // only @nexora
   irrlicht: (u) => Boolean(u.system), // the Nexora Helper
   hoellenfuerst: isLegend, // legendary: only @Zorvecx
+  nexuskrone: (u) => isOwner(u), // founder: only @nexora
 };
 
 // Put on once automatically (afterwards it can be changed like any accessory): [accessory, who, flag].
 const AUTO_GRANTS = [
   ['kuerbiskoenig', isOwner, 'kingGranted'],
   ['hoellenfuerst', isLegend, 'legendGranted'],
+  ['nexuskrone', isOwner, 'founderGranted'],
 ];
 
 function grantAccessories(u) {
@@ -319,7 +321,7 @@ function accessoryOf(value, user) {
   return EXCLUSIVE_ACCESSORIES[value]?.(user) ? value : undefined;
 }
 
-// @nexora gets the Kürbiskönig and @Zorvecx the Höllenfürst once;
+// @nexora gets the Kürbiskönig and then the Nexus-Krone, @Zorvecx the Höllenfürst, each once;
 // anyone else still holding an exclusive from an earlier version loses it.
 function grantExclusives() {
   for (const u of Object.values(db.users)) {
@@ -745,6 +747,8 @@ const io = new Server(server, { maxHttpBufferSize: 64 * 1024 });
 const online = new Map(); // userId -> number of open sockets
 
 function presenceOf(user) {
+  // The Nexora Helper shows the status @nexora gives it with /status.
+  if (user.system) return user.status === 'invisible' ? 'offline' : user.status || 'online';
   if (user.bot) return db.bots[user.id]?.disabled ? 'offline' : 'online';
   if (!online.get(user.id)) return 'offline';
   return user.status === 'invisible' ? 'offline' : user.status;
@@ -1057,7 +1061,7 @@ function addHelperToHub(hub) {
   hub.members.push(HELPER_ID);
   save();
   io.to(`hub:${hub.id}`).emit('user:update', publicUser(db.users[HELPER_ID]));
-  io.to(`hub:${hub.id}`).emit('presence', { userId: HELPER_ID, status: 'online' });
+  io.to(`hub:${hub.id}`).emit('presence', { userId: HELPER_ID, status: presenceOf(db.users[HELPER_ID]) });
   io.to(`hub:${hub.id}`).emit('hub:update', hubView(hub));
   const channel = hub.channels.find((c) => c.kind !== 'voice');
   if (channel) {
@@ -1065,6 +1069,25 @@ function addHelperToHub(hub) {
       content: '👋 Hallo zusammen! Ich bin der **Nexora Helper**, der offizielle Helfer von Nexora. Ab jetzt bin ich hier und unterstütze das Nexora-Team.',
     });
   }
+}
+
+// /status accepts German and English words for the four statuses.
+const HELPER_STATUS = {
+  online: 'online', on: 'online',
+  abwesend: 'idle', idle: 'idle', away: 'idle',
+  nichtstoeren: 'dnd', nichtstören: 'dnd', dnd: 'dnd', donotdisturb: 'dnd',
+  unsichtbar: 'invisible', invisible: 'invisible', offline: 'invisible',
+};
+const HELPER_STATUS_LABEL = { online: 'online', idle: 'abwesend', dnd: 'auf „Nicht stören“', invisible: 'unsichtbar' };
+const HELPER_STATUS_ICON = { online: '🟢', idle: '🌙', dnd: '⛔', invisible: '👻' };
+
+// Everyone knows the helper, so everyone gets its new status right away.
+function setHelperStatus(status) {
+  const helper = db.users[HELPER_ID];
+  helper.status = status;
+  save();
+  io.emit('user:update', publicUser(helper));
+  io.emit('presence', { userId: HELPER_ID, status: presenceOf(helper) });
 }
 
 function ensureHelper() {
@@ -1075,7 +1098,7 @@ function ensureHelper() {
     username: taken && taken.id !== HELPER_ID ? 'Nexora.Helper' : 'NexoraHelper',
     displayName: 'Nexora Helper',
     color: '#ff7a18',
-    status: 'online',
+    status: db.users[HELPER_ID]?.status || 'online', // set by @nexora with /status, kept across restarts
     bio: 'Der offizielle Helfer von Nexora. Moderation per Slash-Befehl – nur für das Nexora-Team.',
     accessory: 'irrlicht',
     createdAt: db.users[HELPER_ID]?.createdAt || Date.now(),
@@ -1131,6 +1154,20 @@ const HELPER_COMMANDS = [
       removeFromHub(hub, HELPER_ID);
       audit(invoker.id, 'helperRemove', hub.name);
       return { ephemeral: [`👋 Der Nexora Helper hat „${hub.name}“ verlassen.`] };
+    },
+  },
+  {
+    name: 'status',
+    description: 'Setzt den Status des Nexora Helpers für alle',
+    ownerOnly: true,
+    options: [option('status', 'online, abwesend, nichtstoeren oder unsichtbar', true)],
+    run: ({ invoker, options }) => {
+      const key = String(options.status).toLowerCase().replace(/[\s_.-]/g, '');
+      const status = Object.hasOwn(HELPER_STATUS, key) ? HELPER_STATUS[key] : null;
+      if (!status) return { ephemeral: ['Unbekannter Status. Möglich: `online`, `abwesend`, `nichtstoeren`, `unsichtbar`.'] };
+      setHelperStatus(status);
+      audit(invoker.id, 'helperStatus', HELPER_STATUS_LABEL[status]);
+      return { ephemeral: [`${HELPER_STATUS_ICON[status]} Der Nexora Helper ist jetzt **${HELPER_STATUS_LABEL[status]}**.`] };
     },
   },
   {
@@ -1307,7 +1344,7 @@ io.on('connection', (socket) => {
     }
     // Everyone can see the helper's messages, so everyone knows its profile.
     users[HELPER_ID] = publicUser(db.users[HELPER_ID]);
-    presence[HELPER_ID] = 'online';
+    presence[HELPER_ID] = presenceOf(db.users[HELPER_ID]);
     return {
       version: VERSION,
       announcement: db.announcement,
@@ -1860,7 +1897,7 @@ io.on('connection', (socket) => {
     const helperCommand = HELPER_COMMANDS.find((c) => c.name === commandName);
     if (helperCommand && (botId === HELPER_ID || !bot)) {
       if (!isOfficial(me())) return { error: 'Der Nexora Helper ist nur für das Nexora-Team.' };
-      if (helperCommand.ownerOnly && !isOwner(me())) return { error: 'Nur @nexora kann den Nexora Helper ein- und ausladen.' };
+      if (helperCommand.ownerOnly && !isOwner(me())) return { error: 'Diesen Befehl kann nur @nexora benutzen.' };
       return runHelper(access, channelId, helperCommand, text);
     }
     if (access.type !== 'hub') return { error: 'Befehle von Bots funktionieren nur in Hubs.' };
