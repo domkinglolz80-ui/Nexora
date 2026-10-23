@@ -1,5 +1,28 @@
 [
   {
+    "version": "V0.1.6.6 Beta",
+    "date": "2026-10-23",
+    "title": "Der Höllenfürst",
+    "titleEn": "The Hell Prince",
+    "changes": [
+      {
+        "icon": "😈",
+        "text": "Das erste **legendäre** Accessoire: der **Höllenfürst** – es gibt ihn genau einmal, und nur @Zorvecx trägt ihn",
+        "textEn": "The first **legendary** accessory: the **Hell Prince** – there is exactly one, and only @Zorvecx wears it"
+      },
+      {
+        "icon": "🔥",
+        "text": "Glühende Teufelshörner, ein wedelnder Schwanz, ein doppelter Höllenfeuer-Rahmen um das Profilbild, Flammen, Funken und brodelnde Lava – alles animiert",
+        "textEn": "Glowing devil horns, a wagging tail, a double hellfire outline around the profile picture, flames, sparks and bubbling lava – all animated"
+      },
+      {
+        "icon": "🌋",
+        "text": "Seine Profilkarte öffnet sich in eine Höllenlandschaft mit Lavastrom, roter Sonnenfinsternis und Blitzen, und sein Name brennt im Chat",
+        "textEn": "His profile card opens onto a hellscape with a lava stream, a red eclipse and lightning, and his name burns in the chat"
+      }
+    ]
+  },
+  {
     "version": "V0.1.6.5 Beta",
     "date": "2026-10-23",
     "title": "Mehrere Accounts & der Helper zieht ein",

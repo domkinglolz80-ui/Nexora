@@ -109,6 +109,24 @@ const ACCESSORIES = [
       <ellipse class="fog f1" cx="90" cy="76" rx="90" ry="9"/><ellipse class="fog f2" cx="220" cy="78" rx="100" ry="8"/>
       <circle class="scene-wisp s1" cx="100" cy="44" r="3"/><circle class="scene-wisp s2" cx="200" cy="38" r="2.4"/><circle class="scene-wisp s3" cx="160" cy="30" r="2"/></svg>`,
   },
+  // Legendary: one of a kind, only @Zorvecx owns it.
+  {
+    id: 'hoellenfuerst', name: t('Höllenfürst'), badge: t('😈 Höllenfürst'), tier: 'legendary', allowed: (u) => !u.bot && u.username?.toLowerCase() === 'zorvecx',
+    svg: `<span class="aura"></span><span class="ring"></span><span class="ring r2"></span>
+      <span class="flame f1"></span><span class="flame f2"></span><span class="flame f3"></span><span class="flame f4"></span>
+      <span class="spark s1"></span><span class="spark s2"></span><span class="spark s3"></span><span class="spark s4"></span>
+      <svg class="horns" viewBox="0 0 64 30"><path class="horn l" d="M20 30C10 26 3 18 2 2c5 9 11 14 22 18z"/><path class="horn r" d="M44 30c10-4 17-12 18-28-5 9-11 14-22 18z"/>
+      <path class="horn-shine" d="M6 9c2 6 6 11 13 15M58 9c-2 6-6 11-13 15"/></svg>
+      <svg class="tail" viewBox="0 0 30 30"><path class="tail-line" d="M2 4c10 2 16 8 15 15-1 5 3 7 7 5"/><path class="tail-tip" d="m22 21 7 2-3 6-2-4z"/></svg>`,
+    scene: `<svg viewBox="0 0 300 104" preserveAspectRatio="xMidYMid slice">
+      <circle class="eclipse-glow" cx="236" cy="30" r="24"/><circle class="eclipse" cx="236" cy="30" r="16"/>
+      <path class="bolt" d="M70 0l-8 20h7l-10 22 18-26h-8l7-16z"/>
+      <path class="peaks" d="M0 76 22 46l14 18 22-34 20 30 16-14 24 30 18-22 20 22 26-36 22 30 16-12 22 22 24-26 34 40v20H0z"/>
+      <path class="lava" d="M0 86q25-8 50 0t50 0 50 0 50 0 50 0 50 0 50 0v18H0z"/>
+      <path class="lava l2" d="M0 92q25-6 50 0t50 0 50 0 50 0 50 0 50 0 50 0v12H0z"/>
+      <circle class="ash a1" cx="40" cy="96" r="1.6"/><circle class="ash a2" cx="110" cy="98" r="1.2"/><circle class="ash a3" cx="170" cy="96" r="1.8"/>
+      <circle class="ash a4" cx="220" cy="99" r="1.3"/><circle class="ash a5" cx="275" cy="97" r="1.5"/><circle class="ash a6" cx="80" cy="99" r="1"/></svg>`,
+  },
 ];
 
 function exclusiveOf(user) {
@@ -120,6 +138,11 @@ function exclusiveOf(user) {
 function exClass(user) {
   const ex = exclusiveOf(user);
   return ex ? ` ex-${ex.id}` : '';
+}
+
+// "Legendär" for one-of-a-kind accessories, "Exklusiv" for the rest of the special ones.
+function tierLabel(acc) {
+  return acc.tier === 'legendary' ? t('Legendär') : t('Exklusiv');
 }
 
 function accessoryHtml(id) {
@@ -164,8 +187,8 @@ function statusDot(status) {
 // A row of live previews (the user's own avatar wearing each accessory). Returns a getter.
 function accessoryPicker(container, user) {
   let value = user.accessory || '';
-  container.innerHTML = ACCESSORIES.filter((a) => !a.allowed || a.allowed(user)).map((a) => `<button type="button" class="acc-opt ${a.id === value ? 'sel' : ''}${a.allowed ? ' exclusive' : ''}" data-a="${a.id}" title="${esc(a.name)}">
-    ${a.allowed ? `<i class="ex-tag">${t('Exklusiv')}</i>` : ''}${avatar({ ...user, accessory: a.id }, { size: 40 })}<span>${esc(a.name)}</span></button>`).join('');
+  container.innerHTML = ACCESSORIES.filter((a) => !a.allowed || a.allowed(user)).map((a) => `<button type="button" class="acc-opt ${a.id === value ? 'sel' : ''}${a.allowed ? ' exclusive' : ''}${a.tier ? ` ${a.tier}` : ''}" data-a="${a.id}" title="${esc(a.name)}">
+    ${a.allowed ? `<i class="ex-tag">${tierLabel(a)}</i>` : ''}${avatar({ ...user, accessory: a.id }, { size: 40 })}<span>${esc(a.name)}</span></button>`).join('');
   container.addEventListener('click', (e) => {
     const opt = e.target.closest('.acc-opt');
     if (!opt) return;
@@ -1111,7 +1134,7 @@ function renderMembers() {
     for (const m of list) {
       const st = statusOf(m.id);
       const sub = m.system ? t('Offizieller Bot') : m.bot ? (m.disabled ? t('Gesperrt') : plural(m.commands?.length || 0, 'Befehl', 'Befehle')) : m.bio || STATUS_LABEL[st];
-      const row = h(`<button class="member ${st === 'offline' ? 'offline' : ''}" style="--c:${esc(m.color)}">
+      const row = h(`<button class="member ${st === 'offline' ? 'offline' : ''}${exClass(m)}" style="--c:${esc(m.color)}">
         ${avatar(m, { dot: true })}
         <div class="info"><div class="name">${esc(m.displayName)}${verified(m)}${m.id === hub.ownerId ? `<span class="crown" title="${t('Besitzer')}">👑</span>` : ''}</div>
         <div class="bio">${esc(sub)}</div></div>
@@ -2047,7 +2070,7 @@ function showProfile(userId, anchor) {
       ${avatar(u, { dot: true })}
       <h4>${esc(u.displayName)}${verified(u)}</h4>
       <div class="handle">@${esc(u.username)} · ${STATUS_LABEL[st]}</div>
-      ${ex ? `<div class="ex-badge">${esc(ex.badge)} · ${t('Exklusiv')}</div>` : ''}
+      ${ex ? `<div class="ex-badge">${esc(ex.badge)} · ${tierLabel(ex)}</div>` : ''}
       ${ghostBadge(u)}
       ${u.bio ? `<div class="bio">${esc(u.bio)}</div>` : '<div style="height:12px"></div>'}
       <div class="meta">${t('Dabei seit {date}', { date: u.createdAt ? esc(dateFmt.format(u.createdAt)) : '–' })}</div>
@@ -2068,7 +2091,7 @@ function showBotProfile(u, anchor) {
       ${avatar(u, { dot: true })}
       <h4>${esc(u.displayName)}${verified(u)}</h4>
       <div class="handle">@${esc(u.username)} · ${u.system ? t('Offizieller Bot') : u.disabled ? t('Gesperrt') : 'Bot'}${u.ownerId ? ` · ${t('von {name}', { name: esc(userOf(u.ownerId).displayName) })}` : ''}</div>
-      ${ex ? `<div class="ex-badge">${esc(ex.badge)} · ${t('Exklusiv')}</div>` : ''}
+      ${ex ? `<div class="ex-badge">${esc(ex.badge)} · ${tierLabel(ex)}</div>` : ''}
       ${u.bio ? `<div class="bio">${esc(u.system ? tServer(u.bio) : u.bio)}</div>` : '<div style="height:12px"></div>'}
       ${u.system && !state.me.official ? '' : commands ? `<div class="field"><span>${t('Befehle')}${u.system ? ` <em>${t('– nur für das Nexora-Team')}</em>` : ''}</span></div><ul class="bot-cmd-list">${commands}</ul>` : `<div class="meta">${t('Noch keine Befehle.')}</div>`}
       ${mine ? `<button class="btn block" data-act="edit">${ICONS.bot} ${t('Bot bearbeiten')}</button>` : ''}

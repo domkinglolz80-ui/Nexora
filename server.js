@@ -288,11 +288,30 @@ function audit(byId, action, detail = '') {
 // Animated avatar accessories (Halloween Edition). The look lives in the client.
 const ACCESSORIES = new Set(['kuerbis', 'hexenhut', 'geist', 'fledermaus', 'hoerner', 'spinne', 'katze']);
 
-// Exclusive accessories: only these accounts may wear them.
+// The one account that owns the legendary Höllenfürst.
+const LEGEND_USERNAME = 'zorvecx';
+const isLegend = (u) => Boolean(u) && !u.bot && u.username.toLowerCase() === LEGEND_USERNAME;
+
+// Exclusive and legendary accessories: only these accounts may wear them.
 const EXCLUSIVE_ACCESSORIES = {
   kuerbiskoenig: (u) => isOwner(u), // only @nexora
   irrlicht: (u) => Boolean(u.system), // the Nexora Helper
+  hoellenfuerst: isLegend, // legendary: only @Zorvecx
 };
+
+// Put on once automatically (afterwards it can be changed like any accessory): [accessory, who, flag].
+const AUTO_GRANTS = [
+  ['kuerbiskoenig', isOwner, 'kingGranted'],
+  ['hoellenfuerst', isLegend, 'legendGranted'],
+];
+
+function grantAccessories(u) {
+  for (const [accessory, allowed, flag] of AUTO_GRANTS) {
+    if (u[flag] || !allowed(u)) continue;
+    u.accessory = accessory;
+    u[flag] = true;
+  }
+}
 
 function accessoryOf(value, user) {
   if (value === '' || value === null) return '';
@@ -300,14 +319,12 @@ function accessoryOf(value, user) {
   return EXCLUSIVE_ACCESSORIES[value]?.(user) ? value : undefined;
 }
 
-// @nexora gets the Kürbiskönig once (afterwards it can be changed like any accessory);
+// @nexora gets the Kürbiskönig and @Zorvecx the Höllenfürst once;
 // anyone else still holding an exclusive from an earlier version loses it.
 function grantExclusives() {
   for (const u of Object.values(db.users)) {
     if (u.accessory && !ACCESSORIES.has(u.accessory) && accessoryOf(u.accessory, u) === undefined) u.accessory = '';
-    if (u.kingGranted || !isOwner(u)) continue;
-    u.accessory = 'kuerbiskoenig';
-    u.kingGranted = true;
+    grantAccessories(u);
   }
   save();
 }
@@ -562,6 +579,7 @@ app.post('/api/register', (req, res) => {
     bio: '',
     createdAt: Date.now(),
   };
+  grantAccessories(user);
   db.users[user.id] = user;
 
   const lounge = ensureLounge();

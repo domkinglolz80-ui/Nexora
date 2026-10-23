@@ -309,6 +309,9 @@ const EN = {
   'Katzenohren': 'Cat ears',
   'Kürbiskönig': 'Pumpkin King',
   '👑 Kürbiskönig': '👑 Pumpkin King',
+  'Höllenfürst': 'Hell Prince',
+  '😈 Höllenfürst': '😈 Hell Prince',
+  'Legendär': 'Legendary',
   'Irrlicht-Wächter': 'Will-o’-the-Wisp Warden',
   '🏮 Irrlicht-Wächter': '🏮 Will-o’-the-Wisp Warden',
 

@@ -1434,6 +1434,127 @@ textarea.code:focus { border-color: var(--orange); box-shadow: 0 0 0 4px rgba(25
   .acc-opt .avatar { --size: 34px !important; }
 }
 
+/* ---------- LEGENDARY: Höllenfürst (only @Zorvecx) ----------
+   Lava-filled avatar, double hellfire outline, glowing horns, a wagging tail,
+   flames licking at the edge and sparks; the profile card opens onto a hellscape. */
+.avatar:has(> .acc-hoellenfuerst) {
+  color: #ffe1cc; text-shadow: 0 0 6px #ff2a00;
+  background: radial-gradient(120% 90% at 50% 110%, #ffb000 0%, #ff4d00 18%, #c1121f 40%, #3d0008 72%, #0d0002 100%) 50% 0 / 100% 180%;
+  animation: hf-lava 2.8s ease-in-out infinite alternate;
+}
+@keyframes hf-lava { to { background-position: 50% 100%; } }
+.acc-hoellenfuerst { inset: 0; }
+.acc-hoellenfuerst > * { position: absolute; display: block; }
+.acc-hoellenfuerst .aura {
+  inset: calc(var(--s) * -0.32); border-radius: 50%; z-index: -1;
+  background: radial-gradient(circle, rgba(255, 30, 0, 0.55) 30%, rgba(120, 0, 20, 0.25) 55%, transparent 70%);
+  animation: hf-aura 1.6s ease-in-out infinite alternate;
+}
+@keyframes hf-aura { from { transform: scale(0.88); opacity: 0.6; } to { transform: scale(1.08); opacity: 1; } }
+.acc-hoellenfuerst .ring {
+  inset: calc(var(--s) * -0.11); border-radius: 38%;
+  padding: calc(var(--s) * 0.055 + 1.5px);
+  background: conic-gradient(from var(--ex-angle), #ff0033, #1a0004, #ff6a00, #ffd000, #ff6a00, #1a0004, #ff0033);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+  filter: drop-shadow(0 0 calc(var(--s) * 0.12) rgba(255, 20, 0, 0.95));
+  animation: ex-spin 1.8s linear infinite;
+}
+.acc-hoellenfuerst .ring.r2 {
+  inset: calc(var(--s) * -0.21); border-radius: 42%;
+  padding: calc(var(--s) * 0.025 + 1px);
+  background: repeating-conic-gradient(from var(--ex-angle), #ffb000 0 7deg, transparent 7deg 20deg);
+  filter: drop-shadow(0 0 4px #ff3b00); opacity: 0.85;
+  animation-duration: 7s; animation-direction: reverse;
+}
+.avatar .acc-hoellenfuerst .horns {
+  width: calc(var(--s) * 1.04); height: calc(var(--s) * 0.5); left: 50%; top: calc(var(--s) * -0.4); margin-left: calc(var(--s) * -0.52);
+  animation: hf-horns 2.2s ease-in-out infinite;
+}
+.acc-hoellenfuerst .horn { fill: #7a0010; stroke: #ff3b1f; stroke-width: 1.4; stroke-linejoin: round; }
+.acc-hoellenfuerst .horn-shine { fill: none; stroke: rgba(255, 210, 160, 0.7); stroke-width: 1.2; stroke-linecap: round; }
+@keyframes hf-horns {
+  0%, 100% { transform: translateY(0); filter: drop-shadow(0 0 calc(var(--s) * 0.05) #ff1a00) drop-shadow(0 2px 2px rgba(0, 0, 0, 0.7)); }
+  50% { transform: translateY(-6%); filter: drop-shadow(0 0 calc(var(--s) * 0.16) #ff4d00) drop-shadow(0 2px 2px rgba(0, 0, 0, 0.7)); }
+}
+.avatar .acc-hoellenfuerst .tail {
+  width: calc(var(--s) * 0.5); height: calc(var(--s) * 0.5); right: calc(var(--s) * -0.36); bottom: calc(var(--s) * -0.12);
+  transform-origin: 0 10%; animation: hf-tail 1.4s ease-in-out infinite;
+  filter: drop-shadow(0 0 3px rgba(255, 30, 0, 0.8));
+}
+.acc-hoellenfuerst .tail-line { fill: none; stroke: #b3001b; stroke-width: 3; stroke-linecap: round; }
+.acc-hoellenfuerst .tail-tip { fill: #ff2a2a; stroke: #7a0010; stroke-width: 0.8; stroke-linejoin: round; }
+@keyframes hf-tail { 0%, 100% { transform: rotate(-12deg); } 50% { transform: rotate(14deg); } }
+.acc-hoellenfuerst .flame {
+  width: calc(var(--s) * 0.3); height: calc(var(--s) * 0.46); bottom: calc(var(--s) * -0.2);
+  border-radius: 50% 50% 35% 35% / 70% 70% 30% 30%;
+  background: radial-gradient(60% 50% at 50% 80%, #fff3b0 0%, #ffb000 30%, #ff3b00 60%, rgba(200, 0, 20, 0) 100%);
+  filter: blur(0.5px) drop-shadow(0 0 4px #ff3b00);
+  transform-origin: 50% 100%; animation: hf-flame 0.7s ease-in-out infinite alternate; mix-blend-mode: screen;
+}
+.acc-hoellenfuerst .f1 { left: -6%; animation-delay: -0.2s; transform: rotate(-20deg); }
+.acc-hoellenfuerst .f2 { left: 22%; animation-delay: -0.5s; }
+.acc-hoellenfuerst .f3 { left: 50%; animation-delay: -0.1s; }
+.acc-hoellenfuerst .f4 { left: 78%; animation-delay: -0.35s; }
+@keyframes hf-flame { from { transform: scale(0.75, 0.7) skewX(-6deg); opacity: 0.75; } to { transform: scale(1.05, 1.15) skewX(6deg); opacity: 1; } }
+.acc-hoellenfuerst .spark {
+  width: calc(var(--s) * 0.07 + 1px); height: calc(var(--s) * 0.07 + 1px); border-radius: 50%; bottom: 10%;
+  background: #ffd36b; box-shadow: 0 0 6px #ff4d00, 0 0 2px #fff;
+  opacity: 0; animation: hf-spark 2s ease-out infinite;
+}
+.acc-hoellenfuerst .s1 { left: 4%; }
+.acc-hoellenfuerst .s2 { left: 38%; animation-delay: 0.5s; }
+.acc-hoellenfuerst .s3 { left: 66%; animation-delay: 1s; }
+.acc-hoellenfuerst .s4 { left: 92%; animation-delay: 1.5s; }
+@keyframes hf-spark { 0% { opacity: 0; transform: translate(0, 0) scale(1); } 15% { opacity: 1; } 100% { opacity: 0; transform: translate(calc(var(--s) * -0.15), calc(var(--s) * -1.4)) scale(0.3); } }
+.avatar.tiny .acc-hoellenfuerst .spark, .avatar.tiny .acc-hoellenfuerst .flame,
+.avatar.tiny .acc-hoellenfuerst .r2, .avatar.tiny .acc-hoellenfuerst .tail { display: none; }
+
+/* name, member list, profile card */
+.msg-author.ex-hoellenfuerst {
+  background: linear-gradient(90deg, #ffe066, #ff6a00, #ff0033, #8b0018, #ff0033, #ff6a00, #ffe066) 0 0 / 200% 100%;
+  -webkit-background-clip: text; background-clip: text; color: transparent; font-weight: 800;
+  filter: drop-shadow(0 0 6px rgba(255, 30, 0, 0.7)); animation: ex-name 2.2s linear infinite;
+}
+.member.ex-hoellenfuerst .name, .who.ex-hoellenfuerst .name { color: #ff6a4d; text-shadow: 0 0 8px rgba(255, 20, 0, 0.9); animation: hf-name 1.6s ease-in-out infinite alternate; }
+@keyframes hf-name { to { color: #ffb347; text-shadow: 0 0 12px rgba(255, 60, 0, 1); } }
+.popover.ex-hoellenfuerst { border-color: rgba(255, 30, 0, 0.75); animation: pop 0.18s cubic-bezier(.2,.9,.3,1.2), hf-card 2s ease-in-out infinite alternate; }
+@keyframes hf-card {
+  from { box-shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.9), 0 0 40px -10px rgba(255, 0, 40, 0.6), 0 0 0 1px rgba(255, 120, 0, 0.3); }
+  to { box-shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.9), 0 0 70px -6px rgba(255, 40, 0, 0.9), 0 0 0 1px rgba(255, 180, 0, 0.55); }
+}
+.popover.ex-hoellenfuerst .profile-banner { background: linear-gradient(180deg, #050001 0%, #2a0006 45%, #8b0018 80%, #ff4d00 100%); }
+.popover.ex-hoellenfuerst h4 { color: #ffb199; text-shadow: 0 0 14px rgba(255, 30, 0, 0.9); }
+.ex-hoellenfuerst .ex-badge {
+  color: #fff0e0; border: 1px solid rgba(255, 90, 0, 0.8); text-shadow: 0 0 6px #ff2a00;
+  background: linear-gradient(90deg, rgba(139, 0, 24, 0.6), rgba(255, 77, 0, 0.45), rgba(139, 0, 24, 0.6)) 0 0 / 200% 100%;
+  animation: ex-name 2.5s linear infinite;
+}
+
+/* hellscape */
+.ex-hoellenfuerst .profile-banner .eclipse { fill: #050001; }
+.ex-hoellenfuerst .profile-banner .eclipse-glow { fill: #ff2a00; filter: blur(6px); animation: hf-eclipse 2.4s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: center; }
+@keyframes hf-eclipse { from { opacity: 0.55; transform: scale(0.85); } to { opacity: 1; transform: scale(1.1); } }
+.ex-hoellenfuerst .profile-banner .bolt { fill: #ffd0a0; opacity: 0; filter: drop-shadow(0 0 6px #ff4d00); animation: hf-bolt 4.5s linear infinite; }
+@keyframes hf-bolt { 0%, 88%, 94%, 100% { opacity: 0; } 90%, 96% { opacity: 1; } }
+.ex-hoellenfuerst .profile-banner .peaks { fill: #120003; stroke: #5c0010; stroke-width: 1; }
+.ex-hoellenfuerst .profile-banner .lava { fill: #ff3b00; filter: drop-shadow(0 0 8px #ff4d00); animation: hf-flow 3s linear infinite; }
+.ex-hoellenfuerst .profile-banner .lava.l2 { fill: #ffb000; opacity: 0.85; animation-duration: 2s; animation-direction: reverse; }
+@keyframes hf-flow { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(-25px); } }
+.ex-hoellenfuerst .profile-banner .ash { fill: #ffcf6b; filter: drop-shadow(0 0 3px #ff4d00); animation: hf-ash 3.2s ease-out infinite; }
+.ex-hoellenfuerst .profile-banner .a2 { animation-delay: -0.6s; animation-duration: 3.8s; }
+.ex-hoellenfuerst .profile-banner .a3 { animation-delay: -1.3s; }
+.ex-hoellenfuerst .profile-banner .a4 { animation-delay: -2s; animation-duration: 4.2s; }
+.ex-hoellenfuerst .profile-banner .a5 { animation-delay: -2.6s; }
+.ex-hoellenfuerst .profile-banner .a6 { animation-delay: -1.8s; animation-duration: 2.8s; }
+@keyframes hf-ash { 0% { opacity: 0; transform: translate(0, 0); } 15% { opacity: 1; } 100% { opacity: 0; transform: translate(14px, -80px); } }
+
+/* picker tile */
+.acc-opt.legendary { border-color: rgba(255, 30, 0, 0.7); background: linear-gradient(160deg, rgba(255, 0, 40, 0.2), rgba(255, 106, 0, 0.14) 60%, rgba(0, 0, 0, 0.3)); box-shadow: inset 0 0 18px -6px rgba(255, 30, 0, 0.8); }
+/* room for horns and crowns below the tag */
+.acc-opt.exclusive { padding-top: 32px; }
+.acc-opt.legendary .ex-tag { color: #ff8a5c; text-shadow: 0 0 6px #ff2a00; }
+
 /* =========================================================================
    OWNER (@nexora): Owner-Zentrale and live broadcasts
    ========================================================================= */

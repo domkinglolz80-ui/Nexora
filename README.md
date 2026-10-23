@@ -51,7 +51,13 @@ Ab **V0.1.5 Beta** trägt Nexora Halloween: Vollmond, Nebel, Spinnennetz und Fle
 | 👑 Kürbiskönig          | nur `@nexora`                        | Feuerring, goldene Krone mit Kürbis-Juwel, Funken; Profilkarte mit Kürbis-Hügel bei Vollmond, Name in Feuerfarben |
 | 🏮 Irrlicht-Wächter     | nur der Nexora Helper                | grüner Geisterring, schwingende Laterne, Irrlichter; Profilkarte mit Friedhof im grünen Nebel, Name in Geistergrün |
 
-`@nexora` bekommt den Kürbiskönig beim ersten Serverstart einmal automatisch angelegt und kann danach frei wechseln. Auch weitere offizielle Accounts aus `NEXORA_OFFICIAL` können ihn nicht tragen.
+**Legendäre Accessoires** – gibt es genau einmal, für einen einzigen Account:
+
+| Accessoire              | Wer                                  | Was passiert                                                                 |
+| ----------------------- | ------------------------------------ | ---------------------------------------------------------------------------- |
+| 😈 Höllenfürst          | nur `@Zorvecx`                       | Lava im Profilbild, doppelter Höllenfeuer-Rahmen, glühende Hörner, wedelnder Schwanz, Flammen und Funken; Profilkarte mit Höllenlandschaft (Lavastrom, rote Sonnenfinsternis, Blitze), brennender Name |
+
+`@Zorvecx` bekommt den Höllenfürsten genauso einmal automatisch (beim Serverstart oder bei der Registrierung). `@nexora` bekommt den Kürbiskönig beim ersten Serverstart einmal automatisch angelegt und kann danach frei wechseln. Auch weitere offizielle Accounts aus `NEXORA_OFFICIAL` können ihn nicht tragen.
 
 **Geisterjagd** – alle 40–90 Sekunden (in der Halloween-Nacht alle 15–35 Sekunden) schwebt ein Geist über den Bildschirm. Wer ihn anklickt, fängt ihn, und es platzen Süßigkeiten heraus. Jeder achte ist ein **goldener Geist**, der dreifach zählt. Der Zähler gehört zum Account (Zähler älterer Versionen vom Gerät werden einmal übernommen) und bringt Ränge, die im Profil stehen:
 
@@ -186,7 +192,7 @@ Die Stimmen laufen per **WebRTC direkt zwischen den Geräten**; der Server vermi
 
 ## Versionen & Updates
 
-Aktuelle Version: **V0.1.6.5 Beta**. Alle Änderungen stehen in [`changelog.json`](changelog.json) – der oberste Eintrag ist die laufende Version.
+Aktuelle Version: **V0.1.6.6 Beta**. Alle Änderungen stehen in [`changelog.json`](changelog.json) – der oberste Eintrag ist die laufende Version.
 
 - Nach dem Login (und nach jedem Update) zeigt Nexora einmal das Fenster **„Was ist neu?“**. Über die Versionsanzeige unten in der Hub-Leiste lässt es sich jederzeit wieder öffnen.
 - Geht eine neue Version live, während jemand Nexora offen hat, lädt die Seite automatisch neu. Tippt die Person gerade etwas, erscheint stattdessen ein „Jetzt laden“-Hinweis.
