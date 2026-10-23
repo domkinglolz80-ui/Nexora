@@ -62,6 +62,12 @@ Und diese zur Halloween Edition:
 | 👑 Kürbiskönig          | nur `@nexora`                        | Feuerring, goldene Krone mit Kürbis-Juwel, Funken; Profilkarte mit Kürbis-Hügel bei Vollmond, Name in Feuerfarben |
 | 🏮 Irrlicht-Wächter     | nur der Nexora Helper                | grüner Geisterring, schwingende Laterne, Irrlichter; Profilkarte mit Friedhof im grünen Nebel, Name in Geistergrün |
 
+**Offizielles Accessoire** – gehört dem Nexora Helper, er trägt es fest:
+
+| Accessoire              | Wer                                  | Was passiert                                                                 |
+| ----------------------- | ------------------------------------ | ---------------------------------------------------------------------------- |
+| ⚙️ Schaltkreis-Kern     | nur der Nexora Helper                | Platinen-Avatar mit Leiterbahnen, rotierender Datenring, Scan-Linie, drei herabhängende Kabel mit Datenimpulsen, Antenne mit Funkwellen, Chip mit blinkenden LEDs; Profilkarte mit Serverraum, Prozessor und Datenpaketen, Name in Cyan |
+
 **Gründer-Accessoire** – nur für den Gründer von Nexora:
 
 | Accessoire              | Wer                                  | Was passiert                                                                 |
@@ -120,9 +126,9 @@ Offizielle Accounts können selbst nicht gesperrt werden. Jede Aktion prüft der
 
 Der Account `@nexora` ist der **Owner** (Gründer) von Nexora. Er trägt das 👑 **GRÜNDER**-Abzeichen, sein Admin-Panel heißt **Owner-Zentrale** und hat drei zusätzliche Bereiche. Der Server prüft jede Owner-Aktion selbst, andere offizielle Accounts bekommen sie nicht.
 
-- **Team** – Accounts per Benutzername zu offiziellen Accounts ernennen oder wieder entfernen (✓-Abzeichen, Admin-Panel, Nexora Helper). Accounts aus `NEXORA_OFFICIAL` sind fest und lassen sich hier nicht entfernen.
+- **Team** – Accounts per Benutzername zu offiziellen Accounts ernennen oder wieder entfernen (✓-Abzeichen, Admin-Panel). Accounts aus `NEXORA_OFFICIAL` sind fest und lassen sich hier nicht entfernen.
 - **Kontrolle** – **Wartungsmodus**: meldet alle außer dem Team sofort ab, sperrt Login und Registrierung und zeigt den Hinweistext beim Login; **Live-Durchsage**: ein Pop-up bei allen, die gerade online sind.
-- **Protokoll** – die letzten 500 Ereignisse: Registrierungen, Sperren, Kicks, Verwarnungen, Abmeldungen, Passwort-Resets, gelöschte Hubs und Bots, Ankündigungen, Team-Änderungen, Wartung, Durchsagen und Hub-Übertragungen – auch über den Nexora Helper.
+- **Protokoll** – die letzten 500 Ereignisse: Registrierungen, Sperren, Kicks, Verwarnungen, Abmeldungen, Passwort-Resets, gelöschte Hubs und Bots, Ankündigungen, Team-Änderungen, Wartung, Durchsagen und Hub-Übertragungen – auch über den Nexora Helper, inklusive Stummschaltungen, Umbenennungen und **Versuchen anderer, den Helper zu benutzen**.
 - **Hubs** – zusätzlich **Besitzer übertragen** an jeden Account (auch an sich selbst); die Person tritt dabei automatisch bei.
 
 Außerdem verwaltet der Owner **jeden Hub** wie dessen Besitzer und hat **doppelte Limits**: 4000 Zeichen pro Nachricht, 10 Anhänge mit je 16 MB, 20 Antworten pro Umfrage, 10 eigene Bots und doppeltes Sende-Tempo.
@@ -140,27 +146,48 @@ Damit die Datenbank nicht immer weiter wächst, räumt Nexora selbst auf – bei
 
 ## Nexora Helper
 
-Der **Nexora Helper** (`@NexoraHelper`) ist der offizielle Bot von Nexora, mit ✓- und BOT-Abzeichen. Er ist fest eingebaut: Man muss ihn nicht einladen, er kann nicht bearbeitet oder gelöscht werden, und **nur offizielle Accounts** können seine Befehle benutzen – in jedem Hub und in Direktnachrichten. Alle anderen sehen nur seine Nachrichten.
+Der **Nexora Helper** (`@NexoraHelper`) ist der offizielle Bot von Nexora, mit ✓- und BOT-Abzeichen und dem offiziellen Accessoire ⚙️ **Schaltkreis-Kern**. Er ist fest eingebaut: Man muss ihn nicht einladen, er kann nicht bearbeitet oder gelöscht werden, und **nur @nexora** kann seine Befehle benutzen – in jedem Hub und in Direktnachrichten. Alle anderen, auch das Nexora-Team, sehen nur seine Nachrichten.
 
-Nur **@nexora** kann den Helper mit `/einladen` als sichtbares Mitglied in einen Hub holen: Er erscheint dann für alle in der Mitgliederliste unter „Bots“ und begrüßt den Hub im ersten Textkanal. Ohne Code gilt der Befehl für den aktuellen Hub, mit Einladungscode für jeden anderen Hub (auch aus einer DM heraus).
+**Sicherheit**
 
-| Befehl                         | Wirkung                                                              |
-| ------------------------------ | -------------------------------------------------------------------- |
-| `/hilfe`                       | alle Befehle (nur für dich sichtbar)                                 |
-| `/ban <nutzer> [grund]`        | sperrt den Account auf ganz Nexora, die Person fliegt sofort raus    |
-| `/unban <nutzer>`              | hebt die Sperre auf                                                  |
-| `/kick <nutzer> [grund]`       | wirft die Person aus dem aktuellen Hub (nicht den Besitzer)          |
-| `/verwarnen <nutzer> <grund>`  | öffentliche Verwarnung mit Erwähnung                                 |
-| `/abmelden <nutzer>`           | meldet die Person auf allen Geräten ab                               |
-| `/info <nutzer>`               | Account-Infos: dabei seit, Hubs, Nachrichten, Sperre                 |
-| `/stats`                       | Nexora in Zahlen                                                     |
-| `/ankuendigung [text]`         | setzt das Banner für alle, ohne Text wird es entfernt                |
-| `/loeschen <anzahl>`           | löscht die letzten 1–100 Nachrichten im Kanal                        |
-| `/einladen [code]`             | nur @nexora: holt den Helper sichtbar in diesen oder einen anderen Hub |
-| `/ausladen [code]`             | nur @nexora: holt den Helper wieder aus dem Hub                       |
-| `/status <status>`             | nur @nexora: `online`, `abwesend`, `nichtstoeren` oder `unsichtbar` (englisch geht auch: `idle`, `dnd`, `invisible`) |
+- Der Server prüft bei jedem Befehl selbst, ob er von `@nexora` kommt. Die Befehlsliste bekommt auch nur `@nexora` – für alle anderen ist sie leer, auch im Slash-Menü und auf der Profilkarte.
+- Versucht jemand anderes trotzdem, den Helper anzusprechen (z. B. mit einem veränderten Client), wird das abgelehnt und als „hat versucht, den Nexora Helper zu benutzen“ ins Protokoll geschrieben (höchstens alle 10 Minuten pro Account).
+- Befehle mit 🔒 lassen sich nicht einfach rückgängig machen (`/ban`, `/abmelden`, `/loeschen`, `/wartung`): Sie werden erst mit `/ja` innerhalb von 60 Sekunden ausgeführt, `/abbrechen` verwirft sie. Falsche Eingaben werden vorher abgelehnt.
+- Höchstens **15 Helper-Befehle pro Minute**. Offizielle Accounts und Bots können nicht moderiert werden.
 
-`<nutzer>` ist der Benutzername, mit oder ohne `@`. Offizielle Accounts und Bots können nicht moderiert werden. Sperren, Verwarnungen und Kicks schreibt der Helper sichtbar in den Kanal, alles andere sieht nur die Person, die den Befehl nutzt.
+`/einladen` holt den Helper als sichtbares Mitglied in einen Hub: Er erscheint dann für alle in der Mitgliederliste unter „Bots“ und begrüßt den Hub im ersten Textkanal. Ohne Code gilt der Befehl für den aktuellen Hub, mit Einladungscode für jeden anderen Hub (auch aus einer DM heraus).
+
+| Befehl                                | Wirkung                                                              |
+| ------------------------------------- | -------------------------------------------------------------------- |
+| **Moderation**                        |                                                                      |
+| `/ban <nutzer> [grund]` 🔒            | sperrt den Account auf ganz Nexora, die Person fliegt sofort raus    |
+| `/unban <nutzer>`                     | hebt die Sperre auf                                                  |
+| `/stumm <nutzer> <dauer> [grund]`     | schaltet die Person auf ganz Nexora stumm: keine Nachrichten, Umfragen oder Bot-Befehle. Dauer: `30`, `30m`, `2h`, `1d` (max. 7 Tage) |
+| `/entstummen <nutzer>`                | hebt die Stummschaltung auf                                          |
+| `/kick <nutzer> [grund]`              | wirft die Person aus dem aktuellen Hub (nicht den Besitzer)          |
+| `/verwarnen <nutzer> <grund>`         | öffentliche Verwarnung mit Erwähnung                                 |
+| `/umbenennen <nutzer> <name>`         | ändert den Anzeigenamen, z. B. bei unpassenden Namen                 |
+| `/abmelden <nutzer>` 🔒               | meldet die Person auf allen Geräten ab                               |
+| **Kanal**                             |                                                                      |
+| `/sagen <text>`                       | der Helper schreibt deinen Text in den Kanal                         |
+| `/loeschen <anzahl>` 🔒               | löscht die letzten 1–100 Nachrichten im Kanal                        |
+| **Nexora**                            |                                                                      |
+| `/ankuendigung [text]`                | setzt das Banner für alle, ohne Text wird es entfernt                |
+| `/wartung [text]` 🔒                  | Wartungsmodus an (alle außer dem Team werden abgemeldet); `/wartung aus` beendet ihn |
+| `/info <nutzer>`                      | Account-Infos: dabei seit, Geräte, Hubs, Nachrichten, Sperre, Stummschaltung |
+| `/suche <name>`                       | findet Accounts nach Benutzer- oder Anzeigename                      |
+| `/online`                             | wer gerade online ist                                                |
+| `/hubs`                               | die 10 größten Hubs mit Einladungscode                               |
+| `/stats`                              | Nexora in Zahlen                                                     |
+| `/system`                             | Technik-Check: Laufzeit, Speicher, Datenbank, Verbindungen, Sessions |
+| `/protokoll [anzahl]`                 | die letzten 1–25 Einträge aus dem Protokoll                          |
+| **Helper**                            |                                                                      |
+| `/hilfe`                              | alle Befehle, nach Gruppen sortiert                                  |
+| `/ja` · `/abbrechen`                  | bestätigt oder verwirft den wartenden 🔒-Befehl                       |
+| `/einladen [code]` · `/ausladen [code]` | holt den Helper sichtbar in einen Hub oder wieder heraus           |
+| `/status <status>`                    | `online`, `abwesend`, `nichtstoeren` oder `unsichtbar` (englisch geht auch: `idle`, `dnd`, `invisible`) |
+
+`<nutzer>` ist der Benutzername, mit oder ohne `@`. Sperren, Stummschaltungen, Verwarnungen, Kicks und `/sagen` schreibt der Helper sichtbar in den Kanal, alles andere sieht nur `@nexora`.
 
 ## Bots & Slash-Befehle
 
@@ -221,7 +248,7 @@ Die Stimmen laufen per **WebRTC direkt zwischen den Geräten**; der Server vermi
 
 ## Versionen & Updates
 
-Aktuelle Version: **V0.1.7 Beta**. Alle Änderungen stehen in [`changelog.json`](changelog.json) – der oberste Eintrag ist die laufende Version.
+Aktuelle Version: **V0.1.8 Beta**. Alle Änderungen stehen in [`changelog.json`](changelog.json) – der oberste Eintrag ist die laufende Version.
 
 - Nach dem Login (und nach jedem Update) zeigt Nexora einmal das Fenster **„Was ist neu?“**. Über die Versionsanzeige unten in der Hub-Leiste lässt es sich jederzeit wieder öffnen.
 - Geht eine neue Version live, während jemand Nexora offen hat, lädt die Seite automatisch neu. Tippt die Person gerade etwas, erscheint stattdessen ein „Jetzt laden“-Hinweis.

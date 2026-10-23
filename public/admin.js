@@ -294,6 +294,12 @@ const AUDIT_LABELS = {
   helperInvite: ['🛡️', 'hat den Nexora Helper eingeladen'],
   helperRemove: ['🛡️', 'hat den Nexora Helper ausgeladen'],
   helperStatus: ['🟢', 'hat den Status des Nexora Helpers geändert'],
+  helperSay: ['💬', 'hat den Nexora Helper sprechen lassen'],
+  helperDenied: ['🚫', 'hat versucht, den Nexora Helper zu benutzen'],
+  mute: ['🔇', 'hat stumm geschaltet'],
+  unmute: ['🔊', 'hat die Stummschaltung aufgehoben'],
+  rename: ['✏️', 'hat einen Anzeigenamen geändert'],
+  purge: ['🧹', 'hat Nachrichten gelöscht'],
   retention: ['🧹', 'hat das Aufräumen alter Nachrichten eingestellt'],
   botDisable: ['⛔', 'hat einen Bot gesperrt'],
   botEnable: ['🤖', 'hat einen Bot entsperrt'],
@@ -325,7 +331,7 @@ function ownerViews(body, reload) {
       const { team } = await req('owner:state');
       body.innerHTML = `
         <form class="owner-form">
-          <div class="field"><span>${t('Ins Team holen')} <em>${t('– bekommt ✓-Abzeichen, Admin-Panel und den Nexora Helper')}</em></span></div>
+          <div class="field"><span>${t('Ins Team holen')} <em>${t('– bekommt ✓-Abzeichen und Admin-Panel')}</em></span></div>
           <div class="owner-inline"><input class="input" name="username" maxlength="32" placeholder="@nutzer" autocomplete="off" />
             <button type="submit" class="btn primary">🛡️ ${t('Ernennen')}</button></div>
         </form>

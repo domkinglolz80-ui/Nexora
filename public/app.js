@@ -143,6 +143,32 @@ const ACCESSORIES = [
       <ellipse class="fog f1" cx="90" cy="76" rx="90" ry="9"/><ellipse class="fog f2" cx="220" cy="78" rx="100" ry="8"/>
       <circle class="scene-wisp s1" cx="100" cy="44" r="3"/><circle class="scene-wisp s2" cx="200" cy="38" r="2.4"/><circle class="scene-wisp s3" cx="160" cy="30" r="2"/></svg>`,
   },
+  // Official: the Nexora Helper's own. Cables hang off a circuit ring, data pulses run down them.
+  {
+    id: 'schaltkern', name: t('Schaltkreis-Kern'), badge: t('⚙️ Schaltkreis-Kern'), tier: 'official', allowed: (u) => Boolean(u.system),
+    svg: `<span class="ring"></span><span class="scan"><i></i></span>
+      <svg class="board" viewBox="0 0 100 100"><path class="trace" d="M-14 22h16l8 8M-14 70h12l8-8M114 30H98l-8 8M114 78h-14l-6-6M30 -14v14l8 8M70 114v-12l-6-6"/>
+      <circle class="pad" cx="-14" cy="22" r="2.6"/><circle class="pad" cx="-14" cy="70" r="2.6"/><circle class="pad" cx="114" cy="30" r="2.6"/><circle class="pad" cx="114" cy="78" r="2.6"/><circle class="pad" cx="30" cy="-14" r="2.6"/><circle class="pad" cx="70" cy="114" r="2.6"/></svg>
+      <svg class="cables" viewBox="0 0 100 60"><path class="cable c1" d="M22 0c-4 14-14 18-14 34s8 20 6 26"/><path class="cable c2" d="M50 0c0 18 8 24 8 38s-6 16-4 22"/><path class="cable c3" d="M78 0c4 12 16 16 16 30s-6 22-4 30"/>
+      <circle class="plug p1" cx="14" cy="58" r="3.4"/><circle class="plug p2" cx="54" cy="58" r="3.4"/><circle class="plug p3" cx="90" cy="58" r="3.4"/>
+      <g class="pulse q1"><circle cx="13" cy="20" r="2.2"/><circle cx="8" cy="34" r="2.2"/><circle cx="11" cy="48" r="2.2"/></g>
+      <g class="pulse q2"><circle cx="54" cy="18" r="2.2"/><circle cx="58" cy="34" r="2.2"/><circle cx="55" cy="50" r="2.2"/></g>
+      <g class="pulse q3"><circle cx="88" cy="16" r="2.2"/><circle cx="94" cy="30" r="2.2"/><circle cx="92" cy="46" r="2.2"/></g></svg>
+      <svg class="antenna" viewBox="0 0 30 40"><path class="mast" d="M15 40V12"/><rect class="base" x="8" y="32" width="14" height="8" rx="2"/><circle class="tip" cx="15" cy="10" r="3.4"/>
+      <path class="wave w1" d="M8 6a10 10 0 0 1 14 0"/><path class="wave w2" d="M4 2a16 16 0 0 1 22 0"/></svg>
+      <svg class="chip" viewBox="0 0 30 24"><path class="pin" d="M6 0v4M12 0v4M18 0v4M24 0v4M6 20v4M12 20v4M18 20v4M24 20v4"/><rect class="die" x="2" y="4" width="26" height="16" rx="2.5"/>
+      <circle class="led l1" cx="9" cy="12" r="2.4"/><circle class="led l2" cx="15" cy="12" r="2.4"/><circle class="led l3" cx="21" cy="12" r="2.4"/></svg>`,
+    scene: `<svg viewBox="0 0 300 104" preserveAspectRatio="xMidYMid slice">
+      <path class="grid" d="M0 26h300M0 52h300M0 78h300M50 0v104M100 0v104M150 0v104M200 0v104M250 0v104"/>
+      <path class="ptrace" d="M0 20h70l12 12h50M0 84h60l14-14h60M300 30h-70l-12 12h-52M300 76h-56l-14-10h-64"/>
+      <g class="rack" transform="translate(16 30)"><rect width="34" height="46" rx="3"/><path class="slot" d="M4 9h26M4 19h26M4 29h26M4 39h26"/>
+      <circle class="rled r1" cx="27" cy="6" r="1.6"/><circle class="rled r2" cx="27" cy="16" r="1.6"/><circle class="rled r3" cx="27" cy="26" r="1.6"/><circle class="rled r4" cx="27" cy="36" r="1.6"/></g>
+      <g class="rack" transform="translate(250 30)"><rect width="34" height="46" rx="3"/><path class="slot" d="M4 9h26M4 19h26M4 29h26M4 39h26"/>
+      <circle class="rled r3" cx="27" cy="6" r="1.6"/><circle class="rled r1" cx="27" cy="16" r="1.6"/><circle class="rled r4" cx="27" cy="26" r="1.6"/><circle class="rled r2" cx="27" cy="36" r="1.6"/></g>
+      <g transform="translate(150 50)"><rect class="cpu" x="-20" y="-20" width="40" height="40" rx="5"/><path class="cpu-pin" d="M-12-26v6M-4-26v6M4-26v6M12-26v6M-12 20v6M-4 20v6M4 20v6M12 20v6M-26-12h6M-26-4h6M-26 4h6M-26 12h6M20-12h6M20-4h6M20 4h6M20 12h6"/>
+      <polygon class="cpu-core" points="0,-10 8.7,-5 8.7,5 0,10 -8.7,5 -8.7,-5"/></g>
+      <circle class="bit b1" cx="0" cy="20" r="2"/><circle class="bit b2" cx="0" cy="84" r="2"/><circle class="bit b3" cx="300" cy="30" r="2"/><circle class="bit b4" cx="300" cy="76" r="2"/></svg>`,
+  },
   // Legendary: one of a kind, only @Zorvecx owns it.
   {
     id: 'hoellenfuerst', name: t('Höllenfürst'), badge: t('😈 Höllenfürst'), tier: 'legendary', allowed: (u) => !u.bot && u.username?.toLowerCase() === 'zorvecx',
@@ -219,6 +245,7 @@ if (accVisibility) {
 // "Legendär" for one-of-a-kind accessories, "Exklusiv" for the rest of the special ones.
 function tierLabel(acc) {
   if (acc.tier === 'founder') return t('Gründer');
+  if (acc.tier === 'official') return t('Offiziell');
   return acc.tier === 'legendary' ? t('Legendär') : t('Exklusiv');
 }
 
@@ -868,6 +895,8 @@ function applyBootstrap(data) {
   state.presence = new Map(Object.entries(data.presence));
   state.voiceStates = new Map(Object.entries(data.voice || {}));
   state.announcement = data.announcement || null;
+  // The helper's commands: only @nexora gets them from the server.
+  state.helperCommands = data.helperCommands || [];
   // After a reconnect the cache may be stale — drop it and refetch lazily.
   state.channels.clear();
   state.lastChannel = accountStore('lastChannel') || {};
@@ -1822,17 +1851,17 @@ async function sendMessage() {
 
 const slash = { items: [], sel: 0, botId: null, hideTimer: null };
 
-// Commands of all bots in the current hub, plus the Nexora Helper for official accounts (also in DMs).
-// Commands marked ownerOnly (inviting the helper) are only listed for @nexora.
+// Commands of all bots in the current hub, plus the Nexora Helper for @nexora (also in DMs).
 function availableCommands() {
   if (!state.view.channelId || isVoiceChannel(state.view.channelId)) return [];
   const hub = currentHub();
   const bots = hub ? hub.members.map((m) => state.users.get(m)).filter((u) => u?.bot && !u.disabled && !u.system) : [];
-  if (state.me?.official) bots.push(...[...state.users.values()].filter((u) => u.system));
   const out = [];
   for (const u of bots) {
-    for (const c of u.commands || []) if (!c.ownerOnly || state.me?.owner) out.push({ ...c, bot: u });
+    for (const c of u.commands || []) out.push({ ...c, bot: u });
   }
+  const helper = [...state.users.values()].find((u) => u.system);
+  if (helper) for (const c of state.helperCommands || []) out.push({ ...c, bot: helper });
   return out.sort((a, b) => a.name.localeCompare(b.name) || a.bot.displayName.localeCompare(b.bot.displayName));
 }
 
@@ -2159,7 +2188,7 @@ function showProfile(userId, anchor) {
 }
 
 function showBotProfile(u, anchor) {
-  const commands = (u.commands || []).filter((c) => !c.ownerOnly || state.me.owner).map((c) => `<li><code>/${esc(c.name)}</code><span>${esc(c.description ? tServer(c.description) : '')}</span></li>`).join('');
+  const commands = (u.system ? state.helperCommands || [] : u.commands || []).map((c) => `<li><code>/${esc(c.name)}</code><span>${esc(c.description ? tServer(c.description) : '')}</span></li>`).join('');
   const mine = u.ownerId === state.me.id;
   const ex = exclusiveOf(u);
   const pop = h(`<div class="popover${exClass(u)}" style="--c:${esc(u.color)}">
@@ -2170,7 +2199,7 @@ function showBotProfile(u, anchor) {
       <div class="handle">@${esc(u.username)} · ${u.system ? t('Offizieller Bot') : u.disabled ? t('Gesperrt') : 'Bot'}${u.ownerId ? ` · ${t('von {name}', { name: esc(userOf(u.ownerId).displayName) })}` : ''}</div>
       ${ex ? `<div class="ex-badge">${esc(ex.badge)} · ${tierLabel(ex)}</div>` : ''}
       ${u.bio ? `<div class="bio">${esc(u.system ? tServer(u.bio) : u.bio)}</div>` : '<div style="height:12px"></div>'}
-      ${u.system && !state.me.official ? '' : commands ? `<div class="field"><span>${t('Befehle')}${u.system ? ` <em>${t('– nur für das Nexora-Team')}</em>` : ''}</span></div><ul class="bot-cmd-list">${commands}</ul>` : `<div class="meta">${t('Noch keine Befehle.')}</div>`}
+      ${u.system && !state.me.owner ? '' : commands ? `<div class="field"><span>${t('Befehle')}${u.system ? ` <em>${t('– nur für @nexora')}</em>` : ''}</span></div><ul class="bot-cmd-list">${commands}</ul>` : `<div class="meta">${t('Noch keine Befehle.')}</div>`}
       ${mine ? `<button class="btn block" data-act="edit">${ICONS.bot} ${t('Bot bearbeiten')}</button>` : ''}
     </div>
   </div>`);

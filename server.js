@@ -348,7 +348,8 @@ const isLegend = (u) => Boolean(u) && !u.bot && u.username.toLowerCase() === LEG
 // Exclusive and legendary accessories: only these accounts may wear them.
 const EXCLUSIVE_ACCESSORIES = {
   kuerbiskoenig: (u) => isOwner(u), // only @nexora
-  irrlicht: (u) => Boolean(u.system), // the Nexora Helper
+  irrlicht: (u) => Boolean(u.system), // the Nexora Helper (Halloween)
+  schaltkern: (u) => Boolean(u.system), // official: the Nexora Helper
   hoellenfuerst: isLegend, // legendary: only @Zorvecx
   nexuskrone: (u) => isOwner(u), // founder: only @nexora
 };
@@ -404,7 +405,7 @@ function publicUser(u) {
       system: true,
       official: true,
       disabled: false,
-      commands: HELPER_COMMANDS.map((c) => ({ name: c.name, description: c.description, options: c.options, ownerOnly: c.ownerOnly || undefined })),
+      commands: [], // only @nexora gets them, in the bootstrap
     });
     return view;
   }
@@ -602,6 +603,20 @@ function authRateLimited(ip) {
 
 function maintenanceMessage() {
   return `Nexora wird gerade gewartet.${db.maintenance.text ? ` ${db.maintenance.text}` : ''} Schau gleich wieder vorbei!`;
+}
+
+// Maintenance: everyone outside the team is signed out and cannot sign in until it ends.
+function setMaintenance(enabled, text, byId) {
+  if (enabled) {
+    db.maintenance = { text: str(text, 200), at: Date.now(), by: byId };
+    const message = maintenanceMessage();
+    for (const u of Object.values(db.users)) {
+      if (!u.bot && !isOfficial(u)) endSessions(u.id, message);
+    }
+  } else {
+    db.maintenance = null;
+  }
+  audit(byId, enabled ? 'maintenanceOn' : 'maintenanceOff', db.maintenance?.text || '');
 }
 
 app.post('/api/register', (req, res) => {
@@ -930,6 +945,17 @@ function moderatable(target) {
   return { target };
 }
 
+// Someone muted with /stumm can't post until the time is up.
+function muteError(user) {
+  if (!user?.mutedUntil) return null;
+  if (user.mutedUntil <= Date.now()) {
+    delete user.mutedUntil;
+    delete user.muteReason;
+    return null;
+  }
+  return `Du bist bis ${stampFmt.format(user.mutedUntil)} stumm geschaltet.${user.muteReason ? ` Grund: ${user.muteReason}` : ''}`;
+}
+
 function banUser(target, reason, byId) {
   target.banned = { reason: str(reason, 200), at: Date.now(), by: byId };
   endSessions(target.id, banMessage(target));
@@ -1095,14 +1121,39 @@ function deleteBot(bot) {
 
 // ---------------------------------------------------------------------------
 // Nexora Helper: the official system bot. Its commands are built in and only
-// official accounts can use them – in every hub and DM, without inviting it.
+// @nexora can use them – in every hub and DM, without inviting it. Nobody else
+// even gets the list of commands.
 // ---------------------------------------------------------------------------
 
 const HELPER_ID = 'nexora-helper';
 const MAX_PURGE = 100;
+const HELPER_RATE = 15; // commands per minute
+const CONFIRM_MS = 60_000; // time to answer /ja
+const MAX_MUTE = 7 * 24 * 60; // minutes
 
 // Bots and the Nexora Helper don't count as people in a hub.
 const isBotMember = (memberId) => memberId === HELPER_ID || Boolean(db.bots[memberId]);
+
+const helperTimes = new Map(); // userId -> times of the last helper commands
+const helperPending = new Map(); // userId -> { name, options, channelId, expires } waiting for /ja
+const helperDenied = new Map(); // userId -> last logged attempt
+
+function helperLimited(userId) {
+  const now = Date.now();
+  const list = (helperTimes.get(userId) || []).filter((t) => now - t < 60_000);
+  if (list.length >= HELPER_RATE) return true;
+  list.push(now);
+  helperTimes.set(userId, list);
+  return false;
+}
+
+// Someone else tried to use the helper: written to the log, at most every 10 minutes per account.
+function noteHelperDenied(user, command) {
+  const last = helperDenied.get(user.id) || 0;
+  if (Date.now() - last < 600_000) return;
+  helperDenied.set(user.id, Date.now());
+  audit(user.id, 'helperDenied', `/${command}`);
+}
 
 // @nexora can invite the helper into any hub; it then shows up in the member list for everyone.
 function helperTargetHub(access, code) {
@@ -1120,7 +1171,7 @@ function addHelperToHub(hub) {
   const channel = hub.channels.find((c) => c.kind !== 'voice');
   if (channel) {
     postMessage({ type: 'hub', hub }, channel.id, HELPER_ID, {
-      content: '👋 Hallo zusammen! Ich bin der **Nexora Helper**, der offizielle Helfer von Nexora. Ab jetzt bin ich hier und unterstütze das Nexora-Team.',
+      content: '👋 Hallo zusammen! Ich bin der **Nexora Helper**, der offizielle Helfer von Nexora. Ab jetzt bin ich hier – im Auftrag von @nexora.',
     });
   }
 }
@@ -1153,8 +1204,8 @@ function ensureHelper() {
     displayName: 'Nexora Helper',
     color: '#ff7a18',
     status: db.users[HELPER_ID]?.status || 'online', // set by @nexora with /status, kept across restarts
-    bio: 'Der offizielle Helfer von Nexora. Moderation per Slash-Befehl – nur für das Nexora-Team.',
-    accessory: 'irrlicht',
+    bio: 'Der offizielle Helfer von Nexora. Gesteuert per Slash-Befehl – nur von @nexora.',
+    accessory: 'schaltkern',
     createdAt: db.users[HELPER_ID]?.createdAt || Date.now(),
     bot: true,
     system: true,
@@ -1165,27 +1216,94 @@ function ensureHelper() {
 const option = (name, description, required = false) => ({ name, description, required });
 const userByMention = (name) => findUserByName(String(name || '').replace(/^@/, ''));
 const dateFmt = new Intl.DateTimeFormat('de-DE', { dateStyle: 'medium' });
+const stampFmt = new Intl.DateTimeFormat('de-DE', { dateStyle: 'short', timeStyle: 'short', timeZone: 'Europe/Berlin' });
 const numberFmt = new Intl.NumberFormat('de-DE');
 
 function commandUsage(command) {
   return [`/${command.name}`, ...command.options.map((o) => (o.required ? `<${o.name}>` : `[${o.name}]`))].join(' ');
 }
 
+// What the client needs for the slash menu (sent to @nexora only).
+function helperCommandView(c) {
+  return { name: c.name, description: c.description, options: c.options };
+}
+
+// "30", "30m", "2h", "1d" (also "std", "t") -> minutes; null when invalid or longer than a week.
+function parseMinutes(text) {
+  const m = /^(\d{1,5})\s*(m|min|h|std|d|t)?$/i.exec(String(text || '').trim());
+  if (!m) return null;
+  const minutes = Number(m[1]) * ({ h: 60, std: 60, d: 1440, t: 1440 }[(m[2] || '').toLowerCase()] || 1);
+  return minutes >= 1 && minutes <= MAX_MUTE ? minutes : null;
+}
+
+function durationText(minutes) {
+  if (minutes % 1440 === 0) return `${minutes / 1440} ${minutes === 1440 ? 'Tag' : 'Tage'}`;
+  if (minutes % 60 === 0) return `${minutes / 60} Std.`;
+  return `${minutes} Min.`;
+}
+
+function uptimeText(seconds) {
+  const d = Math.floor(seconds / 86400), h = Math.floor((seconds % 86400) / 3600), m = Math.floor((seconds % 3600) / 60);
+  return [d && `${d} T.`, (d || h) && `${h} Std.`, `${m} Min.`].filter(Boolean).join(' ');
+}
+
+const mb = (bytes) => `${numberFmt.format(Math.round(bytes / 1048576))} MB`;
+// 🔒 commands only ask for /ja when they would actually run; otherwise the error comes right away.
+const canModerate = (name) => !moderatable(userByMention(name)).error;
+const validPurge = (value) => Number.isInteger(Number(value)) && Number(value) >= 1 && Number(value) <= MAX_PURGE;
+const isOff = (text) => /^(aus|off|ende|stop)$/i.test(String(text || '').trim());
+
+const HELPER_GROUPS = ['Moderation', 'Kanal', 'Nexora', 'Helper'];
+
 // Each run gets { invoker, access, channelId, options } and returns
 // { public: [texts posted by the helper], ephemeral: [texts only the invoker sees] }.
+// confirm(options) -> true: the command waits for /ja first.
 const HELPER_COMMANDS = [
   {
     name: 'hilfe',
+    group: 'Helper',
     description: 'Zeigt alle Befehle des Nexora Helpers',
     options: [],
+    run: () => ({
+      ephemeral: [[
+        `🛡️ **Nexora Helper** · nur für @nexora · ${VERSION}`,
+        ...HELPER_GROUPS.flatMap((group) => [
+          `**${group}**`,
+          ...HELPER_COMMANDS.filter((c) => c.group === group).map((c) => `\`${commandUsage(c)}\`${c.confirm ? ' 🔒' : ''} – ${c.description}`),
+        ]),
+        `🔒 = wartet auf \`/ja\` · höchstens ${HELPER_RATE} Befehle pro Minute · jeder Eingriff landet im Protokoll`,
+      ].join('\n')],
+    }),
+  },
+  {
+    name: 'ja',
+    group: 'Helper',
+    description: 'Bestätigt den letzten 🔒-Befehl',
+    options: [],
+    run: ({ invoker }) => {
+      const pending = helperPending.get(invoker.id);
+      helperPending.delete(invoker.id);
+      if (!pending || pending.expires < Date.now()) return { ephemeral: ['Es wartet kein Befehl auf eine Bestätigung.'] };
+      const access = channelAccess(invoker.id, pending.channelId);
+      if (!access) return { ephemeral: ['Der Kanal ist nicht mehr erreichbar – abgebrochen.'] };
+      const command = HELPER_COMMANDS.find((c) => c.name === pending.name);
+      const result = command.run({ invoker, access, channelId: pending.channelId, options: pending.options });
+      return { ...result, access, channelId: pending.channelId, ran: command.name };
+    },
+  },
+  {
+    name: 'abbrechen',
+    group: 'Helper',
+    description: 'Verwirft den wartenden 🔒-Befehl',
+    options: [],
     run: ({ invoker }) => ({
-      ephemeral: [`🛡️ **Nexora Helper** – nur für das Nexora-Team\n${HELPER_COMMANDS.filter((c) => !c.ownerOnly || isOwner(invoker)).map((c) => `\`${commandUsage(c)}\` – ${c.description}`).join('\n')}`],
+      ephemeral: [helperPending.delete(invoker.id) ? '❎ Abgebrochen – nichts ist passiert.' : 'Es wartet kein Befehl auf eine Bestätigung.'],
     }),
   },
   {
     name: 'einladen',
+    group: 'Helper',
     description: 'Lädt den Nexora Helper in einen Hub ein – für alle sichtbar',
-    ownerOnly: true,
     options: [option('code', 'Einladungscode – ohne Code: dieser Hub')],
     run: ({ invoker, access, options }) => {
       const hub = helperTargetHub(access, options.code);
@@ -1198,8 +1316,8 @@ const HELPER_COMMANDS = [
   },
   {
     name: 'ausladen',
+    group: 'Helper',
     description: 'Holt den Nexora Helper wieder aus einem Hub',
-    ownerOnly: true,
     options: [option('code', 'Einladungscode – ohne Code: dieser Hub')],
     run: ({ invoker, access, options }) => {
       const hub = helperTargetHub(access, options.code);
@@ -1212,8 +1330,8 @@ const HELPER_COMMANDS = [
   },
   {
     name: 'status',
+    group: 'Helper',
     description: 'Setzt den Status des Nexora Helpers für alle',
-    ownerOnly: true,
     options: [option('status', 'online, abwesend, nichtstoeren oder unsichtbar', true)],
     run: ({ invoker, options }) => {
       const key = String(options.status).toLowerCase().replace(/[\s_.-]/g, '');
@@ -1226,7 +1344,9 @@ const HELPER_COMMANDS = [
   },
   {
     name: 'ban',
+    group: 'Moderation',
     description: 'Sperrt einen Account auf ganz Nexora',
+    confirm: (options) => canModerate(options.nutzer),
     options: [option('nutzer', 'Wer gesperrt wird', true), option('grund', 'Sieht die Person beim Login')],
     run: ({ invoker, options }) => {
       const { target, error } = moderatable(userByMention(options.nutzer));
@@ -1239,6 +1359,7 @@ const HELPER_COMMANDS = [
   },
   {
     name: 'unban',
+    group: 'Moderation',
     description: 'Hebt eine Sperre wieder auf',
     options: [option('nutzer', 'Wer entsperrt wird', true)],
     run: ({ invoker, options }) => {
@@ -1251,7 +1372,39 @@ const HELPER_COMMANDS = [
     },
   },
   {
+    name: 'stumm',
+    group: 'Moderation',
+    description: 'Schaltet jemanden auf ganz Nexora stumm (max. 7 Tage)',
+    options: [option('nutzer', 'Wer stumm geschaltet wird', true), option('dauer', 'z. B. 30, 30m, 2h oder 1d', true), option('grund', 'Sieht die Person beim Schreiben')],
+    run: ({ invoker, options }) => {
+      const { target, error } = moderatable(userByMention(options.nutzer));
+      if (error) return { ephemeral: [error] };
+      const minutes = parseMinutes(options.dauer);
+      if (!minutes) return { ephemeral: ['Dauer ungültig: 1 Minute bis 7 Tage, z. B. `30`, `30m`, `2h` oder `1d`.'] };
+      target.mutedUntil = Date.now() + minutes * 60_000;
+      target.muteReason = str(options.grund, 200);
+      audit(invoker.id, 'mute', `@${target.username} – ${durationText(minutes)}${target.muteReason ? ` – ${target.muteReason}` : ''}`);
+      return { public: [`🔇 **@${target.username}** ist für ${durationText(minutes)} stumm geschaltet.${target.muteReason ? ` Grund: ${target.muteReason}` : ''}`] };
+    },
+  },
+  {
+    name: 'entstummen',
+    group: 'Moderation',
+    description: 'Hebt eine Stummschaltung auf',
+    options: [option('nutzer', 'Wer wieder schreiben darf', true)],
+    run: ({ invoker, options }) => {
+      const { target, error } = moderatable(userByMention(options.nutzer));
+      if (error) return { ephemeral: [error] };
+      if (!muteError(target)) return { ephemeral: [`@${target.username} ist nicht stumm geschaltet.`] };
+      delete target.mutedUntil;
+      delete target.muteReason;
+      audit(invoker.id, 'unmute', `@${target.username}`);
+      return { ephemeral: [`🔊 @${target.username} darf wieder schreiben.`] };
+    },
+  },
+  {
     name: 'kick',
+    group: 'Moderation',
     description: 'Wirft jemanden aus diesem Hub',
     options: [option('nutzer', 'Wer den Hub verlassen muss', true), option('grund', 'Wird im Kanal angezeigt')],
     run: ({ invoker, access, options }) => {
@@ -1268,6 +1421,7 @@ const HELPER_COMMANDS = [
   },
   {
     name: 'verwarnen',
+    group: 'Moderation',
     description: 'Verwarnt jemanden öffentlich im Kanal',
     options: [option('nutzer', 'Wer verwarnt wird', true), option('grund', 'Worum es geht', true)],
     run: ({ invoker, options }) => {
@@ -1278,8 +1432,27 @@ const HELPER_COMMANDS = [
     },
   },
   {
+    name: 'umbenennen',
+    group: 'Moderation',
+    description: 'Ändert den Anzeigenamen eines Accounts',
+    options: [option('nutzer', 'Wessen Name', true), option('name', 'Der neue Anzeigename', true)],
+    run: ({ invoker, options }) => {
+      const { target, error } = moderatable(userByMention(options.nutzer));
+      if (error) return { ephemeral: [error] };
+      const name = str(options.name, 32);
+      const before = target.displayName;
+      target.displayName = name;
+      save();
+      broadcastToVisible(target.id, 'user:update', publicUser(target));
+      audit(invoker.id, 'rename', `@${target.username}: ${before} → ${name}`);
+      return { ephemeral: [`✏️ @${target.username} heißt jetzt „${name}“ (vorher „${before}“).`] };
+    },
+  },
+  {
     name: 'abmelden',
+    group: 'Moderation',
     description: 'Meldet jemanden auf allen Geräten ab',
+    confirm: (options) => canModerate(options.nutzer),
     options: [option('nutzer', 'Wer abgemeldet wird', true)],
     run: ({ invoker, options }) => {
       const { target, error } = moderatable(userByMention(options.nutzer));
@@ -1290,7 +1463,61 @@ const HELPER_COMMANDS = [
     },
   },
   {
+    name: 'sagen',
+    group: 'Kanal',
+    description: 'Der Helper schreibt deinen Text in diesen Kanal',
+    options: [option('text', 'Was der Helper schreibt', true)],
+    run: ({ invoker, options }) => {
+      audit(invoker.id, 'helperSay', options.text.slice(0, 120));
+      return { public: [options.text] };
+    },
+  },
+  {
+    name: 'loeschen',
+    group: 'Kanal',
+    description: `Löscht die letzten Nachrichten in diesem Kanal (max. ${MAX_PURGE})`,
+    confirm: (options) => validPurge(options.anzahl),
+    options: [option('anzahl', `Wie viele (1–${MAX_PURGE})`, true)],
+    run: ({ invoker, access, channelId, options }) => {
+      if (!validPurge(options.anzahl)) return { ephemeral: [`Bitte eine Zahl von 1 bis ${MAX_PURGE}.`] };
+      const removed = (db.messages[channelId] || []).splice(-Number(options.anzahl));
+      discardFiles(removed);
+      save();
+      for (const m of removed) emitToChannel(access, 'message:remove', { channelId, messageId: m.id });
+      audit(invoker.id, 'purge', `${removed.length} Nachrichten`);
+      return { ephemeral: [`🧹 ${removed.length} Nachricht${removed.length === 1 ? '' : 'en'} gelöscht.`] };
+    },
+  },
+  {
+    name: 'ankuendigung',
+    group: 'Nexora',
+    description: 'Setzt das Banner für alle – ohne Text wird es entfernt',
+    options: [option('text', 'Was alle oben im Chat sehen')],
+    run: ({ invoker, options }) => {
+      const live = setAnnouncement(options.text);
+      audit(invoker.id, live ? 'announce' : 'announceClear', live?.text || '');
+      return { ephemeral: [live ? '📣 Die Ankündigung ist live.' : '📣 Die Ankündigung wurde entfernt.'] };
+    },
+  },
+  {
+    name: 'wartung',
+    group: 'Nexora',
+    description: 'Schaltet den Wartungsmodus ein – „aus“ beendet ihn',
+    confirm: (options) => !isOff(options.text),
+    options: [option('text', 'Hinweis für alle – oder „aus“')],
+    run: ({ invoker, options }) => {
+      if (isOff(options.text)) {
+        if (!db.maintenance) return { ephemeral: ['Nexora ist gerade nicht in Wartung.'] };
+        setMaintenance(false, '', invoker.id);
+        return { ephemeral: ['🟢 Wartung beendet – alle können sich wieder anmelden.'] };
+      }
+      setMaintenance(true, options.text, invoker.id);
+      return { ephemeral: ['🚧 Wartungsmodus an: Alle außer dem Team wurden abgemeldet. Beenden mit `/wartung aus`.'] };
+    },
+  },
+  {
     name: 'info',
+    group: 'Nexora',
     description: 'Zeigt Infos zu einem Account',
     options: [option('nutzer', 'Wessen Infos', true)],
     run: ({ options }) => {
@@ -1300,18 +1527,59 @@ const HELPER_COMMANDS = [
       for (const list of Object.values(db.messages)) for (const m of list) if (m.authorId === u.id) messages += 1;
       const hubs = Object.values(db.hubs).filter((h) => h.members.includes(u.id)).length;
       const bots = Object.values(db.bots).filter((b) => b.ownerId === u.id).length;
+      const sessions = Object.values(db.sessions).filter((s) => s.userId === u.id).length;
       return {
         ephemeral: [[
           `ℹ️ **${u.displayName}** (@${u.username})${isOfficial(u) ? ' · offiziell' : ''}`,
-          `Dabei seit ${dateFmt.format(u.createdAt)} · ${online.get(u.id) ? 'gerade online' : 'offline'}`,
+          `Dabei seit ${dateFmt.format(u.createdAt)} · ${online.get(u.id) ? 'gerade online' : 'offline'} · ${numberFmt.format(sessions)} angemeldete Geräte`,
           `${numberFmt.format(hubs)} Hubs · ${numberFmt.format(messages)} Nachrichten · ${numberFmt.format(bots)} Bots`,
           u.banned ? `🔨 Gesperrt seit ${dateFmt.format(u.banned.at)}${u.banned.reason ? ` – ${u.banned.reason}` : ''}` : 'Nicht gesperrt',
+          muteError(u) ? `🔇 Stumm bis ${stampFmt.format(u.mutedUntil)}${u.muteReason ? ` – ${u.muteReason}` : ''}` : 'Nicht stumm',
         ].join('\n')],
       };
     },
   },
   {
+    name: 'suche',
+    group: 'Nexora',
+    description: 'Sucht Accounts nach Name',
+    options: [option('name', 'Teil des Benutzer- oder Anzeigenamens', true)],
+    run: ({ options }) => {
+      const q = options.name.replace(/^@/, '').toLowerCase();
+      const found = Object.values(db.users).filter((u) => !u.bot && (u.username.toLowerCase().includes(q) || u.displayName.toLowerCase().includes(q)));
+      if (!found.length) return { ephemeral: [`Niemand gefunden für „${options.name}“.`] };
+      const rows = found.slice(0, 10).map((u) => `• **${u.displayName}** @${u.username}${online.get(u.id) ? ' 🟢' : ''}${isOfficial(u) ? ' ✓' : ''}${u.banned ? ' 🔨' : ''}${muteError(u) ? ' 🔇' : ''}`);
+      return { ephemeral: [[`🔎 ${numberFmt.format(found.length)} Treffer${found.length > 10 ? ' (die ersten 10)' : ''}`, ...rows].join('\n')] };
+    },
+  },
+  {
+    name: 'online',
+    group: 'Nexora',
+    description: 'Zeigt, wer gerade online ist',
+    options: [],
+    run: () => {
+      const people = Object.values(db.users).filter((u) => !u.bot && online.get(u.id));
+      if (!people.length) return { ephemeral: ['Gerade ist niemand online.'] };
+      const names = people.slice(0, 40).map((u) => `@${u.username}${u.status === 'invisible' ? ' (unsichtbar)' : ''}`);
+      return { ephemeral: [`🟢 **${numberFmt.format(people.length)} online:** ${names.join(', ')}${people.length > 40 ? ' …' : ''}`] };
+    },
+  },
+  {
+    name: 'hubs',
+    group: 'Nexora',
+    description: 'Die größten Hubs mit Einladungscode',
+    options: [],
+    run: () => {
+      const people = (h) => h.members.filter((m) => !isBotMember(m)).length;
+      const hubs = Object.values(db.hubs).sort((a, b) => people(b) - people(a)).slice(0, 10);
+      if (!hubs.length) return { ephemeral: ['Es gibt noch keine Hubs.'] };
+      const rows = hubs.map((h) => `• **${h.name}** · ${numberFmt.format(people(h))} Mitglieder · \`${h.inviteCode}\`${h.members.includes(HELPER_ID) ? ' · 🛡️ Helper' : ''}`);
+      return { ephemeral: [[`🏠 **Hubs** (${numberFmt.format(Object.keys(db.hubs).length)} insgesamt)`, ...rows].join('\n')] };
+    },
+  },
+  {
     name: 'stats',
+    group: 'Nexora',
     description: 'Zeigt Nexora in Zahlen',
     options: [],
     run: () => {
@@ -1328,25 +1596,35 @@ const HELPER_COMMANDS = [
     },
   },
   {
-    name: 'ankuendigung',
-    description: 'Setzt das Banner für alle – ohne Text wird es entfernt',
-    options: [option('text', 'Was alle oben im Chat sehen')],
-    run: ({ options }) => ({
-      ephemeral: [setAnnouncement(options.text) ? '📣 Die Ankündigung ist live.' : '📣 Die Ankündigung wurde entfernt.'],
-    }),
+    name: 'system',
+    group: 'Nexora',
+    description: 'Technik-Check: Laufzeit, Speicher, Verbindungen',
+    options: [],
+    run: () => {
+      const mem = process.memoryUsage();
+      return {
+        ephemeral: [[
+          `⚙️ **Nexora-System** · ${VERSION}`,
+          `Laufzeit: ${uptimeText(process.uptime())} · Node ${process.version}`,
+          `Speicher: ${mb(mem.rss)} (Heap ${mb(mem.heapUsed)} von ${mb(mem.heapTotal)})`,
+          `Datenbank: ${MONGODB_URI ? 'MongoDB' : 'Datei (db.json)'} · Verbindungen: ${numberFmt.format(io.engine.clientsCount)} · Sessions: ${numberFmt.format(Object.keys(db.sessions).length)}`,
+          `Wartung: ${db.maintenance ? 'an' : 'aus'} · Helper in ${numberFmt.format(Object.values(db.hubs).filter((h) => h.members.includes(HELPER_ID)).length)} Hubs`,
+        ].join('\n')],
+      };
+    },
   },
   {
-    name: 'loeschen',
-    description: `Löscht die letzten Nachrichten in diesem Kanal (max. ${MAX_PURGE})`,
-    options: [option('anzahl', `Wie viele (1–${MAX_PURGE})`, true)],
-    run: ({ access, channelId, options }) => {
-      const count = Number(options.anzahl);
-      if (!Number.isInteger(count) || count < 1 || count > MAX_PURGE) return { ephemeral: [`Bitte eine Zahl von 1 bis ${MAX_PURGE}.`] };
-      const removed = (db.messages[channelId] || []).splice(-count);
-      discardFiles(removed);
-      save();
-      for (const m of removed) emitToChannel(access, 'message:remove', { channelId, messageId: m.id });
-      return { ephemeral: [`🧹 ${removed.length} Nachricht${removed.length === 1 ? '' : 'en'} gelöscht.`] };
+    name: 'protokoll',
+    group: 'Nexora',
+    description: 'Zeigt die letzten Einträge im Protokoll',
+    options: [option('anzahl', 'Wie viele (1–25), Standard 10')],
+    run: ({ options }) => {
+      const count = options.anzahl ? Number(options.anzahl) : 10;
+      if (!Number.isInteger(count) || count < 1 || count > 25) return { ephemeral: ['Bitte eine Zahl von 1 bis 25.'] };
+      const entries = (db.audit || []).slice(-count).reverse();
+      if (!entries.length) return { ephemeral: ['Das Protokoll ist leer.'] };
+      const rows = entries.map((e) => `• ${stampFmt.format(e.at)} · ${e.by && db.users[e.by] ? `@${db.users[e.by].username}` : '–'} · \`${e.action}\`${e.detail ? ` ${e.detail}` : ''}`);
+      return { ephemeral: [[`📜 **Protokoll** · die letzten ${entries.length}`, ...rows].join('\n')] };
     },
   },
 ];
@@ -1401,6 +1679,7 @@ io.on('connection', (socket) => {
     presence[HELPER_ID] = presenceOf(db.users[HELPER_ID]);
     return {
       version: VERSION,
+      helperCommands: isOwner(me()) ? HELPER_COMMANDS.map(helperCommandView) : undefined,
       announcement: db.announcement,
       me: publicUser(me()),
       hubs: Object.values(db.hubs).filter((h) => h.members.includes(userId)).map(hubView),
@@ -1557,6 +1836,8 @@ io.on('connection', (socket) => {
       return { error: 'Ein Anhang ist abgelaufen. Entferne ihn und lade ihn neu hoch.' };
     }
     if (!text && !pending.length) return { error: 'Leere Nachricht.' };
+    const muted = muteError(me());
+    if (muted) return { error: muted };
     if (rateLimited()) return { error: 'Langsam! Du sendest zu schnell.' };
 
     for (const fileId of fileIds) pendingFiles.delete(fileId);
@@ -1574,6 +1855,8 @@ io.on('connection', (socket) => {
     const answers = [...new Set((Array.isArray(options) ? options : []).map((o) => str(o, 80)).filter(Boolean))];
     if (answers.length < 2) return { error: 'Eine Umfrage braucht mindestens 2 verschiedene Antworten.' };
     if (answers.length > limit(userId, MAX_POLL_OPTIONS)) return { error: `Maximal ${limit(userId, MAX_POLL_OPTIONS)} Antworten.` };
+    const muted = muteError(me());
+    if (muted) return { error: muted };
     if (rateLimited()) return { error: 'Langsam! Du sendest zu schnell.' };
     const poll = {
       question: q,
@@ -1929,16 +2212,24 @@ io.on('connection', (socket) => {
     return {};
   });
 
-  // Built-in command of the Nexora Helper, for official accounts only.
+  // Built-in command of the Nexora Helper, for @nexora only. Commands that can't be undone
+  // easily wait for /ja; the confirmed run (result.access/channelId) posts where it was typed.
   function runHelper(access, channelId, command, text) {
-    if (rateLimited()) return { error: 'Langsam! Du sendest zu schnell.' };
+    if (helperLimited(userId)) return { error: `Langsam! Höchstens ${HELPER_RATE} Helper-Befehle pro Minute.` };
     const input = typeof text === 'string' ? text.trim().slice(0, MAX_MESSAGE) : '';
     const { options, missing } = parseArgs(command, input);
-    if (missing) return { botId: HELPER_ID, command: command.name, ephemeral: [`Es fehlt „${missing.name}“. So geht's: \`${commandUsage(command)}\``] };
+    const reply = (ephemeral) => ({ botId: HELPER_ID, command: command.name, ephemeral });
+    if (missing) return reply([`Es fehlt „${missing.name}“. So geht's: \`${commandUsage(command)}\``]);
+    if (command.confirm?.(options)) {
+      helperPending.set(userId, { name: command.name, options, channelId, expires: Date.now() + CONFIRM_MS });
+      return reply([`⚠️ **Bestätigung nötig:** \`/${command.name}${input ? ` ${input}` : ''}\` lässt sich nicht einfach rückgängig machen. Tippe \`/ja\` innerhalb von ${CONFIRM_MS / 1000} Sekunden oder \`/abbrechen\`.`]);
+    }
     const result = command.run({ invoker: me(), access, channelId, options });
-    const interaction = { userId, command: command.name };
-    (result.public || []).forEach((content, i) => postMessage(access, channelId, HELPER_ID, { content, interaction: i ? null : interaction }));
-    return { botId: HELPER_ID, command: command.name, ephemeral: result.ephemeral || [] };
+    const target = result.access || access;
+    const targetChannel = result.channelId || channelId;
+    const interaction = { userId, command: result.ran || command.name };
+    (result.public || []).forEach((content, i) => postMessage(target, targetChannel, HELPER_ID, { content, interaction: i ? null : interaction }));
+    return reply(result.ephemeral || []);
   }
 
   on('command:run', ({ channelId, botId, name, text }) => {
@@ -1949,14 +2240,17 @@ io.on('connection', (socket) => {
     const has = (b) => b.commands.some((c) => c.name === commandName);
     const bot = inHub.find((b) => b.id === botId && has(b)) || inHub.find(has);
     const helperCommand = HELPER_COMMANDS.find((c) => c.name === commandName);
-    if (helperCommand && (botId === HELPER_ID || !bot)) {
-      if (!isOfficial(me())) return { error: 'Der Nexora Helper ist nur für das Nexora-Team.' };
-      if (helperCommand.ownerOnly && !isOwner(me())) return { error: 'Diesen Befehl kann nur @nexora benutzen.' };
-      return runHelper(access, channelId, helperCommand, text);
+    if (helperCommand && isOwner(me()) && (botId === HELPER_ID || !bot)) return runHelper(access, channelId, helperCommand, text);
+    // Nobody else sees the helper's commands; asking for it directly means a modified client.
+    if (botId === HELPER_ID) {
+      noteHelperDenied(me(), commandName);
+      return { error: 'Der Nexora Helper gehört nur @nexora.' };
     }
     if (access.type !== 'hub') return { error: 'Befehle von Bots funktionieren nur in Hubs.' };
     const { hub } = access;
     if (!bot) return { error: `Unbekannter Befehl /${commandName}.` };
+    const muted = muteError(me());
+    if (muted) return { error: muted };
     if (rateLimited()) return { error: 'Langsam! Du sendest zu schnell.' };
 
     const command = bot.commands.find((c) => c.name === commandName);
@@ -2164,18 +2458,8 @@ io.on('connection', (socket) => {
     return { user: publicUser(target) };
   });
 
-  // Maintenance: everyone outside the team is signed out and cannot sign in until it ends.
   onOwner('owner:maintenance', ({ enabled, text }) => {
-    if (enabled) {
-      db.maintenance = { text: str(text, 200), at: Date.now(), by: userId };
-      const message = maintenanceMessage();
-      for (const u of Object.values(db.users)) {
-        if (!u.bot && !isOfficial(u)) endSessions(u.id, message);
-      }
-    } else {
-      db.maintenance = null;
-    }
-    audit(userId, enabled ? 'maintenanceOn' : 'maintenanceOff', db.maintenance?.text || '');
+    setMaintenance(enabled, text, userId);
     return { maintenance: db.maintenance };
   });
 

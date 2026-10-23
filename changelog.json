@@ -1,5 +1,33 @@
 [
   {
+    "version": "V0.1.8 Beta",
+    "date": "2026-10-23",
+    "title": "Der Nexora Helper wird erwachsen",
+    "titleEn": "The Nexora Helper grows up",
+    "changes": [
+      {
+        "icon": "🛡️",
+        "text": "Der **Nexora Helper** gehört ab jetzt nur noch **@nexora** – nur der Gründer kann seine Befehle benutzen und sieht sie überhaupt",
+        "textEn": "The **Nexora Helper** now belongs to **@nexora** alone – only the founder can use its commands or even see them"
+      },
+      {
+        "icon": "⚙️",
+        "text": "Sein eigenes **offizielles Accessoire**: der **Schaltkreis-Kern** – Platine mit Leiterbahnen, Datenring, Scan-Linie, Kabel mit Datenimpulsen, Antenne mit Funkwellen und ein Chip mit blinkenden LEDs. Die Profilkarte zeigt einen Serverraum",
+        "textEn": "Its own **official accessory**: the **Circuit Core** – a circuit board with traces, a data ring, a scan line, cables with data pulses, an antenna sending signals and a chip with blinking LEDs. The profile card shows a server room"
+      },
+      {
+        "icon": "🧰",
+        "text": "Neue Befehle: `/stumm`, `/entstummen`, `/umbenennen`, `/sagen`, `/wartung`, `/suche`, `/online`, `/hubs`, `/system` und `/protokoll` – `/hilfe` sortiert alles nach Gruppen",
+        "textEn": "New commands: `/stumm` (mute), `/entstummen` (unmute), `/umbenennen` (rename), `/sagen` (say), `/wartung` (maintenance), `/suche` (search), `/online`, `/hubs`, `/system` and `/protokoll` (log) – `/hilfe` sorts everything into groups"
+      },
+      {
+        "icon": "🔒",
+        "text": "Sicherer: `/ban`, `/abmelden`, `/loeschen` und `/wartung` warten auf `/ja`, höchstens 15 Helper-Befehle pro Minute, und wer den Helper sonst anspricht, landet im Protokoll",
+        "textEn": "Safer: `/ban`, `/abmelden`, `/loeschen` and `/wartung` wait for `/ja`, at most 15 Helper commands per minute, and anyone else trying to use the Helper ends up in the log"
+      }
+    ]
+  },
+  {
     "version": "V0.1.7 Beta",
     "date": "2026-10-23",
     "title": "Bis zu 10 Accounts",
