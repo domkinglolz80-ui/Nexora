@@ -51,6 +51,9 @@ const QUICK_REACTIONS = ['🎃', '👻', '😂'];
 const ACCENTS = ['#ff7a18', '#ff9f1c', '#ff5e3a', '#ffb347', '#ff6b00', '#f9a03f', '#ff8c42', '#e85d04', '#ffd166', '#ef476f', '#9b5de5', '#7bdc3a', '#c1121f'];
 
 // Animated avatar accessories. The server only stores the id.
+// Shop accessories are shown and worn only once they are bought.
+const bought = (id) => (u) => !u.bot && Boolean(u.owned?.includes(id));
+
 // Basic ones are for everyone all year; then the Halloween Edition 2026; then the special ones.
 const ACCESSORIES = [
   { id: '', name: t('Keins') },
@@ -117,6 +120,67 @@ const ACCESSORIES = [
   {
     id: 'katze', name: t('Katzenohren'),
     svg: '<svg viewBox="0 0 48 20"><g class="ear l"><path class="fur" d="M2 20 6 1l13 13z"/><path class="pink" d="m6 16 2-10 6 7z"/></g><g class="ear r"><path class="fur" d="m46 20-4-19-13 13z"/><path class="pink" d="m42 16-2-10-6 7z"/></g></svg>',
+  },
+  // Geister-Laden (V0.4.0): bought with caught ghosts and kept forever. The pricier, the more spectacular.
+  {
+    id: 'spinnennetz', name: t('Spinnennetz'), desc: t('Ein schimmerndes Netz in der Ecke – samt Bewohnerin'), price: 25, r: 1, tier: 'shop', allowed: bought('spinnennetz'),
+    svg: `<svg class="web" viewBox="0 0 40 40"><path class="strand" d="M0 0L37.9 2.7M0 0L34.2 16.7M0 0L25.4 28.2M0 0L13 35.7M0 0L2.7 37.9"/>
+      <path class="silk" d="M10 0.7Q7.9 2.1 9 4.4Q6.5 4.9 6.7 7.4Q4.2 7 3.4 9.4Q1.7 8 0.7 10M19 1.3Q15 4 17.1 8.3Q12.4 9.4 12.7 14.1Q8 13.4 6.5 17.9Q3.2 15.2 1.3 19M27.9 2Q22.2 5.9 25.2 12.3Q18.3 13.8 18.7 20.8Q11.8 19.7 9.6 26.3Q4.8 22.5 2 27.9"/></svg>
+      <svg class="crawler" viewBox="0 0 16 16"><path class="legs" d="M5 7 1 4M5 8.5H.5M5 10l-4 3M11 7l4-3M11 8.5h4.5M11 10l4 3"/><ellipse class="bug" cx="8" cy="9" rx="3.4" ry="4"/><circle class="eye" cx="7" cy="6.8" r=".7"/><circle class="eye" cx="9" cy="6.8" r=".7"/></svg>`,
+  },
+  {
+    id: 'mumie', name: t('Mumienbinden'), desc: t('Uralte Binden, deren loses Ende im Grabwind flattert'), price: 50, r: 1, tier: 'shop', allowed: bought('mumie'),
+    svg: `<span class="wraps"><svg viewBox="0 0 40 40" preserveAspectRatio="none"><path class="wrap" d="M-2 7 42 1v7L-2 14z"/><path class="wrap w2" d="M-2 31 42 26v7L-2 38z"/>
+      <path class="seam" d="M8 6v7M21 4.3v7M33 2.7v7M10 30v7M26 28v7"/></svg></span>
+      <svg class="loose" viewBox="0 0 20 16"><path class="wrap" d="M0 1c6-1 12 0 18 5-3 0-5 1-6 4C9 6 5 5 0 7z"/></svg>`,
+  },
+  {
+    id: 'hexenkessel', name: t('Hexenkessel'), desc: t('Ein brodelnder Kessel voller giftgrüner Blasen'), price: 99, r: 2, tier: 'shop', allowed: bought('hexenkessel'),
+    svg: `<svg class="pot" viewBox="0 0 40 38"><path class="fire" d="M12 38c0-4 3-5 3-8 2 3 3 5 3 8zM19 38c0-5 3-6 3-10 2 4 4 6 3 10zM27 38c0-3 2-4 2-6 2 2 2 4 2 6z"/>
+      <path class="iron" d="M9 29l-3 6h4l2-4zM31 29l3 6h-4l-2-4z"/><path class="iron" d="M4 12h32c0 12-6 20-16 20S4 24 4 12z"/>
+      <ellipse class="brew" cx="20" cy="12" rx="15" ry="3.6"/><rect class="rim" x="2" y="9.5" width="36" height="4" rx="2"/></svg>
+      <i class="bubble hb1"></i><i class="bubble hb2"></i><i class="bubble hb3"></i><i class="bubble hb4"></i>`,
+  },
+  {
+    id: 'vampir', name: t('Vampirgraf'), desc: t('Hoher Umhangkragen, spitze Zähne und zwei treue Fledermäuse'), price: 150, r: 2, tier: 'shop', allowed: bought('vampir'),
+    svg: `<svg class="collar" viewBox="0 0 60 24"><path class="cloak" d="M0 24 6 1l12 14 5 9zM60 24 54 1 42 15l-5 9z"/><path class="lining" d="M4 22 7.5 7l9 10.5 3 5.5zM56 22 52.5 7l-9 10.5-3 5.5z"/>
+      <circle class="clasp" cx="30" cy="21" r="3"/></svg>
+      <svg class="fangs" viewBox="0 0 20 10"><path class="tooth" d="M4 0h3.4L5.7 7zM12.6 0H16l-1.7 7z"/><circle class="drop" cx="14.3" cy="8" r="1.2"/></svg>
+      <span class="vbat v1"><svg viewBox="0 0 48 24"><path class="wing l" d="M24 12C19 4 9 2 1 6c4 1 5 4 5 7 3-2 6-1 7 2 2-2 6-2 8 0z"/><path class="wing r" d="M24 12c5-8 15-10 23-6-4 1-5 4-5 7-3-2-6-1-7 2-2-2-6-2-8 0z"/><ellipse class="bat" cx="24" cy="13" rx="4" ry="5"/><circle class="eye" cx="22.5" cy="12" r=".9"/><circle class="eye" cx="25.5" cy="12" r=".9"/></svg></span><span class="vbat v2"><svg viewBox="0 0 48 24"><path class="wing l" d="M24 12C19 4 9 2 1 6c4 1 5 4 5 7 3-2 6-1 7 2 2-2 6-2 8 0z"/><path class="wing r" d="M24 12c5-8 15-10 23-6-4 1-5 4-5 7-3-2-6-1-7 2-2-2-6-2-8 0z"/><ellipse class="bat" cx="24" cy="13" rx="4" ry="5"/><circle class="eye" cx="22.5" cy="12" r=".9"/><circle class="eye" cx="25.5" cy="12" r=".9"/></svg></span>`,
+  },
+  {
+    id: 'sensenmann', name: t('Sensenmann'), desc: t('Kapuze, glühende Augen, eine schwingende Sense und Totennebel'), price: 250, r: 3, tier: 'shop', allowed: bought('sensenmann'),
+    svg: `<i class="mist m1"></i><i class="mist m2"></i>
+      <svg class="hood" viewBox="0 0 50 50"><path class="shade" d="M9 50C9 26 16 12 25 12s16 14 16 38z"/><path class="cowl" d="M1 50C1 20 10 1 25 0c15 1 24 20 24 50h-8C41 26 34 12 25 12S9 26 9 50z"/><circle class="glare" cx="19.5" cy="22" r="1.8"/><circle class="glare" cx="30.5" cy="22" r="1.8"/></svg>
+      <svg class="scythe" viewBox="0 0 30 60"><path class="staff" d="M19 4 11 58"/><path class="blade" d="M19 5C11 0 2 1-7 10c8-3 16-3 25-1z"/><path class="glint" d="M-1 7c6-4 12-4 17-2"/></svg>`,
+  },
+  {
+    id: 'geisterschwarm', name: t('Geisterschwarm'), desc: t('Drei Geister kreisen um dich, dazu ein geisterhafter Ring, ein leuchtender Name und ein eigenes Profilbild-Banner'), price: 400, r: 4, tier: 'shop', allowed: bought('geisterschwarm'), badge: t('👻 Geisterschwarm'),
+    svg: `<span class="ring"></span><span class="spirit s1"><svg viewBox="0 0 30 34"><path class="ghost" d="M15 2C7 2 3 8 3 15v17l4-3 4 3 4-3 4 3 4-3 4 3V15c0-7-4-13-12-13z"/><ellipse class="eye" cx="11" cy="14" rx="2" ry="3"/><ellipse class="eye" cx="19" cy="14" rx="2" ry="3"/><ellipse class="eye" cx="15" cy="22" rx="2.5" ry="2"/></svg></span><span class="spirit s2"><svg viewBox="0 0 30 34"><path class="ghost" d="M15 2C7 2 3 8 3 15v17l4-3 4 3 4-3 4 3 4-3 4 3V15c0-7-4-13-12-13z"/><ellipse class="eye" cx="11" cy="14" rx="2" ry="3"/><ellipse class="eye" cx="19" cy="14" rx="2" ry="3"/><ellipse class="eye" cx="15" cy="22" rx="2.5" ry="2"/></svg></span><span class="spirit s3"><svg viewBox="0 0 30 34"><path class="ghost" d="M15 2C7 2 3 8 3 15v17l4-3 4 3 4-3 4 3 4-3 4 3V15c0-7-4-13-12-13z"/><ellipse class="eye" cx="11" cy="14" rx="2" ry="3"/><ellipse class="eye" cx="19" cy="14" rx="2" ry="3"/><ellipse class="eye" cx="15" cy="22" rx="2.5" ry="2"/></svg></span>`,
+    scene: `<svg viewBox="0 0 300 104" preserveAspectRatio="xMidYMid slice"><circle class="moon" cx="60" cy="28" r="15"/>
+      <path class="hill" d="M0 80q70-16 150-6t150-4v34H0z"/>
+      <path class="stone" d="M40 82V68a7 7 0 0 1 14 0v14zM120 80V66a8 8 0 0 1 16 0v14zM220 80V69a6 6 0 0 1 12 0v11zM262 82V72h4v-5h3v5h4v10z"/>
+      <ellipse class="fog f1" cx="80" cy="88" rx="100" ry="9"/><ellipse class="fog f2" cx="230" cy="90" rx="100" ry="8"/>
+      <g class="scene-ghost g1" transform="translate(110 30) scale(.7)"><path d="M15 2C7 2 3 8 3 15v17l4-3 4 3 4-3 4 3 4-3 4 3V15c0-7-4-13-12-13z"/></g>
+      <g class="scene-ghost g2" transform="translate(190 20) scale(.55)"><path d="M15 2C7 2 3 8 3 15v17l4-3 4 3 4-3 4 3 4-3 4 3V15c0-7-4-13-12-13z"/></g>
+      <g class="scene-ghost g3" transform="translate(250 38) scale(.45)"><path d="M15 2C7 2 3 8 3 15v17l4-3 4 3 4-3 4 3 4-3 4 3V15c0-7-4-13-12-13z"/></g></svg>`,
+  },
+  {
+    id: 'blutmond', name: t('Blutmond-Herrscher'), desc: t('Das teuerste Stück: Blutmond über dem Kopf, kreisende Runen, Fledermäuse, Glut, ein blutroter Name und ein eigenes Profilbild-Banner'), price: 666, r: 4, tier: 'shop', allowed: bought('blutmond'), badge: t('🌕 Blutmond-Herrscher'),
+    svg: `<span class="aura"></span><span class="ring"></span>
+      <svg class="runes" viewBox="0 0 100 100"><circle class="rune-ring" cx="50" cy="50" r="47"/><text><textPath href="#bm-path" startOffset="0">ᛒᛚᚢᛏᛗᛟᚾᛞ ✦ ᚺᛖᚱᚱᛊᚲᚺᛖᚱ ✦ ᛒᛚᚢᛏᛗᛟᚾᛞ ✦ ᚺᛖᚱᚱᛊᚲᚺᛖᚱ ✦</textPath></text>
+      <defs><path id="bm-path" d="M50 8a42 42 0 1 1 0 84a42 42 0 1 1 0-84"/></defs></svg>
+      <span class="bloodmoon"></span>
+      <span class="spark k1"></span><span class="spark k2"></span><span class="spark k3"></span>
+      <span class="vbat v1"><svg viewBox="0 0 48 24"><path class="wing l" d="M24 12C19 4 9 2 1 6c4 1 5 4 5 7 3-2 6-1 7 2 2-2 6-2 8 0z"/><path class="wing r" d="M24 12c5-8 15-10 23-6-4 1-5 4-5 7-3-2-6-1-7 2-2-2-6-2-8 0z"/><ellipse class="bat" cx="24" cy="13" rx="4" ry="5"/><circle class="eye" cx="22.5" cy="12" r=".9"/><circle class="eye" cx="25.5" cy="12" r=".9"/></svg></span><span class="vbat v2"><svg viewBox="0 0 48 24"><path class="wing l" d="M24 12C19 4 9 2 1 6c4 1 5 4 5 7 3-2 6-1 7 2 2-2 6-2 8 0z"/><path class="wing r" d="M24 12c5-8 15-10 23-6-4 1-5 4-5 7-3-2-6-1-7 2-2-2-6-2-8 0z"/><ellipse class="bat" cx="24" cy="13" rx="4" ry="5"/><circle class="eye" cx="22.5" cy="12" r=".9"/><circle class="eye" cx="25.5" cy="12" r=".9"/></svg></span>`,
+    scene: `<svg viewBox="0 0 300 104" preserveAspectRatio="xMidYMid slice">
+      <circle class="blood-glow" cx="220" cy="40" r="34"/><circle class="blood-moon" cx="220" cy="40" r="24"/>
+      <circle class="crater" cx="212" cy="34" r="4"/><circle class="crater" cx="228" cy="48" r="3"/><circle class="crater" cx="226" cy="30" r="2"/>
+      <path class="castle" d="M0 104V78h14v-8h6v8h10V60h-4v-6h4v-4h5v4h4v6h-4v18h10v-8h6v8h16V66h-3l6-12 6 12h-3v38zM130 104V84h20v-6h4v6h12v20z"/>
+      <path class="hill" d="M0 96q80-12 160-4t140-6v18H0z"/>
+      <ellipse class="red-mist r1" cx="120" cy="96" rx="110" ry="8"/><ellipse class="red-mist r2" cx="250" cy="98" rx="90" ry="7"/>
+      <path class="scene-bat b1" d="M0 4C-3 0-8-1-11 1c2 0 3 2 3 3 1-1 3 0 3 1 1-1 3-1 5 0 2-1 4-1 5 0 0-1 2-2 3-1 0-1 1-3 3-3C8-1 3 0 0 4z"/>
+      <path class="scene-bat b2" d="M0 4C-3 0-8-1-11 1c2 0 3 2 3 3 1-1 3 0 3 1 1-1 3-1 5 0 2-1 4-1 5 0 0-1 2-2 3-1 0-1 1-3 3-3C8-1 3 0 0 4z"/></svg>`,
   },
   // Exclusive: the server only lets these accounts wear them.
   {
@@ -213,7 +277,7 @@ const ACCESSORIES = [
 
 function exclusiveOf(user) {
   const acc = user && user.accessory && ACCESSORIES.find((a) => a.id === user.accessory);
-  return acc && acc.allowed ? acc : null;
+  return acc && acc.allowed && acc.scene ? acc : null;
 }
 
 // Extra class for names, cards and profiles of someone wearing an exclusive accessory.
@@ -245,8 +309,12 @@ if (accVisibility) {
   }).observe(document.body, { childList: true, subtree: true });
 }
 
+// How spooky a shop accessory is: the more ghosts it costs, the higher.
+const RARITY = { 1: t('Gruselig'), 2: t('Schaurig'), 3: t('Albtraum'), 4: t('Mythisch') };
+
 // "Legendär" for one-of-a-kind accessories, "Exklusiv" for the rest of the special ones.
 function tierLabel(acc) {
+  if (acc.tier === 'shop') return RARITY[acc.r];
   if (acc.tier === 'founder') return t('Gründer');
   if (acc.tier === 'official') return t('Offiziell');
   return acc.tier === 'legendary' ? t('Legendär') : t('Exklusiv');
@@ -271,19 +339,95 @@ function ghostRank(n) {
 }
 
 function ghostBadge(user) {
-  const n = user.ghosts || 0;
+  const n = user.ghostsCaught || 0;
   if (!n || user.bot) return '';
   return `<div class="ghost-badge">👻 ${plural(n, 'Geist gefangen', 'Geister gefangen')} · ${esc(ghostRank(n).name)}</div>`;
 }
 
-// The ghost hunt card in the settings: count, title and the next goal.
+// The ghost hunt card in the settings: count, title, the next goal and the ghosts left to spend.
 function ghostStats(user) {
-  const n = user.ghosts || 0;
+  const n = user.ghostsCaught || 0;
   const rank = ghostRank(n);
   const next = GHOST_RANKS.find((r) => r.at > n);
-  return `<div class="ghost-stats"><span class="gs-ico">👻</span><div>
+  return `<div class="ghost-stats"><span class="gs-ico">👻</span><div class="gs-text">
     <b>${n ? plural(n, 'Geist gefangen', 'Geister gefangen') : t('Noch kein Geist gefangen')}</b>${rank ? ` · ${esc(rank.name)}` : ''}
-    <small>${next ? t('Noch {n} bis „{rank}“', { n: next.at - n, rank: next.name }) : t('Höchster Rang erreicht – unheimlich gut!')}</small></div></div>`;
+    <small>${next ? t('Noch {n} bis „{rank}“', { n: next.at - n, rank: next.name }) : t('Höchster Rang erreicht – unheimlich gut!')}</small>
+    <small class="gs-wallet">${t('{n} zum Ausgeben', { n: user.ghosts || 0 })}</small></div>
+    <button type="button" class="btn small" data-act="shop">🛒 ${t('Geister-Laden')}</button></div>`;
+}
+
+/* ---------- Geister-Laden ---------- */
+
+// Halloween decorations for the avatar, paid with caught ghosts. Cheapest first, the showpiece last.
+function openShop() {
+  closePopover();
+  const { modal } = openModal(`
+    <div class="shop-hero"><span class="shop-ico">👻</span><div><h3>${t('Geister-Laden')}</h3>
+      <p class="sub">${t('Halloween-Dekoration für deinen Avatar. Du bezahlst mit gefangenen Geistern – die sind dann weg, die Dekoration gehört dir für immer.')}</p></div></div>
+    <div class="shop-wallet"></div>
+    <div class="shop-grid"></div>
+    <div class="modal-actions"><button type="button" class="btn" data-close>${t('Schließen')}</button></div>`, { className: 'shop' });
+  const items = ACCESSORIES.filter((a) => a.tier === 'shop').sort((a, b) => a.price - b.price);
+  let confirming = null;
+
+  const render = () => {
+    const me = state.me;
+    const ghosts = me.ghosts || 0;
+    modal.querySelector('.shop-wallet').innerHTML = `<span class="sw-ico">👻</span><div><b>${plural(ghosts, 'Geist', 'Geister')}</b><small>${t('zum Ausgeben · fang mehr, wenn sie vorbeischweben')}</small></div>`;
+    modal.querySelector('.shop-grid').innerHTML = items.map((a) => {
+      const owned = a.allowed(me);
+      const worn = me.accessory === a.id;
+      const action = worn ? `<button type="button" class="btn block" disabled>✓ ${t('Trägst du gerade')}</button>`
+        : owned ? `<button type="button" class="btn block" data-wear="${a.id}">${t('Anlegen')}</button>`
+        : ghosts < a.price ? `<button type="button" class="btn block" disabled>${t('Noch {n} 👻', { n: a.price - ghosts })}</button>`
+        : confirming === a.id ? `<button type="button" class="btn primary block confirm" data-buy="${a.id}">${t('Wirklich für 👻 {n} kaufen?', { n: a.price })}</button>`
+        : `<button type="button" class="btn primary block" data-buy="${a.id}">👻 ${a.price}</button>`;
+      return `<div class="shop-item r${a.r}${owned ? ' owned' : ''}">
+        <i class="shop-rarity">${esc(tierLabel(a))}</i>${owned ? `<i class="shop-owned">${t('Gehört dir')}</i>` : ''}
+        <div class="shop-preview">${avatar({ ...me, accessory: a.id }, { size: 64 })}</div>
+        <b>${esc(a.name)}</b><small>${esc(a.desc)}</small>
+        <span class="shop-price">👻 ${a.price}</span>${action}</div>`;
+    }).join('');
+  };
+
+  const apply = (user) => {
+    state.me = user;
+    state.users.set(user.id, user);
+    renderMe();
+  };
+
+  modal.querySelector('.shop-grid').addEventListener('click', async (e) => {
+    const buy = e.target.closest('[data-buy]');
+    const wear = e.target.closest('[data-wear]');
+    if (!buy && !wear) {
+      if (confirming) { confirming = null; render(); }
+      return;
+    }
+    // Spending can't be undone, so a purchase takes a second click.
+    if (buy && confirming !== buy.dataset.buy) {
+      confirming = buy.dataset.buy;
+      return render();
+    }
+    const btn = buy || wear;
+    btn.disabled = true;
+    try {
+      if (buy) {
+        const item = ACCESSORIES.find((a) => a.id === buy.dataset.buy);
+        const { user } = await req('shop:buy', { item: item.id });
+        apply(user);
+        toast(t('🎃 Gekauft und angelegt: {name}', { name: item.name }), 'spooky');
+      } else {
+        const { user } = await req('profile:update', { accessory: wear.dataset.wear });
+        apply(user);
+        toast(t('Angelegt'));
+      }
+    } catch (ex) {
+      toast(ex.message, 'error');
+    }
+    confirming = null;
+    render();
+  });
+  render();
 }
 
 // The presence dot. Online, away and do-not-disturb are animated so a live profile never looks frozen.
@@ -2754,6 +2898,7 @@ function openSettings() {
   let color = me.color;
   let status = me.status;
   const accessory = accessoryPicker(modal.querySelector('.acc-row'), me);
+  modal.querySelector('[data-act=shop]').onclick = () => { close(); openShop(); };
   form.spooky.checked = store('spooky') !== false;
   form.spooky.addEventListener('change', () => {
     store('spooky', form.spooky.checked);
@@ -2826,7 +2971,8 @@ function openPalette() {
   let sel = 0;
 
   const all = () => {
-    const out = [{ label: t('Meine Bots'), kind: t('Bots & Slash-Befehle'), ico: '🤖', go: () => openBotManager() }];
+    const out = [{ label: t('Meine Bots'), kind: t('Bots & Slash-Befehle'), ico: '🤖', go: () => openBotManager() },
+      { label: t('Geister-Laden'), kind: t('Halloween-Dekoration für Geister'), ico: '👻', go: () => openShop() }];
     if (state.me.official) out.push({ label: t('Admin-Panel'), kind: t('Nexora verwalten'), ico: '🛡️', go: () => openAdminPanel() });
     for (const hub of state.hubs.values()) {
       out.push({ label: hub.name, kind: 'Hub', ico: hub.icon || initials(hub.name), go: () => openHub(hub.id) });
@@ -3611,6 +3757,7 @@ $('#join-hub-btn').onclick = openJoinHub;
 $('#palette-btn').onclick = openPalette;
 $('#version-btn').onclick = openChangelog;
 $('#download-btn').onclick = openDownload;
+$('#shop-btn').onclick = openShop;
 $('#admin-btn').onclick = () => openAdminPanel();
 $('#auth-version').onclick = openChangelog;
 $('#toggle-members').onclick = () => {

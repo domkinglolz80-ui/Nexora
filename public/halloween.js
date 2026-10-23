@@ -1,8 +1,8 @@
 /* =========================================================================
    Nexora — Halloween Edition 2026
    Seasonal effects: laughing pumpkins on the splash and login, a countdown,
-   ghosts that float by and can be caught (rare golden ones count three times),
-   a candy burst for every catch and a candy rain for "trick or treat".
+   ghosts that float by and can be caught (rare golden ones count three times;
+   they are spent in the Geister-Laden), a candy burst for every catch and a candy rain for "trick or treat".
    Uses helpers from app.js.
    ========================================================================= */
 
@@ -103,9 +103,10 @@
     const local = Number(store('ghosts')) || 0;
     if (!local || store('ghostsSynced')) return;
     req('halloween:sync', { count: local })
-      .then(({ ghosts }) => {
+      .then(({ ghosts, ghostsCaught }) => {
         store('ghostsSynced', true);
         state.me.ghosts = ghosts;
+        state.me.ghostsCaught = ghostsCaught;
         state.users.set(state.me.id, state.me);
       })
       .catch(() => {});
@@ -122,19 +123,23 @@
     const r = ghost.getBoundingClientRect();
     burst(r.left + r.width / 2, r.top + r.height / 2, golden ? 14 : 9, golden);
 
-    const before = state.me.ghosts || 0;
+    // Milestones count every ghost ever caught; "you now have" is what is left to spend in the shop.
+    const before = state.me.ghostsCaught || 0;
     const value = golden ? GOLDEN_VALUE : 1;
     const after = before + value;
-    state.me.ghosts = after;
+    const wallet = (state.me.ghosts || 0) + value;
+    state.me.ghostsCaught = after;
+    state.me.ghosts = wallet;
     // A golden ghost can jump over a milestone, so take the highest one passed.
     const passed = Object.keys(MILESTONES).map(Number).filter((m) => m > before && m <= after).pop();
     const text = passed ? MILESTONES[passed]
-      : golden ? t('✨ Ein goldener Geist! Zählt dreifach – du hast jetzt {n}.', { n: after })
-      : t('Buh! Geist gefangen 👻 Du hast jetzt {n}.', { n: after });
+      : golden ? t('✨ Ein goldener Geist! Zählt dreifach – du hast jetzt {n}.', { n: wallet })
+      : t('Buh! Geist gefangen 👻 Du hast jetzt {n}.', { n: wallet });
     toast(text, 'spooky');
     req('halloween:ghost', { golden })
-      .then(({ ghosts }) => {
+      .then(({ ghosts, ghostsCaught }) => {
         state.me.ghosts = ghosts;
+        state.me.ghostsCaught = ghostsCaught;
         state.users.set(state.me.id, state.me);
       })
       .catch(() => {});

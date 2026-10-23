@@ -1,5 +1,38 @@
 [
   {
+    "version": "V0.4.0 Beta",
+    "date": "2026-10-23",
+    "title": "Der Geister-Laden",
+    "titleEn": "The Ghost Shop",
+    "changes": [
+      {
+        "icon": "👻",
+        "text": "**Der Geister-Laden ist offen!** Deine gefangenen Geister sind jetzt Geld: Gib sie für **Halloween-Dekoration** für deinen Avatar aus – über das neue **Geist-Symbol** in der Hub-Leiste",
+        "textEn": "**The Ghost Shop is open!** Your caught ghosts are now currency: spend them on **Halloween decorations** for your avatar – via the new **ghost icon** in the hub rail"
+      },
+      {
+        "icon": "🛒",
+        "text": "Sieben Dekorationen von 👻 25 bis 👻 666 – je teurer, desto spektakulärer: **Spinnennetz**, **Mumienbinden**, **Hexenkessel**, **Vampirgraf**, **Sensenmann**, **Geisterschwarm** und der **Blutmond-Herrscher**",
+        "textEn": "Seven decorations from 👻 25 to 👻 666 – the pricier, the more spectacular: **Cobweb**, **Mummy wraps**, **Witch's cauldron**, **Vampire Count**, **Grim Reaper**, **Ghost Swarm** and the **Blood Moon Sovereign**"
+      },
+      {
+        "icon": "🌕",
+        "text": "Die beiden **mythischen** Stücke bringen einen leuchtenden Namen, ein eigenes Abzeichen und ein eigenes Profilkarten-Banner mit",
+        "textEn": "The two **mythic** pieces come with a glowing name, their own badge and their own profile card banner"
+      },
+      {
+        "icon": "♾️",
+        "text": "Gekaufte Geister sind weg – die Dekoration gehört dir **für immer** und steht danach in der Accessoire-Auswahl. Dein Rang zählt weiterhin alle Geister, die du je gefangen hast",
+        "textEn": "Spent ghosts are gone – the decoration is yours **forever** and shows up in the accessory picker. Your rank still counts every ghost you have ever caught"
+      },
+      {
+        "icon": "💻",
+        "text": "**Desktop-App 0.4.0** passend zum Update",
+        "textEn": "**Desktop app 0.4.0** to match the update"
+      }
+    ]
+  },
+  {
     "version": "V0.3.0 Beta",
     "date": "2026-10-23",
     "title": "Anrufe & weg mit Gesperrten",

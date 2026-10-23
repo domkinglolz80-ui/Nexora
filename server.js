@@ -23,6 +23,16 @@ const MAX_COMMAND_OPTIONS = 5;
 const MAX_SCRIPT = 10000;
 const GHOST_COOLDOWN = 10_000;
 const MAX_SYNCED_GHOSTS = 500;
+// The Geister-Laden: Halloween accessories bought with caught ghosts, kept forever. Price in ghosts.
+const SHOP = {
+  spinnennetz: 25,
+  mumie: 50,
+  hexenkessel: 99,
+  vampir: 150,
+  sensenmann: 250,
+  geisterschwarm: 400,
+  blutmond: 666,
+};
 const STARTED_AT = Date.now();
 // The newest changelog entry is the running version; clients compare it to reload on updates.
 const CHANGELOG = require('./changelog.json');
@@ -373,9 +383,13 @@ function grantAccessories(u) {
   }
 }
 
+// Shop accessories are worn only by accounts that bought them (bots never can).
+const owns = (u, item) => Boolean(u && !u.bot && Array.isArray(u.owned) && u.owned.includes(item));
+
 function accessoryOf(value, user) {
   if (value === '' || value === null) return '';
   if (ACCESSORIES.has(value)) return value;
+  if (Object.hasOwn(SHOP, value)) return owns(user, value) ? value : undefined;
   return EXCLUSIVE_ACCESSORIES[value]?.(user) ? value : undefined;
 }
 
@@ -383,6 +397,8 @@ function accessoryOf(value, user) {
 // anyone else still holding an exclusive from an earlier version loses it.
 function grantExclusives() {
   for (const u of Object.values(db.users)) {
+    // Since V0.4.0 ghosts can be spent; the rank counts every ghost ever caught.
+    u.ghostsCaught = Math.max(u.ghostsCaught || 0, u.ghosts || 0);
     if (u.accessory && !ACCESSORIES.has(u.accessory) && accessoryOf(u.accessory, u) === undefined) u.accessory = '';
     grantAccessories(u);
   }
@@ -401,6 +417,8 @@ function publicUser(u) {
     bio: u.bio || '',
     accessory: (u.accessory && accessoryOf(u.accessory, u)) || '',
     ghosts: u.ghosts || 0,
+    ghostsCaught: u.ghostsCaught || 0,
+    owned: Array.isArray(u.owned) ? u.owned.filter((item) => Object.hasOwn(SHOP, item)) : [],
     createdAt: u.createdAt,
     banned: u.banned ? true : undefined,
   };
@@ -2601,10 +2619,12 @@ io.on('connection', (socket) => {
     const now = Date.now();
     if (now - lastGhost >= GHOST_COOLDOWN) {
       lastGhost = now;
-      user.ghosts = (user.ghosts || 0) + (golden ? 3 : 1);
+      const value = golden ? 3 : 1;
+      user.ghosts = (user.ghosts || 0) + value;
+      user.ghostsCaught = (user.ghostsCaught || 0) + value;
       save();
     }
-    return { ghosts: user.ghosts || 0 };
+    return { ghosts: user.ghosts || 0, ghostsCaught: user.ghostsCaught || 0 };
   });
 
   // Counters from before V0.1.5.5 lived on the device; they are taken over once.
@@ -2614,9 +2634,25 @@ io.on('connection', (socket) => {
       user.ghostsSynced = true;
       const local = Number.isInteger(count) ? Math.min(Math.max(count, 0), MAX_SYNCED_GHOSTS) : 0;
       user.ghosts = Math.max(user.ghosts || 0, local);
+      user.ghostsCaught = Math.max(user.ghostsCaught || 0, user.ghosts);
       save();
     }
-    return { ghosts: user.ghosts || 0 };
+    return { ghosts: user.ghosts || 0, ghostsCaught: user.ghostsCaught || 0 };
+  });
+
+  // Geister-Laden: the price is taken from the ghosts, the accessory stays forever and is put on.
+  on('shop:buy', ({ item }) => {
+    const user = me();
+    if (user.bot || typeof item !== 'string' || !Object.hasOwn(SHOP, item)) return { error: 'Diese Dekoration gibt es im Laden nicht.' };
+    if (owns(user, item)) return { error: 'Diese Dekoration gehört dir schon.' };
+    const price = SHOP[item];
+    if ((user.ghosts || 0) < price) return { error: 'Dafür hast du nicht genug Geister.' };
+    user.ghosts -= price;
+    user.owned = [...(Array.isArray(user.owned) ? user.owned : []), item];
+    user.accessory = item;
+    save();
+    broadcastToVisible(userId, 'user:update', publicUser(user));
+    return { user: publicUser(user) };
   });
 
   socket.on('disconnect', () => {

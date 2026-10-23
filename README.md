@@ -25,7 +25,7 @@ Nexora ist eine Echtzeit-Chat-Plattform mit eigenem Look: dunkles Glas-Design mi
 - **Deutsch & Englisch** – Sprache beim Login oder in den Profil-Einstellungen wählen, beim ersten Besuch wird sie automatisch erkannt
 - **Desktop-App** – Nexora als eigenes Programm für Windows, macOS und Linux, Download über das Symbol unten in der Hub-Leiste
 - **Responsive** – funktioniert auch auf dem Handy
-- **Halloween Edition 2026** – gruseliger Look, animierte Profil-Accessoires und Geisterjagd
+- **Halloween Edition 2026** – gruseliger Look, animierte Profil-Accessoires, Geisterjagd und der **Geister-Laden**
 
 Neue Nutzer landen automatisch in der **Nexora Lounge** (Code `NEXORA`).
 
@@ -94,6 +94,22 @@ Und diese zur Halloween Edition:
 | 13      | Geisterjäger:in    |
 | 31      | Kürbismeister:in   |
 | 66      | Legende der Nacht  |
+
+Der Rang zählt **alle jemals gefangenen Geister** – auch die, die du im Laden ausgegeben hast.
+
+**Geister-Laden** (ab V0.4.0 Beta) – gefangene Geister sind jetzt Geld: Über das Geist-Symbol in der Hub-Leiste, „Geister-Laden“ in den Profil-Einstellungen oder die Schnellsuche öffnet sich der Laden mit **Halloween-Dekoration** für den Avatar. Jedes Stück zeigt eine Live-Vorschau mit deinem eigenen Avatar. Beim Kauf (zweiter Klick bestätigt) werden die Geister abgezogen und sind weg – die Dekoration gehört dir **für immer**, wird sofort angelegt und steht danach in der Accessoire-Auswahl. Je teurer, desto spektakulärer:
+
+| Dekoration              | Preis  | Stufe    | Was passiert                                                                 |
+| ----------------------- | ------ | -------- | ---------------------------------------------------------------------------- |
+| 🕸️ Spinnennetz          | 👻 25  | Gruselig | schimmerndes Netz in der Ecke, eine Spinne krabbelt hinein und hinaus        |
+| 🩹 Mumienbinden         | 👻 50  | Gruselig | zwei Binden um den Avatar, das lose Ende flattert                             |
+| 🧪 Hexenkessel          | 👻 99  | Schaurig | brodelnder Kessel über kleinem Feuer, giftgrüne Blasen steigen auf            |
+| 🧛 Vampirgraf           | 👻 150 | Schaurig | hoher Umhangkragen mit Rubin-Spange, Vampirzähne mit Blutstropfen, zwei Fledermäuse kreisen |
+| 💀 Sensenmann           | 👻 250 | Albtraum | Kapuze mit glühenden roten Augen, schwingende Sense mit Glanz, Totennebel     |
+| 👻 Geisterschwarm       | 👻 400 | Mythisch | drei Geister kreisen im geisterhaften Ring; leuchtender Name, Abzeichen und Profilkarte mit Geisterfriedhof |
+| 🌕 Blutmond-Herrscher   | 👻 666 | Mythisch | Blutmond über dem Kopf, kreisende Runen, blutroter Ring, Glut und Fledermäuse; blutroter Name, Abzeichen und Profilkarte mit Schloss unter dem Blutmond |
+
+Der Server prüft jeden Kauf (Preis, Kontostand, schon gekauft) und lässt gekaufte Dekoration nur von ihrem Besitzer tragen. Bots können nichts kaufen.
 
 **Süßigkeitenregen** – wer „Süßes oder Saures“, „Trick or treat“ oder „Happy Halloween“ in den Chat schreibt, lässt bei allen, die den Kanal offen haben, Süßigkeiten regnen.
 
@@ -277,7 +293,7 @@ Selbst bauen: `cd desktop && npm install && npm start` (Testen) bzw. `npm run di
 
 ## Versionen & Updates
 
-Aktuelle Version: **V0.3.0 Beta** (Desktop-App 0.3.0). Alle Änderungen stehen in [`changelog.json`](changelog.json) – der oberste Eintrag ist die laufende Version.
+Aktuelle Version: **V0.4.0 Beta** (Desktop-App 0.4.0). Alle Änderungen stehen in [`changelog.json`](changelog.json) – der oberste Eintrag ist die laufende Version.
 
 - Nach dem Login (und nach jedem Update) zeigt Nexora einmal das Fenster **„Was ist neu?“**. Über die Versionsanzeige unten in der Hub-Leiste lässt es sich jederzeit wieder öffnen.
 - Geht eine neue Version live, während jemand Nexora offen hat, lädt die Seite automatisch neu. Tippt die Person gerade etwas, erscheint stattdessen ein „Jetzt laden“-Hinweis.
