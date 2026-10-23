@@ -47,9 +47,43 @@ const HUB_ICONS = ['', '🎃', '👻', '🦇', '💀', '🔥', '⚡', '🚀', '�
 const QUICK_REACTIONS = ['🎃', '👻', '😂'];
 const ACCENTS = ['#ff7a18', '#ff9f1c', '#ff5e3a', '#ffb347', '#ff6b00', '#f9a03f', '#ff8c42', '#e85d04', '#ffd166', '#ef476f', '#9b5de5', '#7bdc3a', '#c1121f'];
 
-// Animated avatar accessories (Halloween Edition 2026). The server only stores the id.
+// Animated avatar accessories. The server only stores the id.
+// Basic ones are for everyone all year; then the Halloween Edition 2026; then the special ones.
 const ACCESSORIES = [
   { id: '', name: t('Keins') },
+  {
+    id: 'sonnenbrille', name: t('Sonnenbrille'),
+    svg: `<svg viewBox="0 0 48 16"><path class="frame" d="M2 3h44v3h-2l-2 7c-1 2-3 3-5 3h-4c-3 0-5-2-6-5h-2c-1 3-3 5-6 5h-4c-2 0-4-1-5-3L4 6H2z"/>
+      <path class="lens" d="M6 6h14l-1.5 6c-.4 1.3-1.5 2-2.8 2h-4.4c-1.3 0-2.4-.7-2.8-2zM28 6h14l-2.5 6c-.4 1.3-1.5 2-2.8 2h-4.4c-1.3 0-2.4-.7-2.8-2z"/></svg>
+      <i class="shine"></i>`,
+  },
+  {
+    id: 'kopfhoerer', name: t('Kopfhörer'),
+    svg: `<svg viewBox="0 0 48 34"><path class="band" d="M5 24C5 11 13 3 24 3s19 8 19 21"/><rect class="cup" x="1" y="19" width="9" height="14" rx="4"/><rect class="cup" x="38" y="19" width="9" height="14" rx="4"/>
+      <rect class="pad" x="7" y="21" width="3" height="10" rx="1.5"/><rect class="pad" x="38" y="21" width="3" height="10" rx="1.5"/></svg>
+      <b class="note n1">♪</b><b class="note n2">♫</b>`,
+  },
+  {
+    id: 'partyhut', name: t('Partyhut'),
+    svg: `<svg viewBox="0 0 30 40"><path class="cone" d="M15 4 3 36h24z"/><path class="stripe" d="M11.2 14h7.6l1.6 4H9.6zM7.8 23h14.4l1.6 4H6.2z"/>
+      <circle class="dot" cx="13" cy="31" r="1.4"/><circle class="dot" cx="19" cy="20" r="1.2"/><circle class="pom" cx="15" cy="4" r="3.6"/></svg>
+      <i class="confetti c1"></i><i class="confetti c2"></i><i class="confetti c3"></i>`,
+  },
+  {
+    id: 'heiligenschein', name: t('Heiligenschein'),
+    svg: `<i class="halo"></i><i class="glitter g1"></i><i class="glitter g2"></i>`,
+  },
+  {
+    id: 'blumenkranz', name: t('Blumenkranz'),
+    svg: `<svg viewBox="0 0 52 18"><path class="vine" d="M2 12c8 4 16 5 24 5s16-1 24-5"/><path class="leaf" d="M9 13c1-4 5-5 7-4-1 3-4 5-7 4zM43 13c-1-4-5-5-7-4 1 3 4 5 7 4z"/>
+      <g class="flower f1"><circle cx="5" cy="9" r="3.4"/><circle class="mid" cx="5" cy="9" r="1.4"/></g><g class="flower f2"><circle cx="17" cy="13" r="3.8"/><circle class="mid" cx="17" cy="13" r="1.5"/></g>
+      <g class="flower f3"><circle cx="26" cy="14" r="4.4"/><circle class="mid" cx="26" cy="14" r="1.7"/></g><g class="flower f2"><circle cx="35" cy="13" r="3.8"/><circle class="mid" cx="35" cy="13" r="1.5"/></g>
+      <g class="flower f1"><circle cx="47" cy="9" r="3.4"/><circle class="mid" cx="47" cy="9" r="1.4"/></g></svg>`,
+  },
+  {
+    id: 'herzen', name: t('Verliebt'),
+    svg: `<b class="heart h1">❤</b><b class="heart h2">❤</b><b class="heart h3">❤</b>`,
+  },
   {
     id: 'kuerbis', name: t('Lachender Kürbis'),
     svg: `<svg viewBox="0 0 40 40"><path class="stem" d="M20 10c0-3 1-5 4-6"/><path class="leaf" d="M21 8c3-3 7-2 8 0-3 2-6 2-8 0z"/>
@@ -2621,7 +2655,7 @@ function openSettings() {
       <div class="field"><span>${t('Akzentfarbe')}</span></div>
       <div class="color-row">${ACCENTS.map((c) => `<button type="button" class="swatch ${c === me.color ? 'sel' : ''}" style="--c:${c}" data-c="${c}"></button>`).join('')}
         <input type="color" value="${esc(me.color)}" title="${t('Eigene Farbe')}" /></div>
-      <div class="field"><span>${t('Halloween-Accessoire 🎃')} <em>${t('(alle sehen es)')}</em></span></div>
+      <div class="field"><span>${t('Accessoire ✨')} <em>${t('(alle sehen es)')}</em></span></div>
       <div class="acc-row"></div>
       <div class="field"><span>${t('Status')}</span></div>
       <div class="status-row">${['online', 'idle', 'dnd', 'invisible'].map((s) => `<button type="button" class="status-opt ${s === me.status ? 'sel' : ''}" data-s="${s}">${statusDot(s === 'invisible' ? 'offline' : s)}${STATUS_LABEL[s]}</button>`).join('')}</div>

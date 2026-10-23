@@ -1209,6 +1209,82 @@ textarea.code:focus { border-color: var(--orange); box-shadow: 0 0 0 4px rgba(25
 .avatar .acc svg { width: 100%; height: 100%; stroke: none; overflow: visible; }
 .avatar .dot { z-index: 3; }
 
+/* ---------- BASIC: for everyone, all year (only transform and opacity move) ---------- */
+/* sunglasses: sit on the eyes, now and then a shine glides over the lenses */
+.acc-sonnenbrille { width: calc(var(--s) * 0.9); height: calc(var(--s) * 0.3); left: 50%; top: calc(var(--s) * 0.24); margin-left: calc(var(--s) * -0.45); overflow: hidden; }
+.acc-sonnenbrille .frame { fill: #121018; }
+.acc-sonnenbrille .lens { fill: #2a2448; }
+.acc-sonnenbrille .shine {
+  position: absolute; top: 0; left: 0; width: 26%; height: 100%;
+  background: linear-gradient(105deg, transparent 25%, rgba(255, 255, 255, 0.6) 50%, transparent 75%);
+  transform: translateX(-120%); animation: acc-shine 3.4s ease-in-out infinite;
+}
+@keyframes acc-shine { 0%, 55% { transform: translateX(-120%); } 85%, 100% { transform: translateX(420%); } }
+
+/* headphones: nod to the beat, notes float up */
+.acc-kopfhoerer { width: calc(var(--s) * 1.14); height: calc(var(--s) * 0.82); left: 50%; top: calc(var(--s) * -0.18); margin-left: calc(var(--s) * -0.57); animation: acc-beat 0.6s ease-in-out infinite alternate; }
+.acc-kopfhoerer .band { fill: none; stroke: #2b2735; stroke-width: 3.6; stroke-linecap: round; }
+.acc-kopfhoerer .cup { fill: #ff7a18; stroke: #1a1622; stroke-width: 1.2; }
+.acc-kopfhoerer .pad { fill: #1a1622; }
+.acc-kopfhoerer .note { position: absolute; font: 800 calc(var(--s) * 0.28)/1 var(--display); color: #ffd166; text-shadow: 0 0 4px rgba(255, 140, 0, 0.8); opacity: 0; animation: acc-note 2.4s ease-out infinite; }
+.acc-kopfhoerer .n1 { left: -14%; top: 30%; }
+.acc-kopfhoerer .n2 { right: -14%; top: 22%; animation-delay: 1.2s; color: #7fe9ff; }
+@keyframes acc-beat { from { transform: scale(1); } to { transform: scale(1.04) translateY(-2%); } }
+@keyframes acc-note { 0% { opacity: 0; transform: translateY(0) rotate(-10deg); } 20% { opacity: 1; } 100% { opacity: 0; transform: translateY(calc(var(--s) * -0.7)) rotate(14deg); } }
+
+/* party hat: sits crooked, confetti rains down */
+.acc-partyhut { inset: 0; }
+.acc-partyhut svg { position: absolute; width: calc(var(--s) * 0.5); height: calc(var(--s) * 0.66); left: calc(var(--s) * 0.06); top: calc(var(--s) * -0.5); transform-origin: 50% 100%; animation: acc-party 2.2s ease-in-out infinite; }
+.acc-partyhut .cone { fill: #9b5de5; stroke: #5b2e9e; stroke-width: 0.8; stroke-linejoin: round; }
+.acc-partyhut .stripe { fill: #ffd166; }
+.acc-partyhut .dot { fill: #3ddc84; }
+.acc-partyhut .pom { fill: #ff5ea8; }
+.acc-partyhut .confetti { position: absolute; top: 0; width: calc(var(--s) * 0.07 + 1px); height: calc(var(--s) * 0.12 + 1px); border-radius: 1px; opacity: 0; animation: acc-confetti 2.6s linear infinite; }
+.acc-partyhut .c1 { left: 6%; background: #ffd166; }
+.acc-partyhut .c2 { left: 55%; background: #3ddc84; animation-delay: 0.9s; }
+.acc-partyhut .c3 { left: 88%; background: #ff5ea8; animation-delay: 1.7s; }
+@keyframes acc-party { 0%, 100% { transform: rotate(-20deg); } 50% { transform: rotate(-8deg) translateY(-6%); } }
+@keyframes acc-confetti { 0% { opacity: 0; transform: translateY(calc(var(--s) * -0.4)) rotate(0deg); } 15% { opacity: 1; } 100% { opacity: 0; transform: translateY(calc(var(--s) * 1.05)) rotate(540deg); } }
+
+/* halo: a golden ring hovers above, glitter twinkles */
+.acc-heiligenschein { inset: 0; }
+.acc-heiligenschein .halo {
+  position: absolute; left: 50%; top: calc(var(--s) * -0.3); width: calc(var(--s) * 0.78); height: calc(var(--s) * 0.22); margin-left: calc(var(--s) * -0.39);
+  border-radius: 50%; border: calc(var(--s) * 0.06 + 1px) solid #ffe27a;
+  box-shadow: 0 0 calc(var(--s) * 0.18) rgba(255, 211, 77, 0.9), inset 0 0 calc(var(--s) * 0.08) rgba(255, 243, 176, 0.9);
+  animation: acc-halo 2.6s ease-in-out infinite;
+}
+.acc-heiligenschein .glitter {
+  position: absolute; width: calc(var(--s) * 0.12 + 2px); height: calc(var(--s) * 0.12 + 2px); background: #fff6c8;
+  clip-path: polygon(50% 0, 60% 40%, 100% 50%, 60% 60%, 50% 100%, 40% 60%, 0 50%, 40% 40%);
+  opacity: 0; animation: nk-twinkle 2.2s ease-in-out infinite;
+}
+.acc-heiligenschein .g1 { left: 2%; top: -26%; }
+.acc-heiligenschein .g2 { right: 0; top: -16%; animation-delay: 1.1s; }
+@keyframes acc-halo { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-14%); } }
+
+/* flower crown: sways gently */
+.acc-blumenkranz { width: calc(var(--s) * 1.12); height: calc(var(--s) * 0.4); left: 50%; top: calc(var(--s) * -0.2); margin-left: calc(var(--s) * -0.56); transform-origin: 50% 100%; animation: acc-sway 3s ease-in-out infinite; }
+.acc-blumenkranz .vine { fill: none; stroke: #3f8f3a; stroke-width: 2; stroke-linecap: round; }
+.acc-blumenkranz .leaf { fill: #5cbf4a; }
+.acc-blumenkranz .f1 circle { fill: #ff8fab; }
+.acc-blumenkranz .f2 circle { fill: #ffd166; }
+.acc-blumenkranz .f3 circle { fill: #ffffff; }
+.acc-blumenkranz .flower .mid { fill: #ff9f1c; }
+@keyframes acc-sway { 0%, 100% { transform: rotate(-4deg); } 50% { transform: rotate(4deg); } }
+
+/* in love: little hearts rise around the avatar */
+.acc-herzen { inset: 0; }
+.acc-herzen .heart { position: absolute; font: 400 calc(var(--s) * 0.3)/1 var(--font); color: #ff4d6d; text-shadow: 0 0 4px rgba(255, 77, 109, 0.7); opacity: 0; animation: acc-heart 2.7s ease-out infinite; }
+.acc-herzen .h1 { right: -18%; bottom: 8%; }
+.acc-herzen .h2 { left: -18%; bottom: 28%; animation-delay: 0.9s; color: #ff8fab; }
+.acc-herzen .h3 { right: 12%; top: -12%; animation-delay: 1.8s; font-size: calc(var(--s) * 0.22); }
+@keyframes acc-heart { 0% { opacity: 0; transform: translateY(0) scale(0.5); } 20% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: translateY(calc(var(--s) * -0.6)) scale(0.8) rotate(12deg); } }
+
+.avatar.tiny .acc-kopfhoerer .note, .avatar.tiny .acc-partyhut .confetti, .avatar.tiny .acc-heiligenschein .glitter,
+.avatar.tiny .acc-herzen .h2, .avatar.tiny .acc-herzen .h3, .avatar.tiny .acc-sonnenbrille .shine { display: none; }
+.avatar.tiny .acc-herzen .h1 { opacity: 1; }
+
 /* laughing pumpkin: hops on the top-right corner, jaw flaps, "HA" bubbles rise */
 .acc-kuerbis { width: calc(var(--s) * 0.56); height: calc(var(--s) * 0.56); right: calc(var(--s) * -0.2); top: calc(var(--s) * -0.24); animation: acc-hop 1.1s ease-in-out infinite; transform-origin: 50% 100%; }
 .acc-kuerbis .lobe { fill: #e8590c; }

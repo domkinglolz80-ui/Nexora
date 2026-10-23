@@ -32,7 +32,18 @@ Neue Nutzer landen automatisch in der **Nexora Lounge** (Code `NEXORA`).
 
 Ab **V0.1.5 Beta** trägt Nexora Halloween: Vollmond, Nebel, Spinnennetz und Fledermäuse im Hintergrund, ein lachender Kürbis auf Ladebildschirm und Login, ein Countdown bis zum 31. Oktober und der Kanal `#halloween` in der Lounge.
 
-**Accessoires** – in den Profil-Einstellungen unter „Halloween-Accessoire“ (für Bots im Bot-Editor unter „Profil“). Alle sind animiert und für alle sichtbar:
+**Accessoires** – in den Profil-Einstellungen unter „Accessoire“ (für Bots im Bot-Editor unter „Profil“). Alle sind animiert und für alle sichtbar. Diese gibt es für alle, das ganze Jahr:
+
+| Accessoire          | Was passiert                                          |
+| ------------------- | ----------------------------------------------------- |
+| 😎 Sonnenbrille     | sitzt auf den Augen, ab und zu gleitet ein Glanz drüber |
+| 🎧 Kopfhörer        | nicken im Takt, Noten schweben hoch                   |
+| 🥳 Partyhut         | sitzt schief und wippt, Konfetti rieselt              |
+| 😇 Heiligenschein   | goldener Ring schwebt über dem Kopf, Glitzer funkelt  |
+| 🌸 Blumenkranz      | wiegt sich sanft hin und her                          |
+| 💕 Verliebt         | kleine Herzen steigen um den Avatar auf               |
+
+Und diese zur Halloween Edition:
 
 | Accessoire          | Was passiert                                          |
 | ------------------- | ----------------------------------------------------- |
@@ -118,6 +129,15 @@ Außerdem verwaltet der Owner **jeden Hub** wie dessen Besitzer und hat **doppel
 
 Private Direktnachrichten anderer kann auch der Owner nicht lesen.
 
+## Alte Nachrichten aufräumen
+
+Damit die Datenbank nicht immer weiter wächst, räumt Nexora selbst auf – beim Start und danach jede Stunde:
+
+- Nachrichten, die älter als **90 Tage** sind, werden gelöscht, mitsamt ihren Dateien (Bilder, Anhänge).
+- Jeder Kanal und jede DM behält höchstens die neuesten **2.000 Nachrichten**.
+
+`@nexora` stellt beides in der Owner-Zentrale unter **Kontrolle → Alte Nachrichten aufräumen** ein: löschen nach 7, 14, 30, 60, 90, 180 oder 365 Tagen oder nie, und 500 bis 5.000 Nachrichten pro Kanal. Beim Speichern wird sofort aufgeräumt. Der Startwert für die Tage lässt sich auch über die Umgebungsvariable `NEXORA_MESSAGE_DAYS` setzen (`0` = nie löschen).
+
 ## Nexora Helper
 
 Der **Nexora Helper** (`@NexoraHelper`) ist der offizielle Bot von Nexora, mit ✓- und BOT-Abzeichen. Er ist fest eingebaut: Man muss ihn nicht einladen, er kann nicht bearbeitet oder gelöscht werden, und **nur offizielle Accounts** können seine Befehle benutzen – in jedem Hub und in Direktnachrichten. Alle anderen sehen nur seine Nachrichten.
@@ -201,7 +221,7 @@ Die Stimmen laufen per **WebRTC direkt zwischen den Geräten**; der Server vermi
 
 ## Versionen & Updates
 
-Aktuelle Version: **V0.1.6.8 Beta**. Alle Änderungen stehen in [`changelog.json`](changelog.json) – der oberste Eintrag ist die laufende Version.
+Aktuelle Version: **V0.1.6.9 Beta**. Alle Änderungen stehen in [`changelog.json`](changelog.json) – der oberste Eintrag ist die laufende Version.
 
 - Nach dem Login (und nach jedem Update) zeigt Nexora einmal das Fenster **„Was ist neu?“**. Über die Versionsanzeige unten in der Hub-Leiste lässt es sich jederzeit wieder öffnen.
 - Geht eine neue Version live, während jemand Nexora offen hat, lädt die Seite automatisch neu. Tippt die Person gerade etwas, erscheint stattdessen ein „Jetzt laden“-Hinweis.

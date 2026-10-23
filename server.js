@@ -60,7 +60,7 @@ function mongoHint(err) {
 }
 
 function emptyDb() {
-  return { users: {}, sessions: {}, hubs: {}, dms: {}, messages: {}, bots: {}, announcement: null, team: [], audit: [], maintenance: null };
+  return { users: {}, sessions: {}, hubs: {}, dms: {}, messages: {}, bots: {}, announcement: null, team: [], audit: [], maintenance: null, retention: null };
 }
 
 const db = emptyDb();
@@ -132,8 +132,8 @@ const mongoStore = {
   },
 
   async write() {
-    const { users, sessions, hubs, dms, bots, announcement, team, audit, maintenance } = db;
-    const docs = new Map([['meta', { data: { users, sessions, hubs, dms, bots, announcement, team, audit, maintenance } }]]);
+    const { users, sessions, hubs, dms, bots, announcement, team, audit, maintenance, retention } = db;
+    const docs = new Map([['meta', { data: { users, sessions, hubs, dms, bots, announcement, team, audit, maintenance, retention } }]]);
     for (const [channelId, list] of Object.entries(db.messages)) docs.set('ch:' + channelId, { list });
 
     const ops = [];
@@ -206,6 +206,56 @@ function discardFiles(messages) {
       fileStore.remove(a.id).catch((err) => console.error('[nexora] Datei konnte nicht gelöscht werden:', err.message));
     }
   }
+}
+
+// ---------------------------------------------------------------------------
+// Message cleanup: so the database does not grow forever, messages older than
+// `days` are deleted (with their files) and every channel keeps at most `max`.
+// @nexora can change both in the Owner-Zentrale; days = 0 keeps messages forever.
+// ---------------------------------------------------------------------------
+
+const RETENTION_DAYS = [0, 7, 14, 30, 60, 90, 180, 365];
+const RETENTION_MAX = [500, 1000, 2000, 5000];
+const RETENTION_DEFAULT = {
+  days: RETENTION_DAYS.includes(Number(process.env.NEXORA_MESSAGE_DAYS)) ? Number(process.env.NEXORA_MESSAGE_DAYS) : 90,
+  max: 2000,
+};
+const DAY = 24 * 60 * 60 * 1000;
+
+function retention() {
+  return { ...RETENTION_DEFAULT, ...(db.retention || {}) };
+}
+
+// Returns how many messages were deleted.
+function pruneMessages() {
+  const { days, max } = retention();
+  const cutoff = days ? Date.now() - days * DAY : 0;
+  let removed = 0;
+  for (const [channelId, list] of Object.entries(db.messages)) {
+    // Messages are stored oldest first, so everything to delete sits at the start.
+    let cut = Math.max(0, list.length - max);
+    while (cut < list.length && list[cut].createdAt < cutoff) cut += 1;
+    if (cut) {
+      discardFiles(list.splice(0, cut));
+      removed += cut;
+    }
+    if (!list.length) delete db.messages[channelId];
+  }
+  if (removed) {
+    save();
+    console.log(`[nexora] Aufgeräumt: ${removed} alte Nachrichten gelöscht`);
+  }
+  return removed;
+}
+
+function messageStats() {
+  let count = 0;
+  let oldest = null;
+  for (const list of Object.values(db.messages)) {
+    count += list.length;
+    if (list.length && (oldest === null || list[0].createdAt < oldest)) oldest = list[0].createdAt;
+  }
+  return { count, oldest };
 }
 
 // Files nobody sent (upload abandoned, or the server restarted in between) are removed.
@@ -285,8 +335,11 @@ function audit(byId, action, detail = '') {
   save();
 }
 
-// Animated avatar accessories (Halloween Edition). The look lives in the client.
-const ACCESSORIES = new Set(['kuerbis', 'hexenhut', 'geist', 'fledermaus', 'hoerner', 'spinne', 'katze']);
+// Animated avatar accessories (basic ones for everyone + Halloween Edition). The look lives in the client.
+const ACCESSORIES = new Set([
+  'sonnenbrille', 'kopfhoerer', 'partyhut', 'heiligenschein', 'blumenkranz', 'herzen', // basic, all year
+  'kuerbis', 'hexenhut', 'geist', 'fledermaus', 'hoerner', 'spinne', 'katze', // Halloween Edition 2026
+]);
 
 // The one account that owns the legendary Höllenfürst.
 const LEGEND_USERNAME = 'zorvecx';
@@ -838,7 +891,8 @@ function postMessage(access, channelId, authorId, fields) {
     ...fields,
   };
   list.push(message);
-  if (list.length > 5000) discardFiles(list.splice(0, list.length - 5000));
+  const { max } = retention();
+  if (list.length > max) discardFiles(list.splice(0, list.length - max));
   save();
   emitToChannel(access, 'message:new', message);
   return message;
@@ -2089,6 +2143,7 @@ io.on('connection', (socket) => {
         .filter((u) => isOfficial(u))
         .map((u) => ({ ...publicUser(u), fixed: OFFICIAL.has(u.username.toLowerCase()), online: Boolean(online.get(u.id)) })),
       maintenance: db.maintenance,
+      retention: { ...retention(), ...messageStats(), dayOptions: RETENTION_DAYS, maxOptions: RETENTION_MAX },
       audit: (db.audit || []).slice(-150).reverse().map((e) => ({ ...e, user: e.by && db.users[e.by] ? publicUser(db.users[e.by]) : null })),
     };
   });
@@ -2122,6 +2177,16 @@ io.on('connection', (socket) => {
     }
     audit(userId, enabled ? 'maintenanceOn' : 'maintenanceOff', db.maintenance?.text || '');
     return { maintenance: db.maintenance };
+  });
+
+  // How long messages are kept; cleans up right away with the new values.
+  onOwner('owner:retention', ({ days, max }) => {
+    if (!RETENTION_DAYS.includes(days) || !RETENTION_MAX.includes(max)) return { error: 'Ungültige Einstellung.' };
+    db.retention = { days, max };
+    save();
+    const removed = pruneMessages();
+    audit(userId, 'retention', `${days ? `${days} Tage` : 'für immer'} · max. ${max} pro Kanal${removed ? ` · ${removed} gelöscht` : ''}`);
+    return { removed, retention: { ...retention(), ...messageStats() } };
   });
 
   // A message that pops up right now for everyone who is online.
@@ -2212,6 +2277,8 @@ async function main() {
   ensureLounge();
   ensureHelper();
   grantExclusives();
+  pruneMessages();
+  setInterval(pruneMessages, 60 * 60 * 1000);
   await botRuntime.ready;
   await sweepOrphanFiles().catch((err) => console.error('[nexora] Aufräumen der Dateien fehlgeschlagen:', err.message));
   server.listen(PORT, () => {

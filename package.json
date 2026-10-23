@@ -1,6 +1,6 @@
 {
   "name": "nexora",
-  "version": "0.1.6-beta.8",
+  "version": "0.1.6-beta.9",
   "description": "Nexora – Echtzeit-Chat mit Hubs, Kanälen und Direktnachrichten",
   "main": "server.js",
   "scripts": {

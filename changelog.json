@@ -1,5 +1,28 @@
 [
   {
+    "version": "V0.1.6.9 Beta",
+    "date": "2026-10-23",
+    "title": "Neue Accessoires für alle & Aufräumen",
+    "titleEn": "New accessories for everyone & cleanup",
+    "changes": [
+      {
+        "icon": "✨",
+        "text": "Sechs neue **Accessoires für alle**, das ganze Jahr: 😎 Sonnenbrille, 🎧 Kopfhörer, 🥳 Partyhut, 😇 Heiligenschein, 🌸 Blumenkranz und 💕 Verliebt – alle animiert",
+        "textEn": "Six new **accessories for everyone**, all year round: 😎 sunglasses, 🎧 headphones, 🥳 party hat, 😇 halo, 🌸 flower crown and 💕 in love – all animated"
+      },
+      {
+        "icon": "🧹",
+        "text": "**Aufräumen**: Nachrichten, die älter als 90 Tage sind, werden mitsamt Dateien automatisch gelöscht, und jeder Kanal behält höchstens 2.000 Nachrichten – so bleibt die Datenbank schlank",
+        "textEn": "**Cleanup**: messages older than 90 days are deleted automatically together with their files, and every channel keeps at most 2,000 messages – so the database stays lean"
+      },
+      {
+        "icon": "👑",
+        "text": "Der Gründer stellt in der Owner-Zentrale ein, wie lange Nachrichten bleiben (7 Tage bis 1 Jahr oder für immer) und wie viele pro Kanal",
+        "textEn": "The founder sets in the Owner HQ how long messages stay (7 days up to 1 year, or forever) and how many per channel"
+      }
+    ]
+  },
+  {
     "version": "V0.1.6.8 Beta",
     "date": "2026-10-23",
     "title": "Die Nexus-Krone",

@@ -294,6 +294,7 @@ const AUDIT_LABELS = {
   helperInvite: ['🛡️', 'hat den Nexora Helper eingeladen'],
   helperRemove: ['🛡️', 'hat den Nexora Helper ausgeladen'],
   helperStatus: ['🟢', 'hat den Status des Nexora Helpers geändert'],
+  retention: ['🧹', 'hat das Aufräumen alter Nachrichten eingestellt'],
   botDisable: ['⛔', 'hat einen Bot gesperrt'],
   botEnable: ['🤖', 'hat einen Bot entsperrt'],
   deleteBot: ['🗑️', 'hat einen Bot gelöscht'],
@@ -350,7 +351,8 @@ function ownerViews(body, reload) {
     },
 
     async control() {
-      const { maintenance } = await req('owner:state');
+      const { maintenance, retention } = await req('owner:state');
+      const dayLabel = (d) => (d ? t('{n} Tagen', { n: d }) : t('nie – alles behalten'));
       body.innerHTML = `
         <form class="owner-card ${maintenance ? 'danger' : ''}" data-form="maintenance">
           <h4>🚧 ${t('Wartungsmodus')} ${maintenance ? `<span class="pill danger">${t('Aktiv seit {time}', { time: esc(stamp(maintenance.at)) })}</span>` : ''}</h4>
@@ -365,6 +367,14 @@ function ownerViews(body, reload) {
           <p class="hint">${t('Erscheint sofort groß bei allen, die gerade online sind – egal wo sie in Nexora sind.')}</p>
           <label class="field"><textarea name="text" maxlength="300" rows="2" placeholder="${t('z. B. Happy Halloween, Leute! 🎃')}"></textarea></label>
           <div class="modal-actions" style="justify-content:flex-start"><button type="submit" class="btn primary">📢 ${t('Jetzt senden')}</button></div>
+        </form>
+        <form class="owner-card" data-form="retention">
+          <h4>🧹 ${t('Alte Nachrichten aufräumen')}</h4>
+          <p class="hint">${t('Damit die Datenbank nicht immer voller wird, löscht Nexora jede Stunde alte Nachrichten mitsamt ihren Dateien. Zusätzlich behält jeder Kanal nur die neuesten Nachrichten.')}</p>
+          <p class="hint">${t('Gerade gespeichert: {n} Nachrichten', { n: numberFmt.format(retention.count) })}${retention.oldest ? ` · ${t('älteste vom {date}', { date: esc(dateFmt.format(retention.oldest)) })}` : ''}</p>
+          <label class="field"><span>${t('Nachrichten löschen nach')}</span><select name="days">${retention.dayOptions.map((d) => `<option value="${d}" ${d === retention.days ? 'selected' : ''}>${esc(dayLabel(d))}</option>`).join('')}</select></label>
+          <label class="field"><span>${t('Höchstens pro Kanal')}</span><select name="max">${retention.maxOptions.map((m) => `<option value="${m}" ${m === retention.max ? 'selected' : ''}>${esc(t('{n} Nachrichten', { n: numberFmt.format(m) }))}</option>`).join('')}</select></label>
+          <div class="modal-actions" style="justify-content:flex-start"><button type="submit" class="btn primary">🧹 ${t('Speichern & aufräumen')}</button></div>
         </form>
         <div class="owner-card">
           <h4>✨ ${t('Deine Owner-Vorteile')}</h4>
@@ -388,6 +398,12 @@ function ownerViews(body, reload) {
           run('owner:maintenance', { enabled: false }, t('Wartungsmodus ist aus – alle dürfen wieder rein'));
         };
       }
+      const rForm = body.querySelector('[data-form=retention]');
+      rForm.onsubmit = (e) => {
+        e.preventDefault();
+        run('owner:retention', { days: Number(rForm.days.value), max: Number(rForm.max.value) },
+          ({ removed }) => (removed ? t('Gespeichert – {n} alte Nachrichten gelöscht', { n: numberFmt.format(removed) }) : t('Gespeichert – nichts zu löschen')));
+      };
       const bForm = body.querySelector('[data-form=broadcast]');
       bForm.onsubmit = (e) => {
         e.preventDefault();
