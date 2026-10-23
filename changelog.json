@@ -1,5 +1,38 @@
 [
   {
+    "version": "V0.8.0 Beta",
+    "date": "2026-10-23",
+    "title": "Die Geister-Bestenliste",
+    "titleEn": "The Ghost Leaderboard",
+    "changes": [
+      {
+        "icon": "🏆",
+        "text": "**Geister-Bestenliste** im Geister-Laden: die 10 besten Geisterjäger:innen mit Medaillen für die ersten drei. Dein Eintrag leuchtet – und bist du nicht in den Top 10, siehst du deinen Platz",
+        "textEn": "**Ghost Leaderboard** in the Ghost Shop: the 10 best ghost hunters with medals for the top three. Your entry lights up – and if you're not in the top 10, you see your place"
+      },
+      {
+        "icon": "📳",
+        "text": "Am Handy **vibriert** es kurz, wenn du einen Geist fängst – bei einem goldenen Geist länger",
+        "textEn": "On your phone it **vibrates** briefly when you catch a ghost – longer for a golden one"
+      },
+      {
+        "icon": "✨",
+        "text": "Läuft die **Goldene Geisternacht**, steht das jetzt auch auf dem Login-Bildschirm – mit der Restzeit",
+        "textEn": "When the **Golden Ghost Night** is on, the login screen now says so too – with the time left"
+      },
+      {
+        "icon": "🖥️",
+        "text": "**Desktop-App 0.8.0** – aktualisiert sich von selbst",
+        "textEn": "**Desktop app 0.8.0** – updates itself"
+      },
+      {
+        "icon": "🛡️",
+        "text": "Der Nexora Helper kennt `/bestenliste`",
+        "textEn": "The Nexora Helper knows `/bestenliste`"
+      }
+    ]
+  },
+  {
     "version": "V0.7.0 Beta",
     "date": "2026-10-23",
     "title": "Goldene Geisternacht & Nexora fürs Handy",

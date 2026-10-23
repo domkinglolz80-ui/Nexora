@@ -391,6 +391,23 @@ function ghostStats(user) {
 /* ---------- Geister-Laden ---------- */
 
 // Halloween decorations for the avatar, paid with caught ghosts. Cheapest first, the showpiece last.
+// The best ghost hunters, below the shop. Every ghost ever caught counts.
+async function loadLeaderboard(box) {
+  box.innerHTML = `<h4>🏆 ${t('Geister-Bestenliste')}</h4><p class="sub">${t('Lädt…')}</p>`;
+  try {
+    const { top, rank } = await req('shop:leaderboard');
+    const medals = ['🥇', '🥈', '🥉'];
+    box.innerHTML = `<h4>🏆 ${t('Geister-Bestenliste')}</h4>${top.length ? `<ol class="board-list">${top.map((e, i) => `
+      <li class="${e.user.id === state.me.id ? 'me' : ''}"><span class="board-place">${medals[i] || i + 1}</span>
+        ${avatar(e.user, { size: 32 })}<span class="board-name">${esc(e.user.displayName)}<small>@${esc(e.user.username)}</small></span>
+        <b class="board-count">👻 ${numberFmt.format(e.caught)}</b></li>`).join('')}</ol>`
+      : `<p class="sub">${t('Noch hat niemand einen Geist gefangen – sei die erste Person!')}</p>`}
+      ${rank && rank > top.length ? `<p class="board-rank">${t('Du bist auf Platz {n}.', { n: rank })}</p>` : ''}`;
+  } catch {
+    box.innerHTML = `<h4>🏆 ${t('Geister-Bestenliste')}</h4><p class="sub">${t('Die Bestenliste konnte nicht geladen werden.')}</p>`;
+  }
+}
+
 function openShop() {
   closePopover();
   const free = (state.shop?.discount || 0) >= 1;
@@ -399,7 +416,9 @@ function openShop() {
       <p class="sub">${free ? t('Halloween-Dekoration für deinen Avatar – gerade ist alles gratis! Hol dir, was du willst, es gehört dir für immer.') : t('Halloween-Dekoration für deinen Avatar. Du bezahlst mit gefangenen Geistern – die sind dann weg, die Dekoration gehört dir für immer.')}</p></div></div>
     <div class="shop-wallet"></div>
     <div class="shop-grid"></div>
+    <div class="shop-board"></div>
     <div class="modal-actions"><button type="button" class="btn" data-close>${t('Schließen')}</button></div>`, { className: 'shop' });
+  loadLeaderboard(modal.querySelector('.shop-board'));
   // The server sets the prices (and any sale); the ones written here are the regular fallback.
   const priceOf = (a) => state.shop?.prices?.[a.id]?.price ?? a.price;
   const regularOf = (a) => state.shop?.prices?.[a.id]?.regular ?? a.price;

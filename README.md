@@ -103,7 +103,9 @@ Und diese zur Halloween Edition:
 | 31      | Kürbismeister:in   |
 | 66      | Legende der Nacht  |
 
-Der Rang zählt **alle jemals gefangenen Geister** – auch die, die du im Laden ausgegeben hast.
+Der Rang zählt **alle jemals gefangenen Geister** – auch die, die du im Laden ausgegeben hast. Am Handy vibriert es beim Fangen kurz, bei goldenen Geistern länger.
+
+**Geister-Bestenliste** (ab V0.8.0 Beta) – unten im Geister-Laden stehen die 10 besten Geisterjäger:innen (gezählt werden alle jemals gefangenen Geister), der eigene Eintrag ist hervorgehoben; wer nicht in den Top 10 ist, sieht seinen Platz. `@nexora` bekommt sie auch mit `/bestenliste`.
 
 **Goldene Geisternacht** (ab V0.7.0 Beta) – ein Event, bei dem **jeder zweite Geist golden** ist statt jeder achte. Solange es läuft, steht oben im Chat ein goldenes Banner mit der Restzeit (ausblendbar). Das erste Event läuft am **23. Oktober 2026 bis Mitternacht** (deutsche Zeit, `GOLDEN_EVENT` in `server.js`). `@nexora` kann es jederzeit mit dem Helper steuern: `/event an [stunden]` startet oder verlängert es, `/event aus` beendet es, `/event` zeigt den Stand. Das Banner erscheint und verschwindet bei allen sofort.
 
@@ -214,6 +216,7 @@ Der **Nexora Helper** (`@NexoraHelper`) ist der offizielle Bot von Nexora, mit �
 | `/protokoll [anzahl]`                 | die letzten 1–25 Einträge aus dem Protokoll                          |
 | **Halloween**                         |                                                                      |
 | `/event [an\|aus] [stunden]`          | Goldene Geisternacht: ohne Angabe der Stand, `an 3` startet oder verlängert sie für 3 Stunden ab jetzt (1–72), `aus` beendet sie |
+| `/bestenliste`                        | die 10 besten Geisterjäger:innen                                     |
 | `/geister <nutzer> <anzahl>`          | schenkt 1–1000 Geister für den Geister-Laden, sichtbar im Kanal; die Person bekommt einen Hinweis |
 | **Helper**                            |                                                                      |
 | `/hilfe [befehl]`                     | alle Befehle nach Gruppen – mit Befehl alles dazu (Optionen, 🔒); bei Tippfehlern schlägt er den passenden Befehl vor |
@@ -309,12 +312,12 @@ Selbst bauen: `cd desktop && npm install && npm start` (Testen) bzw. `npm run di
 
 ## Versionen & Updates
 
-Aktuelle Version: **V0.7.0 Beta** (Desktop-App 0.6.0). Alle Änderungen stehen in [`changelog.json`](changelog.json) – der oberste Eintrag ist die laufende Version.
+Aktuelle Version: **V0.8.0 Beta** (Desktop-App 0.8.0). Alle Änderungen stehen in [`changelog.json`](changelog.json) – der oberste Eintrag ist die laufende Version.
 
 - Nach dem Login (und nach jedem Update) zeigt Nexora einmal das Fenster **„Was ist neu?“**. Über die Versionsanzeige unten in der Hub-Leiste lässt es sich jederzeit wieder öffnen.
 - Geht eine neue Version live, während jemand Nexora offen hat, lädt die Seite automatisch neu. Tippt die Person gerade etwas, erscheint stattdessen ein „Jetzt laden“-Hinweis.
 
-Neue Version veröffentlichen: oben in `changelog.json` einen Eintrag mit `version`, `date`, `title` und `changes` ergänzen und deployen. Die englische Fassung steht daneben in `titleEn` und `textEn` (fehlt sie, wird der deutsche Text gezeigt).
+Neue Version veröffentlichen: oben in `changelog.json` einen Eintrag mit `version`, `date`, `title` und `changes` ergänzen und deployen. Soll beim Release einmalig der Wartungsmodus enden und eine Ankündigung erscheinen, `RELEASE` in `server.js` auf die neue Version setzen – der Server führt das beim ersten Start dieser Version genau einmal aus (`db.release` merkt es sich). Die englische Fassung steht daneben in `titleEn` und `textEn` (fehlt sie, wird der deutsche Text gezeigt).
 
 ## Starten
 

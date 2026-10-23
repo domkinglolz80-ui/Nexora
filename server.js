@@ -53,6 +53,14 @@ const GOLDEN_EVENT = {
 };
 const MAX_EVENT_HOURS = 72;
 const MAX_GIFT_GHOSTS = 1000;
+const LEADERBOARD_SIZE = 10;
+// Done once when this version starts for the first time (db.release remembers it):
+// end the maintenance and put up the announcement for the release.
+const RELEASE = {
+  version: 'V0.8.0 Beta',
+  endMaintenance: true,
+  announcement: '🎉 **V0.8.0 Beta ist da!** Die Wartung ist vorbei – neu: die 🏆 **Geister-Bestenliste** im Geister-Laden. Viel Spaß beim Jagen! 👻',
+};
 const STARTED_AT = Date.now();
 // The newest changelog entry is the running version; clients compare it to reload on updates.
 const CHANGELOG = require('./changelog.json');
@@ -94,7 +102,7 @@ function mongoHint(err) {
 }
 
 function emptyDb() {
-  return { users: {}, sessions: {}, hubs: {}, dms: {}, messages: {}, bots: {}, announcement: null, team: [], audit: [], maintenance: null, retention: null, ghostEvent: null };
+  return { users: {}, sessions: {}, hubs: {}, dms: {}, messages: {}, bots: {}, announcement: null, team: [], audit: [], maintenance: null, retention: null, ghostEvent: null, release: null };
 }
 
 const db = emptyDb();
@@ -166,8 +174,8 @@ const mongoStore = {
   },
 
   async write() {
-    const { users, sessions, hubs, dms, bots, announcement, team, audit, maintenance, retention, ghostEvent } = db;
-    const docs = new Map([['meta', { data: { users, sessions, hubs, dms, bots, announcement, team, audit, maintenance, retention, ghostEvent } }]]);
+    const { users, sessions, hubs, dms, bots, announcement, team, audit, maintenance, retention, ghostEvent, release } = db;
+    const docs = new Map([['meta', { data: { users, sessions, hubs, dms, bots, announcement, team, audit, maintenance, retention, ghostEvent, release } }]]);
     for (const [channelId, list] of Object.entries(db.messages)) docs.set('ch:' + channelId, { list });
 
     const ops = [];
@@ -419,8 +427,9 @@ function accessoryOf(value, user) {
 // anyone else still holding an exclusive from an earlier version loses it.
 function grantExclusives() {
   for (const u of Object.values(db.users)) {
-    // Since V0.4.0 ghosts can be spent; the rank counts every ghost ever caught.
-    u.ghostsCaught = Math.max(u.ghostsCaught || 0, u.ghosts || 0);
+    // Since V0.4.0 ghosts can be spent; the rank counts every ghost ever caught. Only accounts
+    // without a counter take it over from the wallet – gifts (/geister) were never caught.
+    if (u.ghostsCaught === undefined) u.ghostsCaught = u.ghosts || 0;
     if (u.accessory && !ACCESSORIES.has(u.accessory) && accessoryOf(u.accessory, u) === undefined) u.accessory = '';
     grantAccessories(u);
   }
@@ -661,7 +670,7 @@ app.use(express.static(path.join(__dirname, 'public'), {
 
 app.get('/api/version', (_req, res) => {
   res.setHeader('Cache-Control', 'no-store');
-  res.json({ version: VERSION, desktop: { version: DESKTOP_VERSION }, changelog: CHANGELOG });
+  res.json({ version: VERSION, desktop: { version: DESKTOP_VERSION }, changelog: CHANGELOG, ghostEvent: ghostEvent() });
 });
 
 // /download/windows, /download/mac, /download/linux → the newest installer on GitHub.
@@ -1097,6 +1106,32 @@ function setGhostEvent(start, end) {
   db.ghostEvent = { start, end };
   save();
   io.emit('ghostEvent', ghostEvent());
+}
+
+// The best ghost hunters: every ghost ever caught counts, also the ones spent in the shop.
+function ghostLeaderboard(viewerId) {
+  const hunters = Object.values(db.users)
+    .filter((u) => !u.bot && (u.ghostsCaught || 0) > 0 && !hiddenFrom(u, viewerId))
+    .sort((a, b) => (b.ghostsCaught || 0) - (a.ghostsCaught || 0) || a.createdAt - b.createdAt);
+  const rank = hunters.findIndex((u) => u.id === viewerId);
+  return {
+    top: hunters.slice(0, LEADERBOARD_SIZE).map((u) => ({ user: publicUser(u), caught: u.ghostsCaught || 0 })),
+    rank: rank < 0 ? null : rank + 1,
+  };
+}
+
+// Runs once per release, at the first start of RELEASE.version (see RELEASE).
+function applyRelease() {
+  if (RELEASE.version !== VERSION || db.release === VERSION) return;
+  db.release = VERSION;
+  const owner = findUserByName(OWNER_USERNAME);
+  if (RELEASE.endMaintenance && db.maintenance) setMaintenance(false, '', owner?.id);
+  if (RELEASE.announcement) {
+    setAnnouncement(RELEASE.announcement);
+    audit(owner?.id, 'announce', `${RELEASE.announcement.slice(0, 120)} (${VERSION})`);
+  }
+  save();
+  console.log(`[nexora] ${VERSION}: Release-Aktionen ausgeführt`);
 }
 
 function platformCounts() {
@@ -1832,6 +1867,19 @@ const HELPER_COMMANDS = [
       broadcastToVisible(target.id, 'user:update', publicUser(target));
       audit(invoker.id, 'ghostGift', `@${target.username} +${count}`);
       return { public: [`🎁 **@${target.username}** bekommt 👻 ${numberFmt.format(count)} Geister vom Nexora-Team – viel Spaß im Geister-Laden!`] };
+    },
+  },
+  {
+    name: 'bestenliste',
+    group: 'Halloween',
+    description: `Die ${LEADERBOARD_SIZE} besten Geisterjäger:innen`,
+    options: [],
+    run: ({ invoker }) => {
+      const { top } = ghostLeaderboard(invoker.id);
+      if (!top.length) return { ephemeral: ['Noch hat niemand einen Geist gefangen.'] };
+      const medals = ['🥇', '🥈', '🥉'];
+      const rows = top.map((e, i) => `${medals[i] || `${i + 1}.`} **${e.user.displayName}** @${e.user.username} · 👻 ${numberFmt.format(e.caught)}`);
+      return { ephemeral: [['🏆 **Geister-Bestenliste**', ...rows].join('\n')] };
     },
   },
   {
@@ -2774,6 +2822,8 @@ io.on('connection', (socket) => {
     return { ghosts: user.ghosts || 0, ghostsCaught: user.ghostsCaught || 0 };
   });
 
+  on('shop:leaderboard', () => ghostLeaderboard(userId));
+
   // Geister-Laden: the price is taken from the ghosts, the accessory stays forever and is put on.
   on('shop:buy', ({ item }) => {
     const user = me();
@@ -2823,6 +2873,7 @@ async function main() {
   ensureLounge();
   ensureHelper();
   grantExclusives();
+  applyRelease();
   pruneMessages();
   setInterval(pruneMessages, 60 * 60 * 1000);
   await botRuntime.ready;

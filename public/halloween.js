@@ -43,6 +43,19 @@
       : t('🕯️ Noch {n} Nächte bis Halloween', { n: Math.round((new Date(d.getFullYear() + 1, 9, 31) - d) / 864e5) });
   }
 
+  // While the Goldene Geisternacht runs, the login screen says so too.
+  if (countdown) {
+    fetch('/api/version', { cache: 'no-store' })
+      .then((r) => r.json())
+      .then(({ ghostEvent: event }) => {
+        if (!event || event.start > Date.now() || event.end <= Date.now()) return;
+        const minutes = Math.max(1, Math.ceil((event.end - Date.now()) / 60000));
+        const left = minutes >= 60 ? t('noch {h} Std. {m} Min.', { h: Math.floor(minutes / 60), m: minutes % 60 }) : t('noch {m} Min.', { m: minutes });
+        countdown.after(h(`<span class="hw-login-event">✨ ${esc(t(event.name))} · ${esc(left)}</span>`));
+      })
+      .catch(() => {});
+  }
+
   /* ---------- candy ---------- */
 
   const CANDY = ['🍬', '🍭', '🍫', '🎃', '👻', '🦇', '✨'];
@@ -128,6 +141,8 @@
     setTimeout(() => ghost.remove(), 600);
     const r = ghost.getBoundingClientRect();
     burst(r.left + r.width / 2, r.top + r.height / 2, golden ? 14 : 9, golden);
+    // Phones buzz briefly, a golden ghost a little longer.
+    if (!reducedMotion.matches) navigator.vibrate?.(golden ? [40, 60, 40, 60, 120] : 35);
 
     // Milestones count every ghost ever caught; "you now have" is what is left to spend in the shop.
     const before = state.me.ghostsCaught || 0;

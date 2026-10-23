@@ -168,6 +168,9 @@ body.calm .hw-bat, body.calm .hw-fog, body.calm .hw-ghost, body.calm .hw-candy {
   100% { transform: translateY(calc(100vh + 80px)) rotate(var(--r)); opacity: 0; }
 }
 
+/* the event on the login screen */
+.hw-login-event { display: block; margin: -16px 0 22px; color: #ffd34d; font: 600 14px var(--mono); text-shadow: 0 0 10px rgba(255, 200, 60, 0.6); }
+
 /* ---------- Goldene Geisternacht (V0.7.0): event bar on top of the chat ---------- */
 .hw-event-bar {
   display: flex; align-items: center; gap: 12px; padding: 8px 8px 8px 14px; flex-shrink: 0;
@@ -196,6 +199,7 @@ body.calm .hw-bat, body.calm .hw-fog, body.calm .hw-ghost, body.calm .hw-candy {
   .hw-web { width: 140px; height: 140px; }
   .hw-badge { margin: 14px auto 0; }
   .hw-countdown { margin: 10px auto 0; }
+  .hw-login-event { margin: 6px auto 0; font-size: 13px; }
   .hw-ghost { width: 52px; height: 58px; }
   .hw-event-bar { gap: 10px; padding: 6px 4px 6px 10px; }
   .hw-event-ghost { width: 24px; height: 28px; }
