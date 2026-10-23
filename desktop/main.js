@@ -14,12 +14,15 @@ const path = require('path');
 const DE = /^de\b/i.test(app.getLocale?.() || process.env.LANG || '');
 const L = (de, en) => (DE ? de : en);
 
-// The server address is built in by the release workflow (server.json); the user can change it.
+// The official Nexora server. The release workflow can build in another one (server.json,
+// from the NEXORA_URL variable), and the user can change it in the menu.
+const DEFAULT_SERVER = 'https://nexora-yxvx.onrender.com';
+
 function bundledServer() {
   try {
-    return normalizeUrl(JSON.parse(fs.readFileSync(path.join(__dirname, 'server.json'), 'utf8')).url);
+    return normalizeUrl(JSON.parse(fs.readFileSync(path.join(__dirname, 'server.json'), 'utf8')).url) || DEFAULT_SERVER;
   } catch {
-    return null;
+    return DEFAULT_SERVER;
   }
 }
 

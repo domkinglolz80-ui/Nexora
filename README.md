@@ -265,7 +265,7 @@ Ab **V0.2.0 Beta** gibt es Nexora als eigenes Programm. Das **Download-Symbol** 
 
 **So entstehen die Downloads:** Der Workflow [`.github/workflows/desktop.yml`](.github/workflows/desktop.yml) baut bei jedem Push auf `nexora-app`, der `desktop/` ändert, die drei Installer auf GitHub (Windows, macOS, Linux) und veröffentlicht sie als Release `desktop-v<Version>`. Der Server leitet `/download/windows`, `/download/mac` und `/download/linux` auf das neueste Release weiter. Für eine neue Desktop-App die `version` in `desktop/package.json` erhöhen.
 
-**Server-Adresse einbauen (empfohlen):** Auf GitHub unter *Settings → Secrets and variables → Actions → Variables* eine Variable `NEXORA_URL` mit der Render-Adresse anlegen (z. B. `https://nexora-xxxx.onrender.com`) und den Workflow neu laufen lassen. Dann startet die App sofort mit Nexora. Ohne die Variable fragt die App beim ersten Start nach der Adresse – das Download-Fenster zeigt sie mit Kopier-Knopf an.
+**Server-Adresse:** Die App verbindet sich von selbst mit `https://nexora-yxvx.onrender.com` (`DEFAULT_SERVER` in `desktop/main.js`). Für einen anderen Server auf GitHub unter *Settings → Secrets and variables → Actions → Variables* eine Variable `NEXORA_URL` anlegen und den Workflow neu laufen lassen; einzelne Nutzer können die Adresse im Menü unter „Server-Adresse ändern…“ wechseln.
 
 Selbst bauen: `cd desktop && npm install && npm start` (Testen) bzw. `npm run dist` (Installer für das eigene System in `desktop/dist`).
 
