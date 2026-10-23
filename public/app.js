@@ -2335,8 +2335,8 @@ function openSettings() {
       <label class="check-row"><input type="checkbox" name="notify" /><span>Desktop-Benachrichtigungen bei Erwähnungen und DMs <em>(auf diesem Gerät)</em></span></label>
       <label class="check-row"><input type="checkbox" name="spooky" /><span>Gruseleffekte: Fledermäuse, Nebel und Geister zum Fangen 👻 <em>(auf diesem Gerät)</em></span></label>
       <p class="form-error"></p>
-      <div class="modal-actions">
-        <button type="button" class="btn danger" data-act="logout">${ICONS.logout} Abmelden</button><span class="spacer"></span>
+      <div class="modal-actions sticky">
+        <button type="button" class="btn danger" data-act="logout" title="Abmelden">${ICONS.logout}<span class="btn-label">Abmelden</span></button><span class="spacer"></span>
         <button type="button" class="btn" data-close>Abbrechen</button><button type="submit" class="btn primary">Speichern</button>
       </div>
     </form>`);
