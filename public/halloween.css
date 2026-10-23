@@ -1,0 +1,154 @@
+/* =========================================================================
+   Nexora — Halloween Edition 2026
+   Loaded after app.css. Remove this file and halloween.js from index.html
+   to return to the regular Ember theme.
+   ========================================================================= */
+
+:root {
+  --bg: #0a0610;
+  --bg-2: #120a1a;
+  --panel: rgba(22, 13, 30, 0.74);
+  --panel-solid: #170e20;
+  --panel-2: rgba(36, 21, 48, 0.78);
+  --line: rgba(190, 120, 255, 0.13);
+  --line-strong: rgba(255, 140, 60, 0.3);
+  --text: #fbf3ff;
+  --text-2: #d6c6e4;
+  --muted: #9784aa;
+  --offline: #5d4f6b;
+  --purple: #9b5de5;
+  --slime: #7bdc3a;
+  --grad: linear-gradient(135deg, #ffb347 0%, #ff7a18 45%, #ff4d1a 100%);
+  --grad-spooky: linear-gradient(135deg, #ffb347 0%, #ff7a18 40%, #9b5de5 100%);
+}
+
+body { background: radial-gradient(ellipse at 50% 120%, #1c0d2a 0%, var(--bg) 60%); }
+.glass { box-shadow: 0 20px 60px -20px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(200, 150, 255, 0.07); }
+::selection { background: rgba(155, 93, 229, 0.55); }
+
+/* ---------- night sky backdrop ---------- */
+.b1 { background: #ff5e00; opacity: 0.32; }
+.b2 { background: #6a1fb8; opacity: 0.45; }
+.b3 { background: #2f7a12; opacity: 0.18; }
+.grid { opacity: 0.4; }
+
+.hw-moon {
+  position: absolute; top: 6vh; right: 8vw;
+  width: 150px; height: 150px; border-radius: 50%;
+  background: radial-gradient(circle at 38% 36%, #fff8e0 0%, #ffe2a0 45%, #e8b25c 100%);
+  box-shadow: 0 0 60px 10px rgba(255, 214, 140, 0.35), 0 0 160px 40px rgba(255, 150, 60, 0.18);
+  opacity: 0.85;
+}
+.hw-moon::before, .hw-moon::after { content: ''; position: absolute; border-radius: 50%; background: rgba(190, 140, 80, 0.35); }
+.hw-moon::before { width: 30px; height: 30px; top: 40px; left: 52px; }
+.hw-moon::after { width: 18px; height: 18px; top: 92px; left: 34px; box-shadow: 52px -10px 0 4px rgba(190, 140, 80, 0.25); }
+
+.hw-web { position: absolute; top: -4px; left: -4px; width: 220px; height: 220px; opacity: 0.22; }
+.hw-web path { stroke: #e9dcff; stroke-width: 1; fill: none; }
+
+.hw-fog {
+  position: absolute; left: -50%; bottom: -60px; width: 200%; height: 260px;
+  background:
+    radial-gradient(ellipse 18% 60% at 10% 70%, rgba(200, 180, 230, 0.16), transparent 70%),
+    radial-gradient(ellipse 22% 55% at 35% 80%, rgba(200, 180, 230, 0.12), transparent 70%),
+    radial-gradient(ellipse 20% 60% at 62% 75%, rgba(200, 180, 230, 0.15), transparent 70%),
+    radial-gradient(ellipse 24% 50% at 88% 85%, rgba(200, 180, 230, 0.12), transparent 70%);
+  filter: blur(8px);
+  animation: hw-fog 38s linear infinite;
+}
+.hw-fog.f2 { bottom: -90px; opacity: 0.7; animation-duration: 56s; animation-direction: reverse; }
+@keyframes hw-fog { from { transform: translateX(0); } to { transform: translateX(25%); } }
+
+.hw-bat { position: absolute; width: 46px; height: 24px; left: -60px; opacity: 0.75; animation: hw-bat-fly 19s linear infinite; }
+.hw-bat svg { width: 100%; height: 100%; stroke: none; }
+.hw-bat path { fill: #120a18; }
+.hw-bat .w { transform-box: fill-box; animation: hw-bat-flap 0.2s ease-in-out infinite alternate; }
+.hw-bat .w.l { transform-origin: 100% 60%; }
+.hw-bat .w.r { transform-origin: 0 60%; }
+.hw-bat.n1 { top: 14vh; }
+.hw-bat.n2 { top: 32vh; width: 30px; height: 16px; animation-duration: 27s; animation-delay: -9s; opacity: 0.55; }
+.hw-bat.n3 { top: 8vh; width: 36px; height: 19px; animation-duration: 23s; animation-delay: -16s; }
+@keyframes hw-bat-flap { to { transform: scaleY(-0.5); } }
+@keyframes hw-bat-fly {
+  0% { transform: translate(0, 0); }
+  25% { transform: translate(28vw, 6vh); }
+  50% { transform: translate(56vw, -3vh); }
+  75% { transform: translate(84vw, 5vh); }
+  100% { transform: translate(115vw, -2vh); }
+}
+
+body.calm .hw-bat, body.calm .hw-fog, body.calm .hw-ghost { display: none; }
+
+/* ---------- logo & brand ---------- */
+.logo-mark { background: var(--grad-spooky); }
+.rail-item.home .logo-mark { animation: hw-flicker 7s infinite; }
+@keyframes hw-flicker {
+  0%, 91%, 95%, 100% { filter: drop-shadow(0 0 10px rgba(255, 122, 24, 0.55)); }
+  92%, 94% { filter: brightness(0.55) drop-shadow(0 0 2px rgba(155, 93, 229, 0.6)); }
+}
+.brand {
+  background: linear-gradient(180deg, #ffd08a 0%, #ff7a18 55%, #b0390a 100%);
+  -webkit-background-clip: text; background-clip: text;
+  filter: drop-shadow(0 6px 30px rgba(255, 106, 0, 0.5)) drop-shadow(0 0 22px rgba(155, 93, 229, 0.35));
+}
+.hw-logo-wrap { position: relative; display: inline-block; }
+.hw-hero-pumpkin { position: absolute; left: 82px; bottom: -14px; width: 70px; height: 70px; }
+.hw-badge {
+  display: inline-flex; align-items: center; gap: 8px; margin: -16px 0 22px;
+  padding: 6px 14px; border-radius: 999px;
+  background: rgba(155, 93, 229, 0.16); border: 1px solid rgba(155, 93, 229, 0.45);
+  color: #e3ccff; font: 700 13px var(--display); letter-spacing: 0.04em;
+  box-shadow: 0 0 24px -6px rgba(155, 93, 229, 0.7);
+}
+.hw-countdown { display: block; margin: -14px 0 24px; color: var(--slime); font: 600 14px var(--mono); text-shadow: 0 0 10px rgba(123, 220, 58, 0.45); }
+.auth-hero .version-chip { margin-top: 0; }
+
+/* the big pumpkin used on the splash and next to the logo */
+.hw-pumpkin { position: relative; display: block; --s: 120px; }
+.hw-pumpkin.acc-kuerbis { right: auto; top: auto; }
+.hw-pumpkin svg { width: 100%; height: 100%; stroke: none; overflow: visible; }
+.hw-splash-pumpkin { width: 140px; height: 140px; --s: 220px; }
+.hw-hero-pumpkin.hw-pumpkin { position: absolute; --s: 110px; }
+
+/* ---------- catchable ghost ---------- */
+.hw-ghost {
+  position: fixed; z-index: 45; left: -90px;
+  width: 64px; height: 72px; padding: 0;
+  opacity: 0.9; filter: drop-shadow(0 0 14px rgba(230, 220, 255, 0.75));
+  animation: hw-ghost-fly 16s linear forwards;
+}
+.hw-ghost.rtl { animation-name: hw-ghost-fly-rtl; left: auto; right: -90px; }
+.hw-ghost svg { width: 100%; height: 100%; stroke: none; animation: hw-ghost-bob 1.4s ease-in-out infinite alternate; }
+.hw-ghost .body { fill: #f6f2ff; }
+.hw-ghost .eye { fill: #1b1030; }
+.hw-ghost:hover { opacity: 1; filter: drop-shadow(0 0 22px rgba(255, 180, 90, 0.9)); }
+.hw-ghost.caught { pointer-events: none; }
+.hw-ghost.caught svg { animation: hw-ghost-caught 0.55s ease-in forwards; }
+@keyframes hw-ghost-fly {
+  0% { transform: translate(0, 0); }
+  25% { transform: translate(30vw, -6vh); }
+  50% { transform: translate(60vw, 4vh); }
+  75% { transform: translate(90vw, -5vh); }
+  100% { transform: translate(calc(100vw + 180px), 0); }
+}
+@keyframes hw-ghost-fly-rtl {
+  0% { transform: translate(0, 0) scaleX(-1); }
+  25% { transform: translate(-30vw, 5vh) scaleX(-1); }
+  50% { transform: translate(-60vw, -4vh) scaleX(-1); }
+  75% { transform: translate(-90vw, 6vh) scaleX(-1); }
+  100% { transform: translate(calc(-100vw - 180px), 0) scaleX(-1); }
+}
+@keyframes hw-ghost-bob { from { transform: translateY(-6px) rotate(-4deg); } to { transform: translateY(6px) rotate(4deg); } }
+@keyframes hw-ghost-caught { to { transform: scale(1.8) rotate(25deg); opacity: 0; filter: blur(6px); } }
+
+.toast.spooky { border-color: rgba(155, 93, 229, 0.6); box-shadow: 0 0 24px -4px rgba(155, 93, 229, 0.8); }
+
+@media (max-width: 760px) {
+  .hw-moon { width: 90px; height: 90px; top: 3vh; }
+  .hw-moon::before { width: 18px; height: 18px; top: 24px; left: 30px; }
+  .hw-moon::after { width: 11px; height: 11px; top: 56px; left: 20px; box-shadow: 30px -6px 0 3px rgba(190, 140, 80, 0.25); }
+  .hw-web { width: 140px; height: 140px; }
+  .hw-badge { margin: 14px auto 0; }
+  .hw-countdown { margin: 10px auto 0; }
+  .hw-ghost { width: 52px; height: 58px; }
+}

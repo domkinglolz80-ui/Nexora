@@ -23,8 +23,29 @@ Nexora ist eine Echtzeit-Chat-Plattform mit eigenem Look: dunkles Glas-Design mi
 - **Befehlspalette** – `Strg`+`K` springt zu jedem Hub, Kanal oder Menschen
 - **Profile** – Anzeigename, Bio, Akzentfarbe
 - **Responsive** – funktioniert auch auf dem Handy
+- **Halloween Edition 2026** – gruseliger Look, animierte Profil-Accessoires und Geisterjagd
 
 Neue Nutzer landen automatisch in der **Nexora Lounge** (Code `NEXORA`).
+
+## Halloween Edition 2026 🎃
+
+Ab **V0.1.5 Beta** trägt Nexora Halloween: Vollmond, Nebel, Spinnennetz und Fledermäuse im Hintergrund, ein lachender Kürbis auf Ladebildschirm und Login, ein Countdown bis zum 31. Oktober und der Kanal `#halloween` in der Lounge.
+
+**Accessoires** – in den Profil-Einstellungen unter „Halloween-Accessoire“ (für Bots im Bot-Editor unter „Profil“). Alle sind animiert und für alle sichtbar:
+
+| Accessoire          | Was passiert                                          |
+| ------------------- | ----------------------------------------------------- |
+| 🎃 Lachender Kürbis | hüpft auf der Ecke des Avatars und lacht „HA HA“      |
+| 🧙 Hexenhut         | sitzt schief auf dem Kopf und wackelt                 |
+| 👻 Kleiner Geist    | kreist um den Avatar                                  |
+| 🦇 Fledermaus       | flattert über dem Avatar                              |
+| 😈 Teufelshörner    | glühen wie Glut                                       |
+| 🕷️ Spinne           | baumelt an ihrem Faden                                |
+| 🐈‍⬛ Katzenohren      | zucken ab und zu                                      |
+
+**Geisterjagd** – alle 40–90 Sekunden schwebt ein Geist über den Bildschirm. Wer ihn anklickt, fängt ihn; der Zähler bleibt auf dem Gerät gespeichert.
+
+Die Effekte lassen sich pro Gerät in den Profil-Einstellungen abschalten, bei „Bewegung reduzieren“ im System sind alle Animationen aus. Das saisonale Design steckt in `public/halloween.css` und `public/halloween.js` (plus Mond, Fledermäuse und Login-Texte in `public/index.html`). Nach Halloween reicht es, diese wieder herauszunehmen – die Accessoires sind fester Teil der Profile und bleiben erhalten.
 
 ## Offizieller Nexora-Account
 

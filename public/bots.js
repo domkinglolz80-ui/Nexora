@@ -222,6 +222,8 @@ async function openBotEditor(botId, tab = 'commands') {
         <div class="field"><span>Farbe</span></div>
         <div class="color-row">${ACCENTS.map((c) => `<button type="button" class="swatch ${c === bot.color ? 'sel' : ''}" style="--c:${c}" data-c="${c}"></button>`).join('')}
           <input type="color" value="${esc(bot.color)}" title="Eigene Farbe" /></div>
+        <div class="field"><span>Halloween-Accessoire 🎃</span></div>
+        <div class="acc-row"></div>
         <label class="check-row"><input type="checkbox" name="public" /><span>Öffentlich – andere Hub-Besitzer dürfen den Bot über seinen Namen <b>@${esc(bot.username)}</b> hinzufügen</span></label>
         <p class="form-error"></p>
         <div class="modal-actions"><button type="submit" class="btn primary">Speichern</button></div>
@@ -239,6 +241,7 @@ async function openBotEditor(botId, tab = 'commands') {
       form.bio.value = bot.bio || '';
       form.public.checked = bot.public;
       let color = bot.color;
+      const accessory = accessoryPicker(form.querySelector('.acc-row'), bot);
       const picker = form.querySelector('input[type=color]');
       form.querySelector('.color-row').addEventListener('click', (e) => {
         const s = e.target.closest('.swatch');
@@ -254,7 +257,7 @@ async function openBotEditor(botId, tab = 'commands') {
       form.onsubmit = (e) => {
         e.preventDefault();
         submitting(form, async () => {
-          const res = await req('bot:update', { botId: bot.id, displayName: form.displayName.value, bio: form.bio.value, color, public: form.public.checked });
+          const res = await req('bot:update', { botId: bot.id, displayName: form.displayName.value, bio: form.bio.value, color, accessory: accessory(), public: form.public.checked });
           update(res.bot);
           toast('Bot gespeichert');
         });

@@ -259,6 +259,14 @@ function canManage(hub, userId) {
   return hub.ownerId === userId || (hub.isLounge && isOfficial(db.users[userId]));
 }
 
+// Animated avatar accessories (Halloween Edition). The look lives in the client.
+const ACCESSORIES = new Set(['kuerbis', 'hexenhut', 'geist', 'fledermaus', 'hoerner', 'spinne', 'katze']);
+
+function accessoryOf(value) {
+  if (value === '' || value === null) return '';
+  return ACCESSORIES.has(value) ? value : undefined;
+}
+
 function publicUser(u) {
   const view = {
     id: u.id,
@@ -268,6 +276,7 @@ function publicUser(u) {
     color: u.color,
     status: u.status,
     bio: u.bio || '',
+    accessory: u.accessory || '',
     createdAt: u.createdAt,
   };
   if (u.system) {
@@ -353,6 +362,14 @@ function ensureLounge() {
   // Lounges created before voice channels existed get one too.
   if (!lounge.channels.some((c) => c.kind === 'voice')) {
     lounge.channels.push(newChannel('Treffpunkt', '', 'voice'), newChannel('Gaming', '', 'voice'));
+    save();
+  }
+  // Halloween Edition 2026: a spooky channel, added once (owners may delete it later).
+  if (!lounge.halloween2026) {
+    lounge.halloween2026 = true;
+    if (!lounge.channels.some((c) => c.name === 'halloween')) {
+      lounge.channels.splice(2, 0, newChannel('halloween', '🎃 Gruselgeschichten, Kostüme & Süßigkeiten'));
+    }
     save();
   }
   return lounge;
@@ -948,6 +965,7 @@ function ensureHelper() {
     color: '#ff7a18',
     status: 'online',
     bio: 'Der offizielle Helfer von Nexora. Moderation per Slash-Befehl – nur für das Nexora-Team.',
+    accessory: 'hexenhut',
     createdAt: db.users[HELPER_ID]?.createdAt || Date.now(),
     bot: true,
     system: true,
@@ -1445,7 +1463,7 @@ io.on('connection', (socket) => {
     return { users };
   });
 
-  on('profile:update', ({ displayName, status, color, bio }) => {
+  on('profile:update', ({ displayName, status, color, bio, accessory }) => {
     const user = me();
     if (displayName !== undefined) {
       const name = str(displayName, 32);
@@ -1461,6 +1479,11 @@ io.on('connection', (socket) => {
       user.color = color;
     }
     if (bio !== undefined) user.bio = str(bio, 190);
+    if (accessory !== undefined) {
+      const acc = accessoryOf(accessory);
+      if (acc === undefined) return { error: 'Unbekanntes Accessoire.' };
+      user.accessory = acc;
+    }
     save();
     broadcastToVisible(userId, 'user:update', publicUser(user));
     emitPresence(user);
@@ -1556,7 +1579,7 @@ io.on('connection', (socket) => {
     return { bot: botView(db.bots[user.id]) };
   });
 
-  on('bot:update', ({ botId, displayName, bio, color, public: isPublic, clearStore }) => {
+  on('bot:update', ({ botId, displayName, bio, color, accessory, public: isPublic, clearStore }) => {
     const bot = ownBot(botId);
     if (!bot) return { error: 'Bot nicht gefunden.' };
     const user = db.users[bot.id];
@@ -1569,6 +1592,11 @@ io.on('connection', (socket) => {
     if (color !== undefined) {
       if (!/^#[0-9a-fA-F]{6}$/.test(color)) return { error: 'Ungültige Farbe.' };
       user.color = color;
+    }
+    if (accessory !== undefined) {
+      const acc = accessoryOf(accessory);
+      if (acc === undefined) return { error: 'Unbekanntes Accessoire.' };
+      user.accessory = acc;
     }
     if (isPublic !== undefined) bot.public = Boolean(isPublic);
     if (clearStore) bot.store = {};

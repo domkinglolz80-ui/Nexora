@@ -37,13 +37,69 @@ const ICONS = {
   hangup: '<svg viewBox="0 0 24 24"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"/><path d="m22 2-20 20"/></svg>',
 };
 
-const EMOJIS = ('🔥 ⚡ 🚀 💯 ❤️ 🧡 💛 👍 👎 👏 🙌 🤝 🙏 💪 👀 🎉 ' +
+const EMOJIS = ('🎃 👻 🦇 🕷️ 🕸️ 💀 ☠️ 🧛 🧟 🧙 🍬 🍭 🔮 🕯️ 🌕 ⚰️ ' +
+  '🔥 ⚡ 🚀 💯 ❤️ 🧡 💛 👍 👎 👏 🙌 🤝 🙏 💪 👀 🎉 ' +
   '😀 😂 🤣 😊 😍 🥰 😎 🤩 🥳 😏 😅 😭 😡 🤯 😱 🤔 ' +
-  '🫡 🙃 😴 🤤 🤡 💀 👻 👽 🤖 😈 🎮 🎧 🎵 🍕 🍔 🌮 ' +
+  '🫡 🙃 😴 🤤 🤡 👽 🤖 😈 🎮 🎧 🎵 🍕 🍔 🌮 ' +
   '☕ 🍿 🐱 🐶 🦊 🐼 🦄 🌈 ☀️ 🌙 ⭐ ✨ 💎 🏆 ✅ ❌').split(' ');
-const HUB_ICONS = ['', '🔥', '⚡', '🚀', '🎮', '🎧', '🎨', '💻', '📚', '⚽', '🍕', '🌙', '🦊', '👾', '💎', '🏆'];
-const QUICK_REACTIONS = ['🔥', '👍', '😂'];
-const ACCENTS = ['#ff7a18', '#ff9f1c', '#ff5e3a', '#ffb347', '#ff6b00', '#f9a03f', '#ff8c42', '#e85d04', '#ffd166', '#ef476f'];
+const HUB_ICONS = ['', '🎃', '👻', '🦇', '💀', '🔥', '⚡', '🚀', '🎮', '🎧', '🎨', '💻', '📚', '⚽', '🍕', '🌙', '🦊', '👾', '💎', '🏆'];
+const QUICK_REACTIONS = ['🎃', '👻', '😂'];
+const ACCENTS = ['#ff7a18', '#ff9f1c', '#ff5e3a', '#ffb347', '#ff6b00', '#f9a03f', '#ff8c42', '#e85d04', '#ffd166', '#ef476f', '#9b5de5', '#7bdc3a', '#c1121f'];
+
+// Animated avatar accessories (Halloween Edition 2026). The server only stores the id.
+const ACCESSORIES = [
+  { id: '', name: 'Keins' },
+  {
+    id: 'kuerbis', name: 'Lachender Kürbis',
+    svg: `<svg viewBox="0 0 40 40"><path class="stem" d="M20 10c0-3 1-5 4-6"/><path class="leaf" d="M21 8c3-3 7-2 8 0-3 2-6 2-8 0z"/>
+      <ellipse class="lobe" cx="13" cy="23" rx="9" ry="12"/><ellipse class="lobe" cx="27" cy="23" rx="9" ry="12"/><ellipse class="body" cx="20" cy="23" rx="10" ry="13"/>
+      <path class="face" d="m10 19 5-5 2 6zM30 19l-5-5-2 6z"/><g class="jaw"><path class="face" d="M9 25c4 7 18 7 22 0l-3 1-2 2-2-2-2 2-2-2-2 2-2-2-2 2-2-2z"/></g></svg>
+      <b class="ha">HA</b><b class="ha ha2">HA</b>`,
+  },
+  {
+    id: 'hexenhut', name: 'Hexenhut',
+    svg: '<svg viewBox="0 0 40 32"><path class="hat" d="M22 2c-6 2-9 10-12 22h20C27 17 25 11 30 8c-3 0-6-3-8-6z"/><ellipse class="brim" cx="20" cy="25" rx="19" ry="5"/><path class="band" d="M10.5 22h19l.6-3H11.3z"/><rect class="buckle" x="17" y="18.6" width="6" height="4" rx="1"/></svg>',
+  },
+  {
+    id: 'geist', name: 'Kleiner Geist',
+    svg: '<svg viewBox="0 0 30 34"><path class="ghost" d="M15 2C7 2 3 8 3 15v17l4-3 4 3 4-3 4 3 4-3 4 3V15c0-7-4-13-12-13z"/><ellipse class="eye" cx="11" cy="14" rx="2" ry="3"/><ellipse class="eye" cx="19" cy="14" rx="2" ry="3"/><ellipse class="eye" cx="15" cy="22" rx="2.5" ry="2"/></svg>',
+  },
+  {
+    id: 'fledermaus', name: 'Fledermaus',
+    svg: '<svg viewBox="0 0 48 24"><path class="wing l" d="M24 12C19 4 9 2 1 6c4 1 5 4 5 7 3-2 6-1 7 2 2-2 6-2 8 0z"/><path class="wing r" d="M24 12c5-8 15-10 23-6-4 1-5 4-5 7-3-2-6-1-7 2-2-2-6-2-8 0z"/><ellipse class="bat" cx="24" cy="13" rx="4" ry="5"/><path class="bat" d="m21 9-1-4 3 3m4 1 1-4-3 3"/><circle class="eye" cx="22.5" cy="12" r=".9"/><circle class="eye" cx="25.5" cy="12" r=".9"/></svg>',
+  },
+  {
+    id: 'hoerner', name: 'Teufelshörner',
+    svg: '<svg viewBox="0 0 48 20"><path class="horn" d="M8 20C3 14 2 7 5 1c1 6 5 10 11 13z"/><path class="horn" d="M40 20c5-6 6-13 3-19-1 6-5 10-11 13z"/></svg>',
+  },
+  {
+    id: 'spinne', name: 'Spinne',
+    svg: '<svg viewBox="0 0 24 40"><path class="thread" d="M12 0v24"/><g class="spider"><path class="legs" d="M9 27 3 23 1 26M9 29l-7 1-1 3M9 31l-6 4v3M15 27l6-4 2 3M15 29l7 1 1 3M15 31l6 4v3"/><ellipse class="abdomen" cx="12" cy="31" rx="5" ry="6"/><circle class="abdomen" cx="12" cy="25" r="3"/><circle class="eye" cx="11" cy="25" r=".8"/><circle class="eye" cx="13" cy="25" r=".8"/></g></svg>',
+  },
+  {
+    id: 'katze', name: 'Katzenohren',
+    svg: '<svg viewBox="0 0 48 20"><g class="ear l"><path class="fur" d="M2 20 6 1l13 13z"/><path class="pink" d="m6 16 2-10 6 7z"/></g><g class="ear r"><path class="fur" d="m46 20-4-19-13 13z"/><path class="pink" d="m42 16-2-10-6 7z"/></g></svg>',
+  },
+];
+
+function accessoryHtml(id) {
+  const acc = id && ACCESSORIES.find((a) => a.id === id);
+  return acc ? `<span class="acc acc-${acc.id}" aria-hidden="true">${acc.svg}</span>` : '';
+}
+
+// A row of live previews (the user's own avatar wearing each accessory). Returns a getter.
+function accessoryPicker(container, user) {
+  let value = user.accessory || '';
+  container.innerHTML = ACCESSORIES.map((a) => `<button type="button" class="acc-opt ${a.id === value ? 'sel' : ''}" data-a="${a.id}" title="${esc(a.name)}">
+    ${avatar({ ...user, accessory: a.id }, { size: 40 })}<span>${esc(a.name)}</span></button>`).join('');
+  container.addEventListener('click', (e) => {
+    const opt = e.target.closest('.acc-opt');
+    if (!opt) return;
+    value = opt.dataset.a;
+    container.querySelectorAll('.acc-opt').forEach((x) => x.classList.toggle('sel', x === opt));
+  });
+  return () => value;
+}
 const MAX_FILE = 8 * 1024 * 1024;
 const MAX_ATTACHMENTS = 5;
 const MAX_POLL_OPTIONS = 10;
@@ -154,7 +210,8 @@ function verified(user) {
 function avatar(user, { dot = false, size } = {}) {
   const s = size ? `--size:${size}px;` : '';
   const d = dot ? `<span class="dot ${statusOf(user.id)}"></span>` : '';
-  return `<div class="avatar" style="--c:${esc(user.color)};${s}" data-user="${esc(user.id)}">${esc(initials(user.displayName))}${d}</div>`;
+  const acc = accessoryHtml(user.accessory);
+  return `<div class="avatar${acc ? ' has-acc' : ''}${size && size < 30 ? ' tiny' : ''}" style="--c:${esc(user.color)};${s}" data-user="${esc(user.id)}">${esc(initials(user.displayName))}${acc}${d}</div>`;
 }
 
 const timeFmt = new Intl.DateTimeFormat('de-DE', { hour: '2-digit', minute: '2-digit' });
@@ -2271,9 +2328,12 @@ function openSettings() {
       <div class="field"><span>Akzentfarbe</span></div>
       <div class="color-row">${ACCENTS.map((c) => `<button type="button" class="swatch ${c === me.color ? 'sel' : ''}" style="--c:${c}" data-c="${c}"></button>`).join('')}
         <input type="color" value="${esc(me.color)}" title="Eigene Farbe" /></div>
+      <div class="field"><span>Halloween-Accessoire 🎃 <em>(alle sehen es)</em></span></div>
+      <div class="acc-row"></div>
       <div class="field"><span>Status</span></div>
       <div class="status-row">${['online', 'idle', 'dnd', 'invisible'].map((s) => `<button type="button" class="status-opt ${s === me.status ? 'sel' : ''}" data-s="${s}"><span class="dot ${s === 'invisible' ? 'offline' : s}"></span>${STATUS_LABEL[s]}</button>`).join('')}</div>
       <label class="check-row"><input type="checkbox" name="notify" /><span>Desktop-Benachrichtigungen bei Erwähnungen und DMs <em>(auf diesem Gerät)</em></span></label>
+      <label class="check-row"><input type="checkbox" name="spooky" /><span>Gruseleffekte: Fledermäuse, Nebel und Geister zum Fangen 👻 <em>(auf diesem Gerät)</em></span></label>
       <p class="form-error"></p>
       <div class="modal-actions">
         <button type="button" class="btn danger" data-act="logout">${ICONS.logout} Abmelden</button><span class="spacer"></span>
@@ -2285,6 +2345,12 @@ function openSettings() {
   form.bio.value = me.bio || '';
   let color = me.color;
   let status = me.status;
+  const accessory = accessoryPicker(modal.querySelector('.acc-row'), me);
+  form.spooky.checked = store('spooky') !== false;
+  form.spooky.addEventListener('change', () => {
+    store('spooky', form.spooky.checked);
+    document.body.classList.toggle('calm', !form.spooky.checked);
+  });
   const picker = modal.querySelector('input[type=color]');
   modal.querySelector('.color-row').addEventListener('click', (e) => {
     const s = e.target.closest('.swatch');
@@ -2323,7 +2389,7 @@ function openSettings() {
   form.onsubmit = (e) => {
     e.preventDefault();
     submitting(form, async () => {
-      const { user } = await req('profile:update', { displayName: form.displayName.value, bio: form.bio.value, color, status });
+      const { user } = await req('profile:update', { displayName: form.displayName.value, bio: form.bio.value, color, status, accessory: accessory() });
       state.me = user;
       state.users.set(user.id, user);
       renderMe();
@@ -2787,7 +2853,7 @@ async function checkVersion(serverVersion) {
   if (serverVersion && serverVersion !== state.version) {
     if (!input.value.trim() && !state.uploads.length && !$('.modal') && !state.editingId) return location.reload();
     if ($('.update-banner')) return;
-    const banner = h(`<div class="update-banner"><span>🔥 <b>${esc(serverVersion)}</b> ist da!</span><button class="btn primary">Jetzt laden</button></div>`);
+    const banner = h(`<div class="update-banner"><span>🎃 <b>${esc(serverVersion)}</b> ist da!</span><button class="btn primary">Jetzt laden</button></div>`);
     banner.querySelector('button').onclick = () => location.reload();
     document.body.append(banner);
     return;

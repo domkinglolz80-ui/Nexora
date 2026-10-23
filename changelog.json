@@ -1,5 +1,44 @@
 [
   {
+    "version": "V0.1.5 Beta",
+    "date": "2026-10-23",
+    "title": "🎃 Halloween Edition 2026",
+    "changes": [
+      {
+        "icon": "🌕",
+        "text": "Ganz Nexora im Halloween-Look: Vollmond, Nebel, Spinnennetz und Fledermäuse, die durch die Nacht flattern"
+      },
+      {
+        "icon": "🎃",
+        "text": "Neue **Accessoires** für dein Profil – allen voran der **lachende Kürbis**, der auf deinem Avatar hüpft und sich kaputtlacht"
+      },
+      {
+        "icon": "🧙",
+        "text": "Außerdem: Hexenhut, kleiner Geist, Fledermaus, Teufelshörner, Spinne und Katzenohren – alle animiert, und alle anderen sehen sie"
+      },
+      {
+        "icon": "⚙️",
+        "text": "Accessoire wählen: Profil-Einstellungen → „Halloween-Accessoire“ – mit Live-Vorschau. Auch deine Bots können eins tragen"
+      },
+      {
+        "icon": "👻",
+        "text": "Geisterjagd: Ab und zu schwebt ein Geist über den Bildschirm – klick ihn an und sammle so viele wie möglich"
+      },
+      {
+        "icon": "🕯️",
+        "text": "Countdown bis Halloween auf der Login-Seite und neuer Kanal #halloween in der Nexora Lounge"
+      },
+      {
+        "icon": "🦇",
+        "text": "Halloween-Emojis ganz vorne in der Auswahl, gruselige Schnell-Reaktionen und neue Hub-Symbole"
+      },
+      {
+        "icon": "🌙",
+        "text": "Zu viel Grusel? Die Effekte lassen sich in den Profil-Einstellungen abschalten"
+      }
+    ]
+  },
+  {
     "version": "V0.1.4 Beta",
     "date": "2026-10-23",
     "title": "Der Nexora Helper",
