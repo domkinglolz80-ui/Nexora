@@ -263,8 +263,9 @@ function canManage(hub, userId) {
 const ACCESSORIES = new Set(['kuerbis', 'hexenhut', 'geist', 'fledermaus', 'hoerner', 'spinne', 'katze']);
 
 // Exclusive accessories: only these accounts may wear them.
+const KING_USERNAME = 'nexora';
 const EXCLUSIVE_ACCESSORIES = {
-  kuerbiskoenig: (u) => isOfficial(u) && !u.bot, // the Nexora team
+  kuerbiskoenig: (u) => !u.bot && u.username.toLowerCase() === KING_USERNAME, // only @nexora
   irrlicht: (u) => Boolean(u.system), // the Nexora Helper
 };
 
@@ -274,10 +275,12 @@ function accessoryOf(value, user) {
   return EXCLUSIVE_ACCESSORIES[value]?.(user) ? value : undefined;
 }
 
-// Official accounts get the Kürbiskönig once; afterwards they can change it like any accessory.
+// @nexora gets the Kürbiskönig once (afterwards it can be changed like any accessory);
+// anyone else still holding an exclusive from an earlier version loses it.
 function grantExclusives() {
   for (const u of Object.values(db.users)) {
-    if (u.bot || !isOfficial(u) || u.kingGranted) continue;
+    if (u.accessory && !ACCESSORIES.has(u.accessory) && accessoryOf(u.accessory, u) === undefined) u.accessory = '';
+    if (u.bot || u.kingGranted || u.username.toLowerCase() !== KING_USERNAME) continue;
     u.accessory = 'kuerbiskoenig';
     u.kingGranted = true;
   }

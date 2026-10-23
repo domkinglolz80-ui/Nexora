@@ -47,10 +47,10 @@ Ab **V0.1.5 Beta** trägt Nexora Halloween: Vollmond, Nebel, Spinnennetz und Fle
 
 | Accessoire              | Wer                                  | Was passiert                                                                 |
 | ----------------------- | ------------------------------------ | ---------------------------------------------------------------------------- |
-| 👑 Kürbiskönig          | offizielle Accounts (Nexora-Team)    | Feuerring, goldene Krone mit Kürbis-Juwel, Funken; Profilkarte mit Kürbis-Hügel bei Vollmond, Name in Feuerfarben |
+| 👑 Kürbiskönig          | nur `@nexora`                        | Feuerring, goldene Krone mit Kürbis-Juwel, Funken; Profilkarte mit Kürbis-Hügel bei Vollmond, Name in Feuerfarben |
 | 🏮 Irrlicht-Wächter     | nur der Nexora Helper                | grüner Geisterring, schwingende Laterne, Irrlichter; Profilkarte mit Friedhof im grünen Nebel, Name in Geistergrün |
 
-Offizielle Accounts bekommen den Kürbiskönig beim ersten Serverstart einmal automatisch angelegt und können danach frei wechseln.
+`@nexora` bekommt den Kürbiskönig beim ersten Serverstart einmal automatisch angelegt und kann danach frei wechseln. Auch weitere offizielle Accounts aus `NEXORA_OFFICIAL` können ihn nicht tragen.
 
 **Geisterjagd** – alle 40–90 Sekunden schwebt ein Geist über den Bildschirm. Wer ihn anklickt, fängt ihn; der Zähler bleibt auf dem Gerät gespeichert.
 

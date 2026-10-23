@@ -1,5 +1,20 @@
 [
   {
+    "version": "V0.1.5.3 Beta",
+    "date": "2026-10-23",
+    "title": "Der Kürbiskönig ist einzigartig",
+    "changes": [
+      {
+        "icon": "👑",
+        "text": "Den **Kürbiskönig** gibt es jetzt nur noch ein einziges Mal – er gehört **@nexora** allein"
+      },
+      {
+        "icon": "🏮",
+        "text": "Der **Irrlicht-Wächter** bleibt exklusiv beim Nexora Helper"
+      }
+    ]
+  },
+  {
     "version": "V0.1.5.2 Beta",
     "date": "2026-10-23",
     "title": "Exklusive Accessoires",

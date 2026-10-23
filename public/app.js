@@ -82,7 +82,7 @@ const ACCESSORIES = [
   },
   // Exclusive: the server only lets these accounts wear them.
   {
-    id: 'kuerbiskoenig', name: 'Kürbiskönig', badge: '👑 Kürbiskönig', allowed: (u) => u.official && !u.bot,
+    id: 'kuerbiskoenig', name: 'Kürbiskönig', badge: '👑 Kürbiskönig', allowed: (u) => !u.bot && u.username?.toLowerCase() === 'nexora',
     svg: `<span class="ring"></span><span class="ember e1"></span><span class="ember e2"></span><span class="ember e3"></span>
       <svg class="crown" viewBox="0 0 44 26"><path class="gold" d="M4 18 8 4l8 9 6-12 6 12 8-9 4 14z"/><rect class="gold" x="4" y="16.5" width="36" height="8" rx="2"/>
       <circle class="gem" cx="8" cy="4" r="2.2"/><circle class="gem" cx="36" cy="4" r="2.2"/><circle class="gem g2" cx="22" cy="1.8" r="2"/>
