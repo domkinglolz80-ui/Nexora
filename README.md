@@ -6,7 +6,7 @@ Nexora ist eine Echtzeit-Chat-Plattform mit eigenem Look: dunkles Glas-Design mi
 
 ## Features
 
-- **Accounts** – Registrieren und Einloggen (Passwörter werden mit scrypt gehasht); bis zu 5 Accounts pro Gerät, Wechsel per Klick ohne Passwort
+- **Accounts** – Registrieren und Einloggen (Passwörter werden mit scrypt gehasht); bis zu 10 Accounts pro Gerät, Wechsel per Klick ohne Passwort
 - **Hubs** – eigene Hubs erstellen, per Einladungscode oder -link beitreten, verlassen, umbenennen, löschen
 - **Kanäle** – Textkanäle mit Thema erstellen, bearbeiten, löschen (Besitzer)
 - **Nachrichten in Echtzeit** – Antworten, Bearbeiten (auch mit ↑), Löschen, Emoji-Reaktionen
@@ -221,7 +221,7 @@ Die Stimmen laufen per **WebRTC direkt zwischen den Geräten**; der Server vermi
 
 ## Versionen & Updates
 
-Aktuelle Version: **V0.1.6.9 Beta**. Alle Änderungen stehen in [`changelog.json`](changelog.json) – der oberste Eintrag ist die laufende Version.
+Aktuelle Version: **V0.1.7 Beta**. Alle Änderungen stehen in [`changelog.json`](changelog.json) – der oberste Eintrag ist die laufende Version.
 
 - Nach dem Login (und nach jedem Update) zeigt Nexora einmal das Fenster **„Was ist neu?“**. Über die Versionsanzeige unten in der Hub-Leiste lässt es sich jederzeit wieder öffnen.
 - Geht eine neue Version live, während jemand Nexora offen hat, lädt die Seite automatisch neu. Tippt die Person gerade etwas, erscheint stattdessen ein „Jetzt laden“-Hinweis.

@@ -1,5 +1,23 @@
 [
   {
+    "version": "V0.1.7 Beta",
+    "date": "2026-10-23",
+    "title": "Bis zu 10 Accounts",
+    "titleEn": "Up to 10 accounts",
+    "changes": [
+      {
+        "icon": "🔀",
+        "text": "**10 statt 5 Accounts**: Erstelle neue Accounts oder melde dich mit bestehenden an – bis zu 10 pro Gerät, und du wechselst mit einem Klick unten links zwischen allen, ganz ohne Passwort",
+        "textEn": "**10 instead of 5 accounts**: create new accounts or sign in with existing ones – up to 10 per device, and you switch between all of them with one click at the bottom left, no password needed"
+      },
+      {
+        "icon": "🔢",
+        "text": "Der Account-Wechsler zeigt, wie viele Plätze belegt sind (z. B. 3/10), und lange Listen lassen sich scrollen – auch auf dem Handy und dem Login-Bildschirm",
+        "textEn": "The account switcher shows how many slots are used (e.g. 3/10), and long lists scroll – on phones and on the login screen too"
+      }
+    ]
+  },
+  {
     "version": "V0.1.6.9 Beta",
     "date": "2026-10-23",
     "title": "Neue Accessoires für alle & Aufräumen",

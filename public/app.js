@@ -518,7 +518,7 @@ function showAuth({ adding = false } = {}) {
 
 // Every account signed in on this device keeps its own session token, so switching
 // needs no password. The active one is stored under "token" as before.
-const MAX_ACCOUNTS = 5;
+const MAX_ACCOUNTS = 10;
 
 function savedAccounts() {
   const list = store('accounts');
@@ -596,7 +596,7 @@ function openAccountSwitcher(anchor) {
   closePopover();
   const list = savedAccounts();
   const pop = h(`<div class="popover account-pop">
-    <div class="section-label"><span>${t('Accounts')}</span></div>
+    <div class="section-label"><span>${t('Accounts')}</span><span class="account-count">${list.length}/${MAX_ACCOUNTS}</span></div>
     <div class="account-list"></div>
     <button type="button" class="btn block" data-act="add">${ICONS.plus} ${t('Account hinzufügen')}</button>
   </div>`);
