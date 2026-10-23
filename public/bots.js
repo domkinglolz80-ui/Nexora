@@ -146,7 +146,7 @@ async function openBotManager() {
   }
 
   const form = modal.querySelector('.bot-create');
-  if (bots.length >= MAX_BOTS) form.classList.add('hidden');
+  if (bots.length >= myLimit(MAX_BOTS)) form.classList.add('hidden');
   form.onsubmit = (e) => {
     e.preventDefault();
     submitting(form, async () => {

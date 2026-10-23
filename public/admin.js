@@ -16,17 +16,21 @@ function since(ts) {
 function openAdminPanel(tab = 'overview') {
   closePopover();
   if (!state.me?.official) return toast(t('Nur für offizielle Nexora-Accounts.'), 'error');
+  const isOwner = Boolean(state.me.owner);
   const { modal, close } = openModal(`
-    <div class="bm-hero"><span class="bm-ico">${ICONS.shield}</span><div><h3>${t('Admin-Panel')}</h3>
-      <p class="sub">${t('Nexora verwalten · angemeldet als <b>@{name}</b>', { name: esc(state.me.username) })}</p></div></div>
+    <div class="bm-hero"><span class="bm-ico">${isOwner ? '👑' : ICONS.shield}</span><div><h3>${isOwner ? t('Owner-Zentrale') : t('Admin-Panel')}</h3>
+      <p class="sub">${isOwner ? t('Voller Zugriff auf Nexora · angemeldet als <b>@{name}</b>', { name: esc(state.me.username) }) : t('Nexora verwalten · angemeldet als <b>@{name}</b>', { name: esc(state.me.username) })}</p></div></div>
     <div class="tabs" role="tablist">
       <button type="button" data-tab="overview">${t('Übersicht')}</button>
       <button type="button" data-tab="users">${t('Nutzer')}</button>
       <button type="button" data-tab="hubs">${t('Hubs')}</button>
       <button type="button" data-tab="bots">${t('Bots')}</button>
+      ${isOwner ? `<button type="button" class="owner-tab" data-tab="team">👑 ${t('Team')}</button>
+      <button type="button" class="owner-tab" data-tab="control">⚡ ${t('Kontrolle')}</button>
+      <button type="button" class="owner-tab" data-tab="log">📜 ${t('Protokoll')}</button>` : ''}
     </div>
     <div class="tab-body admin-body"></div>
-    <div class="modal-actions"><button class="btn" data-close>${t('Schließen')}</button></div>`, { className: 'wide admin' });
+    <div class="modal-actions"><button class="btn" data-close>${t('Schließen')}</button></div>`, { className: `wide admin${isOwner ? ' owner' : ''}` });
   const body = modal.querySelector('.tab-body');
   let query = '';
 
@@ -128,9 +132,28 @@ function openAdminPanel(tab = 'overview') {
           </div>
           <div class="admin-actions">
             <button class="btn small" data-act="open">${joined ? t('Öffnen') : t('Beitreten')}</button>
+            ${isOwner && !hub.isLounge ? `<button class="btn small" data-act="owner">👑 ${t('Besitzer')}</button>` : ''}
             ${hub.isLounge ? '' : `<button class="btn small danger" data-act="delete">${ICONS.trash} ${t('Löschen')}</button>`}
           </div>
         </div>`);
+        row.querySelector('[data-act=owner]')?.addEventListener('click', () => {
+          const actions = row.querySelector('.admin-actions');
+          actions.innerHTML = `<form class="ban-form"><input class="input" name="username" maxlength="32" placeholder="${t('@nutzer – oder dein Name')}" value="@${esc(state.me.username)}" />
+            <button type="submit" class="btn small primary">${t('Übertragen')}</button><button type="button" class="btn small" data-act="cancel">${t('Abbrechen')}</button></form>`;
+          const form = actions.querySelector('form');
+          form.username.select();
+          form.querySelector('[data-act=cancel]').onclick = () => show('hubs');
+          form.onsubmit = async (e) => {
+            e.preventDefault();
+            try {
+              await req('owner:hubOwner', { hubId: hub.id, username: form.username.value });
+              toast(t('„{name}“ hat einen neuen Besitzer', { name: hub.name }));
+              show('hubs');
+            } catch (ex) {
+              toast(ex.message, 'error');
+            }
+          };
+        });
         row.querySelector('[data-act=open]').onclick = async () => {
           close();
           if (joined) openHub(hub.id);
@@ -182,6 +205,8 @@ function openAdminPanel(tab = 'overview') {
       }
     },
   };
+
+  if (isOwner) Object.assign(views, ownerViews(body, () => show(tab)));
 
   const show = (name) => {
     tab = name;
@@ -252,4 +277,135 @@ function userRow(u, reload) {
 
   showButtons();
   return row;
+}
+
+/* ---------- owner tools (@nexora only; the server checks it again) ---------- */
+
+const AUDIT_LABELS = {
+  register: ['🆕', 'hat sich registriert'],
+  ban: ['🔨', 'hat gesperrt'],
+  unban: ['✅', 'hat entsperrt'],
+  kick: ['👢', 'hat aus einem Hub geworfen'],
+  warn: ['⚠️', 'hat verwarnt'],
+  logout: ['🚪', 'hat abgemeldet'],
+  resetPassword: ['🔑', 'hat ein Passwort zurückgesetzt'],
+  deleteHub: ['🗑️', 'hat einen Hub gelöscht'],
+  hubOwner: ['👑', 'hat einen Hub übertragen'],
+  botDisable: ['⛔', 'hat einen Bot gesperrt'],
+  botEnable: ['🤖', 'hat einen Bot entsperrt'],
+  deleteBot: ['🗑️', 'hat einen Bot gelöscht'],
+  announce: ['📣', 'hat eine Ankündigung veröffentlicht'],
+  announceClear: ['📣', 'hat die Ankündigung entfernt'],
+  teamAdd: ['🛡️', 'hat ins Team geholt'],
+  teamRemove: ['🛡️', 'hat aus dem Team entfernt'],
+  maintenanceOn: ['🚧', 'hat den Wartungsmodus eingeschaltet'],
+  maintenanceOff: ['🟢', 'hat den Wartungsmodus beendet'],
+  broadcast: ['📢', 'hat eine Durchsage gesendet'],
+};
+
+function ownerViews(body, reload) {
+  const run = async (event, payload, message) => {
+    try {
+      const res = await req(event, payload);
+      if (message) toast(typeof message === 'function' ? message(res) : message);
+      reload();
+      return res;
+    } catch (ex) {
+      toast(ex.message, 'error');
+      return null;
+    }
+  };
+
+  return {
+    async team() {
+      const { team } = await req('owner:state');
+      body.innerHTML = `
+        <form class="owner-form">
+          <div class="field"><span>${t('Ins Team holen')} <em>${t('– bekommt ✓-Abzeichen, Admin-Panel und den Nexora Helper')}</em></span></div>
+          <div class="owner-inline"><input class="input" name="username" maxlength="32" placeholder="@nutzer" autocomplete="off" />
+            <button type="submit" class="btn primary">🛡️ ${t('Ernennen')}</button></div>
+        </form>
+        <div class="admin-list"><div class="admin-count">${t('{n} im Team', { n: team.length })}</div></div>`;
+      const list = body.querySelector('.admin-list');
+      for (const u of team) {
+        const row = h(`<div class="admin-row">
+          ${avatar(u, { size: 38 })}
+          <div class="info"><div class="name">${esc(u.displayName)}${verified(u)} ${u.online ? `<span class="pill ok">${t('Online')}</span>` : ''}</div>
+            <div class="bio">@${esc(u.username)} · ${u.owner ? t('Owner') : u.fixed ? t('fest über NEXORA_OFFICIAL') : t('von dir ernannt')}</div></div>
+          <div class="admin-actions">${u.owner || u.fixed ? '' : `<button class="btn small danger" data-act="remove">${t('Entfernen')}</button>`}</div>
+        </div>`);
+        const remove = row.querySelector('[data-act=remove]');
+        if (remove) armButton(remove, 'Wirklich entfernen?', () => run('owner:setOfficial', { username: u.username, official: false }, t('@{name} ist nicht mehr im Team', { name: u.username })));
+        list.append(row);
+      }
+      const form = body.querySelector('form');
+      form.onsubmit = (e) => {
+        e.preventDefault();
+        const username = form.username.value.trim();
+        if (username) run('owner:setOfficial', { username, official: true }, ({ user }) => t('@{name} ist jetzt im Team', { name: user.username }));
+      };
+    },
+
+    async control() {
+      const { maintenance } = await req('owner:state');
+      body.innerHTML = `
+        <form class="owner-card ${maintenance ? 'danger' : ''}" data-form="maintenance">
+          <h4>🚧 ${t('Wartungsmodus')} ${maintenance ? `<span class="pill danger">${t('Aktiv seit {time}', { time: esc(stamp(maintenance.at)) })}</span>` : ''}</h4>
+          <p class="hint">${t('Alle außer dem Team werden sofort abgemeldet und können sich erst wieder anmelden, wenn du den Wartungsmodus beendest. Neue Registrierungen sind solange gesperrt.')}</p>
+          ${maintenance ? '' : `<label class="field"><input class="input" name="text" maxlength="200" placeholder="${t('Hinweis, z. B. Wir sind um 21 Uhr zurück 🔧')}" /></label>`}
+          <div class="modal-actions" style="justify-content:flex-start">
+            ${maintenance ? `<button type="submit" class="btn primary">🟢 ${t('Wartung beenden')}</button>` : `<button type="submit" class="btn danger" data-act="on">🚧 ${t('Wartung starten')}</button>`}
+          </div>
+        </form>
+        <form class="owner-card" data-form="broadcast">
+          <h4>📢 ${t('Live-Durchsage')}</h4>
+          <p class="hint">${t('Erscheint sofort groß bei allen, die gerade online sind – egal wo sie in Nexora sind.')}</p>
+          <label class="field"><textarea name="text" maxlength="300" rows="2" placeholder="${t('z. B. Happy Halloween, Leute! 🎃')}"></textarea></label>
+          <div class="modal-actions" style="justify-content:flex-start"><button type="submit" class="btn primary">📢 ${t('Jetzt senden')}</button></div>
+        </form>
+        <div class="owner-card">
+          <h4>✨ ${t('Deine Owner-Vorteile')}</h4>
+          <ul class="owner-perks">
+            <li>🏰 ${t('Du verwaltest jeden Hub wie sein Besitzer')}</li>
+            <li>✍️ ${t('{n} Zeichen pro Nachricht', { n: numberFmt.format(myLimit(MAX_MESSAGE)) })}</li>
+            <li>📎 ${t('{n} Anhänge mit je {mb} MB', { n: myLimit(MAX_ATTACHMENTS), mb: myLimit(MAX_FILE) / 1024 / 1024 })}</li>
+            <li>📊 ${t('{n} Antworten pro Umfrage', { n: myLimit(MAX_POLL_OPTIONS) })}</li>
+            <li>🤖 ${t('{n} eigene Bots', { n: myLimit(MAX_BOTS) })}</li>
+            <li>⚡ ${t('Doppeltes Sende-Tempo')}</li>
+          </ul>
+        </div>`;
+      const mForm = body.querySelector('[data-form=maintenance]');
+      const onBtn = mForm.querySelector('[data-act=on]');
+      if (onBtn) {
+        onBtn.type = 'button';
+        armButton(onBtn, 'Wirklich alle abmelden?', () => run('owner:maintenance', { enabled: true, text: mForm.text.value }, t('Wartungsmodus ist an')));
+      } else {
+        mForm.onsubmit = (e) => {
+          e.preventDefault();
+          run('owner:maintenance', { enabled: false }, t('Wartungsmodus ist aus – alle dürfen wieder rein'));
+        };
+      }
+      const bForm = body.querySelector('[data-form=broadcast]');
+      bForm.onsubmit = (e) => {
+        e.preventDefault();
+        if (!bForm.text.value.trim()) return;
+        run('owner:broadcast', { text: bForm.text.value }, ({ reached }) => t('Durchsage an {n} online gesendet', { n: reached }));
+      };
+    },
+
+    async log() {
+      const { audit } = await req('owner:state');
+      body.innerHTML = `<div class="admin-list audit-list"><div class="admin-count">${t('Die letzten {n} Ereignisse · neueste zuerst', { n: audit.length })}</div></div>`;
+      const list = body.querySelector('.admin-list');
+      if (!audit.length) list.append(h(`<div class="empty-hint">${t('Noch nichts passiert.')}</div>`));
+      for (const e of audit) {
+        const [icon, label] = AUDIT_LABELS[e.action] || ['•', e.action];
+        list.append(h(`<div class="audit-row">
+          <span class="audit-ico">${icon}</span>
+          <div class="info"><div><b>${e.user ? `@${esc(e.user.username)}` : 'Nexora'}</b> ${t(label)}${e.detail ? ` <span class="audit-detail">${esc(e.detail)}</span>` : ''}</div>
+            <small>${esc(stamp(e.at))}</small></div>
+        </div>`));
+      }
+    },
+  };
 }

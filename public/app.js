@@ -177,6 +177,11 @@ const MAX_FILE = 8 * 1024 * 1024;
 const MAX_ATTACHMENTS = 5;
 const MAX_POLL_OPTIONS = 10;
 const MAX_MESSAGE = 2000;
+
+// The Nexora owner (@nexora) has every limit doubled; the server checks it again.
+function myLimit(base) {
+  return state.me?.owner ? base * 2 : base;
+}
 const STATUS_LABEL = { online: t('Online'), idle: t('Abwesend'), dnd: t('Nicht stören'), invisible: t('Unsichtbar'), offline: t('Offline') };
 
 const state = {
@@ -277,7 +282,8 @@ function isAdmin(hub, userId) {
 
 function verified(user) {
   const check = user.official ? `<span class="verified" title="${user.bot ? t('Offizieller Nexora-Bot') : t('Offizieller Nexora-Account')}">✓</span>` : '';
-  return user.bot ? `${check}<span class="bot-tag" title="Bot">BOT</span>` : check;
+  if (user.bot) return `${check}<span class="bot-tag" title="Bot">BOT</span>`;
+  return user.owner ? `${check}<span class="founder-tag" title="${t('Gründer von Nexora')}">👑 ${t('GRÜNDER')}</span>` : check;
 }
 
 function avatar(user, { dot = false, size } = {}) {
@@ -595,6 +601,8 @@ function start(token) {
     renderAnnouncement();
   });
 
+  socket.on('owner:broadcast', showBroadcast);
+
   socket.on('voice:state', onVoiceState);
   socket.on('voice:signal', (msg) => handleSignal(msg).catch((err) => console.warn('[voice] signal', err)));
   socket.on('voice:peer-left', ({ socketId }) => closePeer(socketId));
@@ -892,6 +900,7 @@ function renderSidebar() {
 function renderMe() {
   const me = state.me;
   if (!me) return;
+  input.maxLength = myLimit(MAX_MESSAGE);
   const card = $('#me-card');
   card.innerHTML = `
     ${avatar(me, { dot: true })}
@@ -1409,7 +1418,7 @@ function startEdit(id, node = $(`.msg[data-id="${id}"]`)) {
   if (!msg || !node) return;
   state.editingId = id;
   const body = node.querySelector('.msg-body');
-  const box = h(`<div class="edit-box"><textarea rows="1" maxlength="2000"></textarea>
+  const box = h(`<div class="edit-box"><textarea rows="1" maxlength="${myLimit(MAX_MESSAGE)}"></textarea>
     <small>${t('Esc zum <b data-act="cancel">Abbrechen</b> · Enter zum <b data-act="save">Speichern</b>')}</small></div>`);
   const ta = box.querySelector('textarea');
   ta.value = msg.content;
@@ -1487,7 +1496,7 @@ function updateComposerState() {
   const uploading = state.uploads.some((u) => !u.attachment && !u.error);
   const ready = state.uploads.some((u) => u.attachment);
   $('#send-btn').disabled = uploading || (!input.value.trim() && !ready);
-  const left = MAX_MESSAGE - input.value.length;
+  const left = myLimit(MAX_MESSAGE) - input.value.length;
   const counter = $('#char-count');
   counter.textContent = left <= 200 ? String(left) : '';
   counter.classList.toggle('low', left <= 50);
@@ -1722,12 +1731,12 @@ function addFiles(files) {
   const channelId = state.view.channelId;
   if (!channelId || isVoiceChannel(channelId)) return;
   for (const file of files) {
-    if (state.uploads.length >= MAX_ATTACHMENTS) {
-      toast(t('Maximal {n} Dateien pro Nachricht.', { n: MAX_ATTACHMENTS }), 'error');
+    if (state.uploads.length >= myLimit(MAX_ATTACHMENTS)) {
+      toast(t('Maximal {n} Dateien pro Nachricht.', { n: myLimit(MAX_ATTACHMENTS) }), 'error');
       break;
     }
-    if (file.size > MAX_FILE) {
-      toast(t('„{name}“ ist zu groß (max. {n} MB).', { name: file.name, n: MAX_FILE / 1024 / 1024 }), 'error');
+    if (file.size > myLimit(MAX_FILE)) {
+      toast(t('„{name}“ ist zu groß (max. {n} MB).', { name: file.name, n: myLimit(MAX_FILE) / 1024 / 1024 }), 'error');
       continue;
     }
     if (!file.size) {
@@ -2321,7 +2330,7 @@ function openPollCreator() {
       row.querySelector('input').placeholder = t('Antwort {n}', { n: i + 1 });
       row.querySelector('button').disabled = rows.length <= 2;
     });
-    addBtn.classList.toggle('hidden', rows.length >= MAX_POLL_OPTIONS);
+    addBtn.classList.toggle('hidden', rows.length >= myLimit(MAX_POLL_OPTIONS));
   };
   const addRow = (focus = false) => {
     const row = h(`<div class="poll-input"><input maxlength="80" /><button type="button" class="icon-btn" title="${t('Entfernen')}">${ICONS.x}</button></div>`);
@@ -2332,7 +2341,7 @@ function openPollCreator() {
       e.preventDefault();
       const next = row.nextElementSibling?.querySelector('input');
       if (next) next.focus();
-      else if ($$('.poll-input', list).length < MAX_POLL_OPTIONS) addRow(true);
+      else if ($$('.poll-input', list).length < myLimit(MAX_POLL_OPTIONS)) addRow(true);
     });
     list.append(row);
     sync();
@@ -2901,6 +2910,24 @@ function renderVoiceUi() {
     renderStage();
     renderChatHeader();
   }
+}
+
+/* ---------- live broadcast from the Nexora owner ---------- */
+
+function showBroadcast({ text, from }) {
+  $('.broadcast')?.remove();
+  const node = h(`<div class="broadcast" role="alert">
+    <div class="broadcast-card">
+      <div class="broadcast-head">${avatar(from, { size: 44 })}<div><b>📢 ${t('Durchsage')}</b><span>${esc(from.displayName)}${verified(from)}</span></div></div>
+      <div class="broadcast-text">${formatMessage(text)}</div>
+      <button type="button" class="btn primary">${t('Verstanden')}</button>
+    </div>
+  </div>`);
+  const close = () => node.remove();
+  node.querySelector('button').onclick = close;
+  node.addEventListener('click', (e) => e.target === node && close());
+  document.body.append(node);
+  setTimeout(close, 20000);
 }
 
 /* ---------- version & changelog ---------- */

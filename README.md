@@ -91,6 +91,19 @@ Offizielle Accounts sehen in der Hub-Leiste links ein Schild-Symbol (auch über 
 
 Offizielle Accounts können selbst nicht gesperrt werden. Jede Aktion prüft der Server noch einmal – das Panel ist nur die Oberfläche.
 
+## Owner-Zentrale (@nexora)
+
+Der Account `@nexora` ist der **Owner** (Gründer) von Nexora. Er trägt das 👑 **GRÜNDER**-Abzeichen, sein Admin-Panel heißt **Owner-Zentrale** und hat drei zusätzliche Bereiche. Der Server prüft jede Owner-Aktion selbst, andere offizielle Accounts bekommen sie nicht.
+
+- **Team** – Accounts per Benutzername zu offiziellen Accounts ernennen oder wieder entfernen (✓-Abzeichen, Admin-Panel, Nexora Helper). Accounts aus `NEXORA_OFFICIAL` sind fest und lassen sich hier nicht entfernen.
+- **Kontrolle** – **Wartungsmodus**: meldet alle außer dem Team sofort ab, sperrt Login und Registrierung und zeigt den Hinweistext beim Login; **Live-Durchsage**: ein Pop-up bei allen, die gerade online sind.
+- **Protokoll** – die letzten 500 Ereignisse: Registrierungen, Sperren, Kicks, Verwarnungen, Abmeldungen, Passwort-Resets, gelöschte Hubs und Bots, Ankündigungen, Team-Änderungen, Wartung, Durchsagen und Hub-Übertragungen – auch über den Nexora Helper.
+- **Hubs** – zusätzlich **Besitzer übertragen** an jeden Account (auch an sich selbst); die Person tritt dabei automatisch bei.
+
+Außerdem verwaltet der Owner **jeden Hub** wie dessen Besitzer und hat **doppelte Limits**: 4000 Zeichen pro Nachricht, 10 Anhänge mit je 16 MB, 20 Antworten pro Umfrage, 10 eigene Bots und doppeltes Sende-Tempo.
+
+Private Direktnachrichten anderer kann auch der Owner nicht lesen.
+
 ## Nexora Helper
 
 Der **Nexora Helper** (`@NexoraHelper`) ist der offizielle Bot von Nexora, mit ✓- und BOT-Abzeichen. Er ist fest eingebaut: Man muss ihn nicht einladen, er kann nicht bearbeitet oder gelöscht werden, und **nur offizielle Accounts** können seine Befehle benutzen – in jedem Hub und in Direktnachrichten. Alle anderen sehen nur seine Nachrichten.
@@ -169,7 +182,7 @@ Die Stimmen laufen per **WebRTC direkt zwischen den Geräten**; der Server vermi
 
 ## Versionen & Updates
 
-Aktuelle Version: **V0.1.5.5 Beta**. Alle Änderungen stehen in [`changelog.json`](changelog.json) – der oberste Eintrag ist die laufende Version.
+Aktuelle Version: **V0.1.6 Beta**. Alle Änderungen stehen in [`changelog.json`](changelog.json) – der oberste Eintrag ist die laufende Version.
 
 - Nach dem Login (und nach jedem Update) zeigt Nexora einmal das Fenster **„Was ist neu?“**. Über die Versionsanzeige unten in der Hub-Leiste lässt es sich jederzeit wieder öffnen.
 - Geht eine neue Version live, während jemand Nexora offen hat, lädt die Seite automatisch neu. Tippt die Person gerade etwas, erscheint stattdessen ein „Jetzt laden“-Hinweis.

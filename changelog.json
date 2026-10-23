@@ -1,5 +1,38 @@
 [
   {
+    "version": "V0.1.6 Beta",
+    "date": "2026-10-23",
+    "title": "Die Owner-Zentrale",
+    "titleEn": "The Owner HQ",
+    "changes": [
+      {
+        "icon": "👑",
+        "text": "**Owner-Zentrale** für den Gründer von Nexora: Team, Kontrolle und Protokoll an einem Ort – mit **Gründer**-Abzeichen",
+        "textEn": "**Owner HQ** for the founder of Nexora: team, control and log in one place – with a **Founder** badge"
+      },
+      {
+        "icon": "🛡️",
+        "text": "Das Nexora-Team wird jetzt direkt im Admin-Panel zusammengestellt",
+        "textEn": "The Nexora team is now put together right in the admin panel"
+      },
+      {
+        "icon": "📢",
+        "text": "**Live-Durchsagen**: Wichtige Infos vom Gründer erscheinen sofort bei allen, die online sind",
+        "textEn": "**Live broadcasts**: important news from the founder pops up right away for everyone online"
+      },
+      {
+        "icon": "🚧",
+        "text": "**Wartungsmodus**: Bei Arbeiten an Nexora siehst du beim Login, wann es weitergeht",
+        "textEn": "**Maintenance mode**: during work on Nexora, the login tells you when it is back"
+      },
+      {
+        "icon": "📜",
+        "text": "Moderation wird protokolliert – auch Sperren und Kicks über den Nexora Helper",
+        "textEn": "Moderation is logged – including bans and kicks via the Nexora Helper"
+      }
+    ]
+  },
+  {
     "version": "V0.1.5.5 Beta",
     "date": "2026-10-23",
     "title": "Lebendige Status, Englisch & Halloween-Upgrade",

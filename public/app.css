@@ -409,6 +409,14 @@ button.chip:hover { background: rgba(255, 122, 24, 0.24); }
 .msg-author { font-weight: 700; cursor: pointer; color: var(--c, var(--text)); }
 .msg-author:hover { text-decoration: underline; }
 .msg-time { color: var(--muted); font-size: 12px; }
+.founder-tag {
+  display: inline-flex; align-items: center; gap: 3px; flex-shrink: 0;
+  padding: 2px 7px; border-radius: 6px; transform: translateY(-1px);
+  font: 800 9px var(--font); letter-spacing: 0.1em; color: #2a1200;
+  background: linear-gradient(90deg, #ffd166, #ff9f1c, #ffd166) 0 0 / 200% 100%;
+  box-shadow: 0 0 10px rgba(255, 190, 70, 0.6); animation: founder-shine 3s linear infinite;
+}
+@keyframes founder-shine { to { background-position: -200% 0; } }
 .owner-tag { font: 700 9px var(--font); letter-spacing: 0.1em; padding: 2px 6px; border-radius: 6px; background: var(--grad); color: #1a0b02; transform: translateY(-1px); }
 .msg-body { color: var(--text); word-wrap: break-word; overflow-wrap: anywhere; white-space: pre-wrap; }
 .msg-body .edited { color: var(--muted); font-size: 11px; margin-left: 4px; }
@@ -1403,4 +1411,44 @@ textarea.code:focus { border-color: var(--orange); box-shadow: 0 0 0 4px rgba(25
   .acc-row { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
   .acc-opt { padding: 18px 2px 8px; gap: 8px; font-size: 10px; }
   .acc-opt .avatar { --size: 34px !important; }
+}
+
+/* =========================================================================
+   OWNER (@nexora): Owner-Zentrale and live broadcasts
+   ========================================================================= */
+.modal.admin.owner {
+  border-color: rgba(255, 190, 70, 0.6);
+  box-shadow: 0 30px 100px -20px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255, 209, 102, 0.2), 0 0 90px -25px rgba(255, 170, 40, 0.7);
+}
+.modal.admin.owner .bm-hero h3 { background: linear-gradient(90deg, #ffe39a, #ffb347, #ff7a18); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.modal.admin.owner .bm-ico { font-size: 26px; }
+.tabs .owner-tab { color: #ffd08a; }
+.tabs .owner-tab.active { background: linear-gradient(135deg, #ffd166, #ff9f1c); color: #2a1200; }
+.owner-inline { display: flex; gap: 8px; margin-bottom: 16px; }
+.owner-inline .input { flex: 1; min-width: 0; }
+.owner-card { padding: 16px; margin-bottom: 12px; border-radius: 16px; background: rgba(0, 0, 0, 0.3); border: 1px solid var(--line); }
+.owner-card.danger { border-color: rgba(255, 61, 87, 0.5); background: rgba(255, 61, 87, 0.08); }
+.owner-card h4 { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 0 0 6px; font: 700 16px var(--display); }
+.owner-card .hint { margin: 0 0 10px; }
+.owner-perks { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 16px; color: var(--text-2); font-size: 14px; }
+.audit-row { display: flex; gap: 12px; align-items: flex-start; padding: 10px 12px; border-radius: 12px; background: rgba(0, 0, 0, 0.25); border: 1px solid var(--line); font-size: 14px; }
+.audit-ico { width: 24px; text-align: center; flex-shrink: 0; }
+.audit-row .info { min-width: 0; display: grid; gap: 2px; }
+.audit-row small { color: var(--muted); font-size: 11px; }
+.audit-detail { color: var(--text-2); overflow-wrap: anywhere; }
+
+.broadcast { position: fixed; inset: 0; z-index: 70; display: grid; place-items: center; padding: 20px; background: rgba(5, 3, 8, 0.6); backdrop-filter: blur(4px); animation: fade 0.2s; }
+.broadcast-card {
+  width: min(480px, 100%); padding: 24px; border-radius: 24px; display: grid; gap: 16px;
+  background: var(--panel-solid); border: 1px solid rgba(255, 190, 70, 0.7);
+  box-shadow: 0 0 0 4px rgba(255, 190, 70, 0.12), 0 0 80px -10px rgba(255, 150, 30, 0.8);
+  animation: pop 0.3s cubic-bezier(.2,.9,.3,1.3);
+}
+.broadcast-head { display: flex; align-items: center; gap: 12px; }
+.broadcast-head > div { display: grid; }
+.broadcast-head b { font: 700 13px var(--display); letter-spacing: 0.08em; text-transform: uppercase; color: #ffd08a; }
+.broadcast-head span { display: flex; align-items: center; gap: 6px; font-weight: 600; }
+.broadcast-text { font-size: 18px; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
+@media (max-width: 760px) {
+  .owner-perks { grid-template-columns: 1fr; }
 }

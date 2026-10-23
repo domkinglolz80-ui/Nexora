@@ -60,7 +60,7 @@ function mongoHint(err) {
 }
 
 function emptyDb() {
-  return { users: {}, sessions: {}, hubs: {}, dms: {}, messages: {}, bots: {}, announcement: null };
+  return { users: {}, sessions: {}, hubs: {}, dms: {}, messages: {}, bots: {}, announcement: null, team: [], audit: [], maintenance: null };
 }
 
 const db = emptyDb();
@@ -132,8 +132,8 @@ const mongoStore = {
   },
 
   async write() {
-    const { users, sessions, hubs, dms, bots, announcement } = db;
-    const docs = new Map([['meta', { data: { users, sessions, hubs, dms, bots, announcement } }]]);
+    const { users, sessions, hubs, dms, bots, announcement, team, audit, maintenance } = db;
+    const docs = new Map([['meta', { data: { users, sessions, hubs, dms, bots, announcement, team, audit, maintenance } }]]);
     for (const [channelId, list] of Object.entries(db.messages)) docs.set('ch:' + channelId, { list });
 
     const ops = [];
@@ -252,22 +252,45 @@ const OFFICIAL = new Set(
   (process.env.NEXORA_OFFICIAL || 'nexora').split(',').map((n) => n.trim().toLowerCase()).filter(Boolean),
 );
 
+// The owner (@nexora) can also make others official from the admin panel (db.team).
 function isOfficial(u) {
-  return Boolean(u) && OFFICIAL.has(u.username.toLowerCase());
+  if (!u) return false;
+  const name = u.username.toLowerCase();
+  return OFFICIAL.has(name) || (!u.bot && Boolean(db.team?.includes(name)));
 }
 
-// Who may manage a hub: its owner, and official accounts in the Lounge.
+// The founder of Nexora: only @nexora. Gets every admin power and doubled limits.
+const OWNER_USERNAME = 'nexora';
+function isOwner(u) {
+  return Boolean(u) && !u.bot && u.username.toLowerCase() === OWNER_USERNAME;
+}
+
+// The owner's limits are doubled.
+function limit(userId, base) {
+  return isOwner(db.users[userId]) ? base * 2 : base;
+}
+
+// Who may manage a hub: its owner, official accounts in the Lounge, and the Nexora owner everywhere.
 function canManage(hub, userId) {
-  return hub.ownerId === userId || (hub.isLounge && isOfficial(db.users[userId]));
+  const user = db.users[userId];
+  return hub.ownerId === userId || (hub.isLounge && isOfficial(user)) || isOwner(user);
+}
+
+// What happened on Nexora and who did it; the owner reads it in the admin panel.
+const MAX_AUDIT = 500;
+function audit(byId, action, detail = '') {
+  if (!Array.isArray(db.audit)) db.audit = [];
+  db.audit.push({ id: id(), at: Date.now(), by: byId || null, action, detail: str(detail, 200) });
+  if (db.audit.length > MAX_AUDIT) db.audit.splice(0, db.audit.length - MAX_AUDIT);
+  save();
 }
 
 // Animated avatar accessories (Halloween Edition). The look lives in the client.
 const ACCESSORIES = new Set(['kuerbis', 'hexenhut', 'geist', 'fledermaus', 'hoerner', 'spinne', 'katze']);
 
 // Exclusive accessories: only these accounts may wear them.
-const KING_USERNAME = 'nexora';
 const EXCLUSIVE_ACCESSORIES = {
-  kuerbiskoenig: (u) => !u.bot && u.username.toLowerCase() === KING_USERNAME, // only @nexora
+  kuerbiskoenig: (u) => isOwner(u), // only @nexora
   irrlicht: (u) => Boolean(u.system), // the Nexora Helper
 };
 
@@ -282,7 +305,7 @@ function accessoryOf(value, user) {
 function grantExclusives() {
   for (const u of Object.values(db.users)) {
     if (u.accessory && !ACCESSORIES.has(u.accessory) && accessoryOf(u.accessory, u) === undefined) u.accessory = '';
-    if (u.bot || u.kingGranted || u.username.toLowerCase() !== KING_USERNAME) continue;
+    if (u.kingGranted || !isOwner(u)) continue;
     u.accessory = 'kuerbiskoenig';
     u.kingGranted = true;
   }
@@ -294,6 +317,7 @@ function publicUser(u) {
     id: u.id,
     username: u.username,
     official: isOfficial(u),
+    owner: isOwner(u) || undefined,
     displayName: u.displayName,
     color: u.color,
     status: u.status,
@@ -504,8 +528,13 @@ function authRateLimited(ip) {
   return list.length > 20;
 }
 
+function maintenanceMessage() {
+  return `Nexora wird gerade gewartet.${db.maintenance.text ? ` ${db.maintenance.text}` : ''} Schau gleich wieder vorbei!`;
+}
+
 app.post('/api/register', (req, res) => {
   if (authRateLimited(req.ip)) return res.status(429).json({ error: 'Zu viele Versuche. Warte kurz.' });
+  if (db.maintenance) return res.status(503).json({ error: maintenanceMessage() });
   const username = str(req.body?.username, 32);
   const password = typeof req.body?.password === 'string' ? req.body.password : '';
   const displayName = str(req.body?.displayName, 32) || username;
@@ -539,7 +568,7 @@ app.post('/api/register', (req, res) => {
   lounge.members.push(user.id);
   io.to(`hub:${lounge.id}`).emit('user:update', publicUser(user));
   io.to(`hub:${lounge.id}`).emit('hub:update', hubView(lounge));
-  save();
+  audit(user.id, 'register', `@${user.username}`);
 
   res.json({ token: createSession(user.id), user: publicUser(user) });
 });
@@ -554,6 +583,7 @@ app.post('/api/login', (req, res) => {
     return res.status(401).json({ error: 'Benutzername oder Passwort falsch.' });
   }
   if (user.banned) return res.status(403).json({ error: banMessage(user) });
+  if (db.maintenance && !isOfficial(user)) return res.status(503).json({ error: maintenanceMessage() });
   res.json({ token: createSession(user.id), user: publicUser(user) });
 });
 
@@ -627,9 +657,12 @@ function uploadAuth(req, res, next) {
   next();
 }
 
-app.post('/api/upload', uploadAuth, express.raw({ type: () => true, limit: MAX_FILE }), async (req, res) => {
+// The raw limit fits the owner's doubled size; everyone else is checked right after.
+app.post('/api/upload', uploadAuth, express.raw({ type: () => true, limit: MAX_FILE * 2 }), async (req, res) => {
   const data = req.body;
   if (!Buffer.isBuffer(data) || !data.length) return res.status(400).json({ error: 'Die Datei ist leer.' });
+  const maxFile = limit(req.userId, MAX_FILE);
+  if (data.length > maxFile) return res.status(413).json({ error: `Die Datei ist zu groß (max. ${maxFile / 1024 / 1024} MB).` });
   const image = sniffImage(data);
   const declared = String(req.get('content-type') || '').toLowerCase().split(';')[0].trim();
   const attachment = {
@@ -681,7 +714,7 @@ app.get('/files/:fileId/:name?', async (req, res) => {
 app.use((err, _req, res, next) => {
   if (res.headersSent) return next(err);
   const tooLarge = err.type === 'entity.too.large';
-  res.status(err.status || 500).json({ error: tooLarge ? `Die Datei ist zu groß (max. ${MAX_FILE / 1024 / 1024} MB).` : 'Anfrage fehlgeschlagen.' });
+  res.status(err.status || 500).json({ error: tooLarge ? `Die Datei ist zu groß (max. ${limit(req.userId, MAX_FILE) / 1024 / 1024} MB).` : 'Anfrage fehlgeschlagen.' });
 });
 
 // ---------------------------------------------------------------------------
@@ -1039,6 +1072,7 @@ const HELPER_COMMANDS = [
       if (error) return { ephemeral: [error] };
       if (target.banned) return { ephemeral: [`@${target.username} ist schon gesperrt.`] };
       banUser(target, options.grund, invoker.id);
+      audit(invoker.id, 'ban', `@${target.username}${options.grund ? ` – ${options.grund}` : ''} (Helper)`);
       return { public: [`🔨 **@${target.username}** wurde gesperrt.${options.grund ? ` Grund: ${options.grund}` : ''}`] };
     },
   },
@@ -1046,12 +1080,12 @@ const HELPER_COMMANDS = [
     name: 'unban',
     description: 'Hebt eine Sperre wieder auf',
     options: [option('nutzer', 'Wer entsperrt wird', true)],
-    run: ({ options }) => {
+    run: ({ invoker, options }) => {
       const { target, error } = moderatable(userByMention(options.nutzer));
       if (error) return { ephemeral: [error] };
       if (!target.banned) return { ephemeral: [`@${target.username} ist nicht gesperrt.`] };
       delete target.banned;
-      save();
+      audit(invoker.id, 'unban', `@${target.username} (Helper)`);
       return { ephemeral: [`✅ @${target.username} ist wieder entsperrt.`] };
     },
   },
@@ -1059,7 +1093,7 @@ const HELPER_COMMANDS = [
     name: 'kick',
     description: 'Wirft jemanden aus diesem Hub',
     options: [option('nutzer', 'Wer den Hub verlassen muss', true), option('grund', 'Wird im Kanal angezeigt')],
-    run: ({ access, options }) => {
+    run: ({ invoker, access, options }) => {
       if (access.type !== 'hub') return { ephemeral: ['/kick funktioniert nur in Hubs.'] };
       const { target, error } = moderatable(userByMention(options.nutzer));
       if (error) return { ephemeral: [error] };
@@ -1067,6 +1101,7 @@ const HELPER_COMMANDS = [
       if (!hub.members.includes(target.id)) return { ephemeral: [`@${target.username} ist nicht in diesem Hub.`] };
       if (hub.ownerId === target.id) return { ephemeral: ['Den Besitzer kann man nicht aus seinem eigenen Hub werfen.'] };
       removeFromHub(hub, target.id);
+      audit(invoker.id, 'kick', `@${target.username} – ${hub.name}`);
       return { public: [`👢 **@${target.username}** wurde aus dem Hub entfernt.${options.grund ? ` Grund: ${options.grund}` : ''}`] };
     },
   },
@@ -1074,9 +1109,10 @@ const HELPER_COMMANDS = [
     name: 'verwarnen',
     description: 'Verwarnt jemanden öffentlich im Kanal',
     options: [option('nutzer', 'Wer verwarnt wird', true), option('grund', 'Worum es geht', true)],
-    run: ({ options }) => {
+    run: ({ invoker, options }) => {
       const { target, error } = moderatable(userByMention(options.nutzer));
       if (error) return { ephemeral: [error] };
+      audit(invoker.id, 'warn', `@${target.username} – ${options.grund}`);
       return { public: [`⚠️ @${target.username}, das ist eine Verwarnung vom Nexora-Team: ${options.grund}`] };
     },
   },
@@ -1084,10 +1120,11 @@ const HELPER_COMMANDS = [
     name: 'abmelden',
     description: 'Meldet jemanden auf allen Geräten ab',
     options: [option('nutzer', 'Wer abgemeldet wird', true)],
-    run: ({ options }) => {
+    run: ({ invoker, options }) => {
       const { target, error } = moderatable(userByMention(options.nutzer));
       if (error) return { ephemeral: [error] };
       endSessions(target.id, 'Du wurdest vom Nexora-Team abgemeldet. Bitte melde dich neu an.');
+      audit(invoker.id, 'logout', `@${target.username} (Helper)`);
       return { ephemeral: [`🚪 @${target.username} wurde überall abgemeldet.`] };
     },
   },
@@ -1158,6 +1195,7 @@ io.use((socket, next) => {
   const session = typeof token === 'string' && db.sessions[token];
   const user = session && db.users[session.userId];
   if (!user || user.bot || user.banned) return next(new Error('unauthorized'));
+  if (db.maintenance && !isOfficial(user)) return next(new Error('unauthorized'));
   socket.data.userId = user.id;
   next();
 });
@@ -1340,7 +1378,7 @@ io.on('connection', (socket) => {
   function rateLimited() {
     const now = Date.now();
     while (sendTimes.length && now - sendTimes[0] > 5000) sendTimes.shift();
-    if (sendTimes.length >= 8) return true;
+    if (sendTimes.length >= limit(userId, 8)) return true;
     sendTimes.push(now);
     return false;
   }
@@ -1349,10 +1387,10 @@ io.on('connection', (socket) => {
     const access = channelAccess(userId, channelId);
     if (!access || isVoice(channelId)) return { error: 'Kein Zugriff.' };
     const text = typeof content === 'string' ? content.trim() : '';
-    if (text.length > MAX_MESSAGE) return { error: `Maximal ${MAX_MESSAGE} Zeichen.` };
+    if (text.length > limit(userId, MAX_MESSAGE)) return { error: `Maximal ${limit(userId, MAX_MESSAGE)} Zeichen.` };
 
     const fileIds = [...new Set(Array.isArray(attachments) ? attachments : [])];
-    if (fileIds.length > MAX_ATTACHMENTS) return { error: `Maximal ${MAX_ATTACHMENTS} Anhänge pro Nachricht.` };
+    if (fileIds.length > limit(userId, MAX_ATTACHMENTS)) return { error: `Maximal ${limit(userId, MAX_ATTACHMENTS)} Anhänge pro Nachricht.` };
     const pending = fileIds.map((fileId) => pendingFiles.get(fileId));
     if (pending.some((p) => !p || p.uploaderId !== userId)) {
       return { error: 'Ein Anhang ist abgelaufen. Entferne ihn und lade ihn neu hoch.' };
@@ -1374,7 +1412,7 @@ io.on('connection', (socket) => {
     if (!q) return { error: 'Die Umfrage braucht eine Frage.' };
     const answers = [...new Set((Array.isArray(options) ? options : []).map((o) => str(o, 80)).filter(Boolean))];
     if (answers.length < 2) return { error: 'Eine Umfrage braucht mindestens 2 verschiedene Antworten.' };
-    if (answers.length > MAX_POLL_OPTIONS) return { error: `Maximal ${MAX_POLL_OPTIONS} Antworten.` };
+    if (answers.length > limit(userId, MAX_POLL_OPTIONS)) return { error: `Maximal ${limit(userId, MAX_POLL_OPTIONS)} Antworten.` };
     if (rateLimited()) return { error: 'Langsam! Du sendest zu schnell.' };
     const poll = {
       question: q,
@@ -1397,7 +1435,7 @@ io.on('connection', (socket) => {
     if (!message || message.authorId !== userId) return { error: 'Nicht erlaubt.' };
     if (message.poll) return { error: 'Umfragen können nicht bearbeitet werden.' };
     const text = typeof content === 'string' ? content.trim() : '';
-    if ((!text && !message.attachments?.length) || text.length > MAX_MESSAGE) return { error: 'Ungültiger Inhalt.' };
+    if ((!text && !message.attachments?.length) || text.length > limit(userId, MAX_MESSAGE)) return { error: 'Ungültiger Inhalt.' };
     message.content = text;
     message.editedAt = Date.now();
     save();
@@ -1584,8 +1622,8 @@ io.on('connection', (socket) => {
   }));
 
   on('bot:create', ({ username, displayName, lang }) => {
-    if (Object.values(db.bots).filter((b) => b.ownerId === userId).length >= MAX_BOTS_PER_USER) {
-      return { error: `Du kannst maximal ${MAX_BOTS_PER_USER} Bots haben.` };
+    if (Object.values(db.bots).filter((b) => b.ownerId === userId).length >= limit(userId, MAX_BOTS_PER_USER)) {
+      return { error: `Du kannst maximal ${limit(userId, MAX_BOTS_PER_USER)} Bots haben.` };
     }
     const name = str(username, 32);
     if (!USERNAME_RE.test(name)) return { error: 'Bot-Name: 3–20 Zeichen, nur Buchstaben, Zahlen, _ und .' };
@@ -1832,6 +1870,7 @@ io.on('connection', (socket) => {
     const { target, error } = moderatable(own(db.users, targetId));
     if (error) return { error };
     banUser(target, reason, userId);
+    audit(userId, 'ban', `@${target.username}${target.banned.reason ? ` – ${target.banned.reason}` : ''}`);
     return {};
   });
 
@@ -1839,7 +1878,7 @@ io.on('connection', (socket) => {
     const { target, error } = moderatable(own(db.users, targetId));
     if (error) return { error };
     delete target.banned;
-    save();
+    audit(userId, 'unban', `@${target.username}`);
     return {};
   });
 
@@ -1847,6 +1886,7 @@ io.on('connection', (socket) => {
     const { target, error } = moderatable(own(db.users, targetId));
     if (error) return { error };
     endSessions(target.id, 'Du wurdest von einem Admin abgemeldet. Bitte melde dich neu an.');
+    audit(userId, 'logout', `@${target.username}`);
     return {};
   });
 
@@ -1859,6 +1899,7 @@ io.on('connection', (socket) => {
     target.salt = salt;
     target.passHash = hash;
     endSessions(target.id, 'Dein Passwort wurde von einem Admin zurückgesetzt. Melde dich mit dem neuen Passwort an.');
+    audit(userId, 'resetPassword', `@${target.username}`);
     return { password };
   });
 
@@ -1887,6 +1928,7 @@ io.on('connection', (socket) => {
     if (!hub) return { error: 'Hub nicht gefunden.' };
     if (hub.isLounge) return { error: 'Die Nexora Lounge kann nicht gelöscht werden.' };
     deleteHub(hub);
+    audit(userId, 'deleteHub', hub.name);
     return {};
   });
 
@@ -1907,19 +1949,100 @@ io.on('connection', (socket) => {
     const bot = own(db.bots, botId);
     if (!bot) return { error: 'Bot nicht gefunden.' };
     bot.disabled = Boolean(disabled);
-    save();
     broadcastBot(bot);
+    audit(userId, bot.disabled ? 'botDisable' : 'botEnable', `@${db.users[bot.id].username}`);
     return {};
   });
 
   onAdmin('admin:deleteBot', ({ botId }) => {
     const bot = own(db.bots, botId);
     if (!bot) return { error: 'Bot nicht gefunden.' };
+    const name = db.users[bot.id].username;
     deleteBot(bot);
+    audit(userId, 'deleteBot', `@${name}`);
     return {};
   });
 
-  onAdmin('admin:announce', ({ text }) => ({ announcement: setAnnouncement(text) }));
+  onAdmin('admin:announce', ({ text }) => {
+    const announcement = setAnnouncement(text);
+    audit(userId, announcement ? 'announce' : 'announceClear', announcement?.text || '');
+    return { announcement };
+  });
+
+  // ----- Owner tools (@nexora only) -----
+
+  const onOwner = (event, handler) => on(event, (payload) => (isOwner(me()) ? handler(payload) : { error: 'Nur für den Nexora-Owner.' }));
+
+  // Everything the owner controls in one place: team, maintenance and the log.
+  onOwner('owner:state', () => {
+    const humans = Object.values(db.users).filter((u) => !u.bot);
+    return {
+      team: humans
+        .filter((u) => isOfficial(u))
+        .map((u) => ({ ...publicUser(u), fixed: OFFICIAL.has(u.username.toLowerCase()), online: Boolean(online.get(u.id)) })),
+      maintenance: db.maintenance,
+      audit: (db.audit || []).slice(-150).reverse().map((e) => ({ ...e, user: e.by && db.users[e.by] ? publicUser(db.users[e.by]) : null })),
+    };
+  });
+
+  // Makes someone official (team) or takes it away. Accounts from NEXORA_OFFICIAL stay.
+  onOwner('owner:setOfficial', ({ username, official }) => {
+    const target = findUserByName(str(username, 32).replace(/^@/, ''));
+    if (!target || target.bot) return { error: 'Benutzer nicht gefunden.' };
+    const name = target.username.toLowerCase();
+    if (OFFICIAL.has(name)) return { error: 'Dieser Account ist fest offiziell (NEXORA_OFFICIAL).' };
+    if (official && target.banned) return { error: 'Gesperrte Accounts können nicht ins Team.' };
+    if (!Array.isArray(db.team)) db.team = [];
+    db.team = db.team.filter((n) => n !== name);
+    if (official) db.team.push(name);
+    audit(userId, official ? 'teamAdd' : 'teamRemove', `@${target.username}`);
+    broadcastToVisible(target.id, 'user:update', publicUser(target));
+    io.to(`user:${target.id}`).emit('user:update', publicUser(target));
+    return { user: publicUser(target) };
+  });
+
+  // Maintenance: everyone outside the team is signed out and cannot sign in until it ends.
+  onOwner('owner:maintenance', ({ enabled, text }) => {
+    if (enabled) {
+      db.maintenance = { text: str(text, 200), at: Date.now(), by: userId };
+      const message = maintenanceMessage();
+      for (const u of Object.values(db.users)) {
+        if (!u.bot && !isOfficial(u)) endSessions(u.id, message);
+      }
+    } else {
+      db.maintenance = null;
+    }
+    audit(userId, enabled ? 'maintenanceOn' : 'maintenanceOff', db.maintenance?.text || '');
+    return { maintenance: db.maintenance };
+  });
+
+  // A message that pops up right now for everyone who is online.
+  onOwner('owner:broadcast', ({ text }) => {
+    const content = str(text, 300);
+    if (!content) return { error: 'Schreib zuerst einen Text.' };
+    io.emit('owner:broadcast', { text: content, from: publicUser(me()), at: Date.now() });
+    audit(userId, 'broadcast', content);
+    return { reached: online.size };
+  });
+
+  // Hands a hub to someone else (also to the owner). They join it if they are not a member yet.
+  onOwner('owner:hubOwner', ({ hubId, username }) => {
+    const hub = own(db.hubs, hubId);
+    if (!hub) return { error: 'Hub nicht gefunden.' };
+    if (hub.isLounge) return { error: 'Die Nexora Lounge gehört Nexora.' };
+    const target = findUserByName(str(username, 32).replace(/^@/, ''));
+    if (!target || target.bot) return { error: 'Benutzer nicht gefunden.' };
+    if (target.banned) return { error: 'Gesperrte Accounts können keinen Hub besitzen.' };
+    if (!hub.members.includes(target.id)) {
+      hub.members.push(target.id);
+      io.in(`user:${target.id}`).socketsJoin(`hub:${hub.id}`);
+      io.to(`hub:${hub.id}`).emit('user:update', publicUser(target));
+    }
+    hub.ownerId = target.id;
+    io.to(`hub:${hub.id}`).emit('hub:update', hubView(hub));
+    audit(userId, 'hubOwner', `${hub.name} → @${target.username}`);
+    return {};
+  });
 
   // Halloween Edition: the ghost hunt counter belongs to the account. Ghosts appear at
   // most every 15 seconds, so faster catches are ignored.
