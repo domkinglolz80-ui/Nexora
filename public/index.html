@@ -47,6 +47,10 @@
       </ul>
     </div>
     <div class="auth-card glass">
+      <div class="lang-switch" role="group" aria-label="Sprache · Language">
+        <button type="button" data-set-lang="de">🇩🇪 Deutsch</button>
+        <button type="button" data-set-lang="en">🇬🇧 English</button>
+      </div>
       <div class="auth-tabs" role="tablist">
         <button class="auth-tab active" data-mode="login" role="tab">Einloggen</button>
         <button class="auth-tab" data-mode="register" role="tab">Registrieren</button>
@@ -164,6 +168,7 @@
   <div id="toast-root" class="toast-root"></div>
 
   <script src="/socket.io/socket.io.js"></script>
+  <script src="/i18n.js"></script>
   <script src="/app.js"></script>
   <script src="/bots.js"></script>
   <script src="/admin.js"></script>

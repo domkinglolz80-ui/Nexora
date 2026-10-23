@@ -48,41 +48,41 @@ const ACCENTS = ['#ff7a18', '#ff9f1c', '#ff5e3a', '#ffb347', '#ff6b00', '#f9a03f
 
 // Animated avatar accessories (Halloween Edition 2026). The server only stores the id.
 const ACCESSORIES = [
-  { id: '', name: 'Keins' },
+  { id: '', name: t('Keins') },
   {
-    id: 'kuerbis', name: 'Lachender Kürbis',
+    id: 'kuerbis', name: t('Lachender Kürbis'),
     svg: `<svg viewBox="0 0 40 40"><path class="stem" d="M20 10c0-3 1-5 4-6"/><path class="leaf" d="M21 8c3-3 7-2 8 0-3 2-6 2-8 0z"/>
       <ellipse class="lobe" cx="13" cy="23" rx="9" ry="12"/><ellipse class="lobe" cx="27" cy="23" rx="9" ry="12"/><ellipse class="body" cx="20" cy="23" rx="10" ry="13"/>
       <path class="face" d="m10 19 5-5 2 6zM30 19l-5-5-2 6z"/><g class="jaw"><path class="face" d="M9 25c4 7 18 7 22 0l-3 1-2 2-2-2-2 2-2-2-2 2-2-2-2 2-2-2z"/></g></svg>
       <b class="ha">HA</b><b class="ha ha2">HA</b>`,
   },
   {
-    id: 'hexenhut', name: 'Hexenhut',
+    id: 'hexenhut', name: t('Hexenhut'),
     svg: '<svg viewBox="0 0 40 32"><path class="hat" d="M22 2c-6 2-9 10-12 22h20C27 17 25 11 30 8c-3 0-6-3-8-6z"/><ellipse class="brim" cx="20" cy="25" rx="19" ry="5"/><path class="band" d="M10.5 22h19l.6-3H11.3z"/><rect class="buckle" x="17" y="18.6" width="6" height="4" rx="1"/></svg>',
   },
   {
-    id: 'geist', name: 'Kleiner Geist',
+    id: 'geist', name: t('Kleiner Geist'),
     svg: '<svg viewBox="0 0 30 34"><path class="ghost" d="M15 2C7 2 3 8 3 15v17l4-3 4 3 4-3 4 3 4-3 4 3V15c0-7-4-13-12-13z"/><ellipse class="eye" cx="11" cy="14" rx="2" ry="3"/><ellipse class="eye" cx="19" cy="14" rx="2" ry="3"/><ellipse class="eye" cx="15" cy="22" rx="2.5" ry="2"/></svg>',
   },
   {
-    id: 'fledermaus', name: 'Fledermaus',
+    id: 'fledermaus', name: t('Fledermaus'),
     svg: '<svg viewBox="0 0 48 24"><path class="wing l" d="M24 12C19 4 9 2 1 6c4 1 5 4 5 7 3-2 6-1 7 2 2-2 6-2 8 0z"/><path class="wing r" d="M24 12c5-8 15-10 23-6-4 1-5 4-5 7-3-2-6-1-7 2-2-2-6-2-8 0z"/><ellipse class="bat" cx="24" cy="13" rx="4" ry="5"/><path class="bat" d="m21 9-1-4 3 3m4 1 1-4-3 3"/><circle class="eye" cx="22.5" cy="12" r=".9"/><circle class="eye" cx="25.5" cy="12" r=".9"/></svg>',
   },
   {
-    id: 'hoerner', name: 'Teufelshörner',
+    id: 'hoerner', name: t('Teufelshörner'),
     svg: '<svg viewBox="0 0 48 20"><path class="horn" d="M8 20C3 14 2 7 5 1c1 6 5 10 11 13z"/><path class="horn" d="M40 20c5-6 6-13 3-19-1 6-5 10-11 13z"/></svg>',
   },
   {
-    id: 'spinne', name: 'Spinne',
+    id: 'spinne', name: t('Spinne'),
     svg: '<svg viewBox="0 0 24 40"><path class="thread" d="M12 0v24"/><g class="spider"><path class="legs" d="M9 27 3 23 1 26M9 29l-7 1-1 3M9 31l-6 4v3M15 27l6-4 2 3M15 29l7 1 1 3M15 31l6 4v3"/><ellipse class="abdomen" cx="12" cy="31" rx="5" ry="6"/><circle class="abdomen" cx="12" cy="25" r="3"/><circle class="eye" cx="11" cy="25" r=".8"/><circle class="eye" cx="13" cy="25" r=".8"/></g></svg>',
   },
   {
-    id: 'katze', name: 'Katzenohren',
+    id: 'katze', name: t('Katzenohren'),
     svg: '<svg viewBox="0 0 48 20"><g class="ear l"><path class="fur" d="M2 20 6 1l13 13z"/><path class="pink" d="m6 16 2-10 6 7z"/></g><g class="ear r"><path class="fur" d="m46 20-4-19-13 13z"/><path class="pink" d="m42 16-2-10-6 7z"/></g></svg>',
   },
   // Exclusive: the server only lets these accounts wear them.
   {
-    id: 'kuerbiskoenig', name: 'Kürbiskönig', badge: '👑 Kürbiskönig', allowed: (u) => !u.bot && u.username?.toLowerCase() === 'nexora',
+    id: 'kuerbiskoenig', name: t('Kürbiskönig'), badge: t('👑 Kürbiskönig'), allowed: (u) => !u.bot && u.username?.toLowerCase() === 'nexora',
     svg: `<span class="ring"></span><span class="ember e1"></span><span class="ember e2"></span><span class="ember e3"></span>
       <svg class="crown" viewBox="0 0 44 26"><path class="gold" d="M4 18 8 4l8 9 6-12 6 12 8-9 4 14z"/><rect class="gold" x="4" y="16.5" width="36" height="8" rx="2"/>
       <circle class="gem" cx="8" cy="4" r="2.2"/><circle class="gem" cx="36" cy="4" r="2.2"/><circle class="gem g2" cx="22" cy="1.8" r="2"/>
@@ -97,7 +97,7 @@ const ACCESSORIES = [
       <path class="scene-bat b2" d="M0 4C-3 0-8-1-11 1c2 0 3 2 3 3 1-1 3 0 3 1 1-1 3-1 5 0 2-1 4-1 5 0 0-1 2-2 3-1 0-1 1-3 3-3C8-1 3 0 0 4z"/></svg>`,
   },
   {
-    id: 'irrlicht', name: 'Irrlicht-Wächter', badge: '🏮 Irrlicht-Wächter', allowed: (u) => Boolean(u.system),
+    id: 'irrlicht', name: t('Irrlicht-Wächter'), badge: t('🏮 Irrlicht-Wächter'), allowed: (u) => Boolean(u.system),
     svg: `<span class="ring"></span><span class="wisp w1"></span><span class="wisp w2"></span><span class="wisp w3"></span>
       <svg class="lantern" viewBox="0 0 24 40"><path class="chain" d="M12 0v7"/><path class="iron" d="M7 10h10l-2-3H9z"/><rect class="glass" x="7" y="10" width="10" height="16" rx="1.5"/>
       <path class="flame" d="M12 13c3 4 3 8 0 10-3-2-3-6 0-10z"/><path class="iron" d="M6 26h12v3H6z"/></svg>`,
@@ -126,11 +126,45 @@ function accessoryHtml(id) {
   return acc ? `<span class="acc acc-${acc.id}" aria-hidden="true">${acc.svg}</span>` : '';
 }
 
+// Ghost hunt ranks (Halloween Edition 2026): the number of ghosts needed for each title.
+const GHOST_RANKS = [
+  { at: 1, name: t('Geisterlehrling') },
+  { at: 5, name: t('Spukjäger:in') },
+  { at: 13, name: t('Geisterjäger:in') },
+  { at: 31, name: t('Kürbismeister:in') },
+  { at: 66, name: t('Legende der Nacht') },
+];
+
+function ghostRank(n) {
+  return [...GHOST_RANKS].reverse().find((r) => n >= r.at) || null;
+}
+
+function ghostBadge(user) {
+  const n = user.ghosts || 0;
+  if (!n || user.bot) return '';
+  return `<div class="ghost-badge">👻 ${plural(n, 'Geist gefangen', 'Geister gefangen')} · ${esc(ghostRank(n).name)}</div>`;
+}
+
+// The ghost hunt card in the settings: count, title and the next goal.
+function ghostStats(user) {
+  const n = user.ghosts || 0;
+  const rank = ghostRank(n);
+  const next = GHOST_RANKS.find((r) => r.at > n);
+  return `<div class="ghost-stats"><span class="gs-ico">👻</span><div>
+    <b>${n ? plural(n, 'Geist gefangen', 'Geister gefangen') : t('Noch kein Geist gefangen')}</b>${rank ? ` · ${esc(rank.name)}` : ''}
+    <small>${next ? t('Noch {n} bis „{rank}“', { n: next.at - n, rank: next.name }) : t('Höchster Rang erreicht – unheimlich gut!')}</small></div></div>`;
+}
+
+// The presence dot. Online, away and do-not-disturb are animated so a live profile never looks frozen.
+function statusDot(status) {
+  return `<span class="dot ${esc(status)}" title="${esc(STATUS_LABEL[status] || '')}"></span>`;
+}
+
 // A row of live previews (the user's own avatar wearing each accessory). Returns a getter.
 function accessoryPicker(container, user) {
   let value = user.accessory || '';
   container.innerHTML = ACCESSORIES.filter((a) => !a.allowed || a.allowed(user)).map((a) => `<button type="button" class="acc-opt ${a.id === value ? 'sel' : ''}${a.allowed ? ' exclusive' : ''}" data-a="${a.id}" title="${esc(a.name)}">
-    ${a.allowed ? '<i class="ex-tag">Exklusiv</i>' : ''}${avatar({ ...user, accessory: a.id }, { size: 40 })}<span>${esc(a.name)}</span></button>`).join('');
+    ${a.allowed ? `<i class="ex-tag">${t('Exklusiv')}</i>` : ''}${avatar({ ...user, accessory: a.id }, { size: 40 })}<span>${esc(a.name)}</span></button>`).join('');
   container.addEventListener('click', (e) => {
     const opt = e.target.closest('.acc-opt');
     if (!opt) return;
@@ -143,7 +177,7 @@ const MAX_FILE = 8 * 1024 * 1024;
 const MAX_ATTACHMENTS = 5;
 const MAX_POLL_OPTIONS = 10;
 const MAX_MESSAGE = 2000;
-const STATUS_LABEL = { online: 'Online', idle: 'Abwesend', dnd: 'Nicht stören', invisible: 'Unsichtbar', offline: 'Offline' };
+const STATUS_LABEL = { online: t('Online'), idle: t('Abwesend'), dnd: t('Nicht stören'), invisible: t('Unsichtbar'), offline: t('Offline') };
 
 const state = {
   token: null,
@@ -195,10 +229,10 @@ function store(key, value) {
 
 function req(event, payload = {}) {
   return new Promise((resolve, reject) => {
-    if (!socket || !socket.connected) return reject(new Error('Keine Verbindung zum Server.'));
+    if (!socket || !socket.connected) return reject(new Error(t('Keine Verbindung zum Server.')));
     socket.timeout(10000).emit(event, payload, (err, res) => {
-      if (err) return reject(new Error('Zeitüberschreitung. Versuch es nochmal.'));
-      if (res && res.error) return reject(new Error(res.error));
+      if (err) return reject(new Error(t('Zeitüberschreitung. Versuch es nochmal.')));
+      if (res && res.error) return reject(new Error(tServer(res.error)));
       resolve(res);
     });
   });
@@ -221,7 +255,7 @@ async function copyText(text) {
     document.execCommand('copy');
     ta.remove();
   }
-  toast('In die Zwischenablage kopiert');
+  toast(t('In die Zwischenablage kopiert'));
 }
 
 function initials(name) {
@@ -230,7 +264,7 @@ function initials(name) {
 }
 
 function userOf(id) {
-  return state.users.get(id) || { id, username: 'unbekannt', displayName: 'Unbekannt', color: '#6b5a4e', bio: '' };
+  return state.users.get(id) || { id, username: t('unbekannt'), displayName: t('Unbekannt'), color: '#6b5a4e', bio: '' };
 }
 
 function statusOf(id) {
@@ -242,20 +276,21 @@ function isAdmin(hub, userId) {
 }
 
 function verified(user) {
-  const check = user.official ? `<span class="verified" title="${user.bot ? 'Offizieller Nexora-Bot' : 'Offizieller Nexora-Account'}">✓</span>` : '';
+  const check = user.official ? `<span class="verified" title="${user.bot ? t('Offizieller Nexora-Bot') : t('Offizieller Nexora-Account')}">✓</span>` : '';
   return user.bot ? `${check}<span class="bot-tag" title="Bot">BOT</span>` : check;
 }
 
 function avatar(user, { dot = false, size } = {}) {
   const s = size ? `--size:${size}px;` : '';
-  const d = dot ? `<span class="dot ${statusOf(user.id)}"></span>` : '';
+  const d = dot ? statusDot(statusOf(user.id)) : '';
   const acc = accessoryHtml(user.accessory);
   return `<div class="avatar${acc ? ' has-acc' : ''}${size && size < 30 ? ' tiny' : ''}" style="--c:${esc(user.color)};${s}" data-user="${esc(user.id)}">${esc(initials(user.displayName))}${acc}${d}</div>`;
 }
 
-const timeFmt = new Intl.DateTimeFormat('de-DE', { hour: '2-digit', minute: '2-digit' });
-const dayFmt = new Intl.DateTimeFormat('de-DE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-const fullFmt = new Intl.DateTimeFormat('de-DE', { dateStyle: 'medium', timeStyle: 'short' });
+const timeFmt = new Intl.DateTimeFormat(LOCALE, { hour: '2-digit', minute: '2-digit' });
+const dayFmt = new Intl.DateTimeFormat(LOCALE, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+const fullFmt = new Intl.DateTimeFormat(LOCALE, { dateStyle: 'medium', timeStyle: 'short' });
+const dateFmt = new Intl.DateTimeFormat(LOCALE, { dateStyle: 'medium' });
 
 function sameDay(a, b) {
   const x = new Date(a), y = new Date(b);
@@ -264,22 +299,22 @@ function sameDay(a, b) {
 
 function dayLabel(ts) {
   const now = Date.now();
-  if (sameDay(ts, now)) return 'Heute';
-  if (sameDay(ts, now - 86400000)) return 'Gestern';
+  if (sameDay(ts, now)) return t('Heute');
+  if (sameDay(ts, now - 86400000)) return t('Gestern');
   return dayFmt.format(ts);
 }
 
 function stamp(ts) {
   const now = Date.now();
-  if (sameDay(ts, now)) return `Heute um ${timeFmt.format(ts)}`;
-  if (sameDay(ts, now - 86400000)) return `Gestern um ${timeFmt.format(ts)}`;
+  if (sameDay(ts, now)) return t('Heute um {time}', { time: timeFmt.format(ts) });
+  if (sameDay(ts, now - 86400000)) return t('Gestern um {time}', { time: timeFmt.format(ts) });
   return fullFmt.format(ts);
 }
 
 function formatSize(bytes) {
   if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(bytes < 10240 ? 1 : 0).replace('.', ',')} KB`;
-  return `${(bytes / 1024 / 1024).toFixed(1).replace('.', ',')} MB`;
+  if (bytes < 1024 * 1024) return `${decimal((bytes / 1024).toFixed(bytes < 10240 ? 1 : 0))} KB`;
+  return `${decimal((bytes / 1024 / 1024).toFixed(1))} MB`;
 }
 
 // One line describing a message, also when it has no text (poll, files).
@@ -312,7 +347,7 @@ function formatMessage(text) {
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
     .replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g, '$1<em>$2</em>')
     .replace(/~~(.+?)~~/g, '<s>$1</s>')
-    .replace(/\|\|(.+?)\|\|/g, '<span class="spoiler" title="Spoiler anzeigen">$1</span>')
+    .replace(/\|\|(.+?)\|\|/g, `<span class="spoiler" title="${t('Spoiler anzeigen')}">$1</span>`)
     .replace(/^&gt; (.*)$/gm, '<blockquote>$1</blockquote>')
     .replace(/(^|[^\w])@([a-zA-Z0-9_.]{3,20})/g, (m, pre, name) => {
       const known = [...state.users.values()].some((u) => u.username.toLowerCase() === name.toLowerCase());
@@ -373,7 +408,7 @@ function setAuthMode(mode) {
   const auth = $('#auth');
   auth.dataset.mode = mode;
   $$('.auth-tab').forEach((b) => b.classList.toggle('active', b.dataset.mode === mode));
-  $('#auth-submit').textContent = mode === 'login' ? "Los geht's" : 'Account erstellen';
+  $('#auth-submit').textContent = mode === 'login' ? t("Los geht's") : t('Account erstellen');
   $('#auth-form [name=password]').autocomplete = mode === 'login' ? 'current-password' : 'new-password';
   $('#auth-error').textContent = '';
   const u = $('#auth-form [name=username]');
@@ -392,8 +427,8 @@ $('#auth-form').addEventListener('submit', async (e) => {
     displayName: form.displayName.value.trim(),
   };
   const err = $('#auth-error');
-  if (body.username.length < 3) return (err.textContent = 'Benutzername braucht mindestens 3 Zeichen.');
-  if (body.password.length < 6) return (err.textContent = 'Passwort braucht mindestens 6 Zeichen.');
+  if (body.username.length < 3) return (err.textContent = t('Benutzername braucht mindestens 3 Zeichen.'));
+  if (body.password.length < 6) return (err.textContent = t('Passwort braucht mindestens 6 Zeichen.'));
 
   const btn = $('#auth-submit');
   btn.disabled = true;
@@ -402,10 +437,10 @@ $('#auth-form').addEventListener('submit', async (e) => {
     const res = await fetch(`/api/${mode}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
+      body: JSON.stringify({ ...body, lang: LANG }),
     });
     const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.error || 'Etwas ist schiefgelaufen.');
+    if (!res.ok) throw new Error(data.error ? tServer(data.error) : t('Etwas ist schiefgelaufen.'));
     store('token', data.token);
     store('lastUser', data.user.username);
     form.password.value = '';
@@ -457,7 +492,7 @@ function start(token) {
 
   // Banned, signed out or password reset by an admin: back to the login screen.
   let endedMessage = '';
-  socket.on('account:ended', ({ message }) => (endedMessage = message));
+  socket.on('account:ended', ({ message }) => (endedMessage = tServer(message)));
 
   socket.on('disconnect', (reason) => {
     if (reason === 'io server disconnect') {
@@ -468,11 +503,11 @@ function start(token) {
       cleanupVoice();
       closeAllModals();
       showAuth();
-      $('#auth-error').textContent = endedMessage || 'Du wurdest abgemeldet.';
+      $('#auth-error').textContent = endedMessage || t('Du wurdest abgemeldet.');
       return;
     }
     if (!banner && socket) {
-      banner = h('<div class="conn-banner">Verbindung verloren – verbinde neu…</div>');
+      banner = h(`<div class="conn-banner">${t('Verbindung verloren – verbinde neu…')}</div>`);
       document.body.append(banner);
     }
   });
@@ -500,7 +535,7 @@ function start(token) {
       state.unread.delete(c.id);
     });
     if (state.view.hubId === hubId) {
-      if (hub) toast(`Du bist nicht mehr in „${hub.name}“`, 'error');
+      if (hub) toast(t('Du bist nicht mehr in „{name}“', { name: hub.name }), 'error');
       openHome();
     } else renderRail();
   });
@@ -565,8 +600,8 @@ function start(token) {
   socket.on('voice:peer-left', ({ socketId }) => closePeer(socketId));
   socket.on('voice:kicked', ({ reason }) => {
     cleanupVoice();
-    if (reason === 'elsewhere') toast('Du bist jetzt auf einem anderen Gerät im Sprachkanal.');
-    else if (reason === 'deleted') toast('Der Sprachkanal wurde gelöscht.', 'error');
+    if (reason === 'elsewhere') toast(t('Du bist jetzt auf einem anderen Gerät im Sprachkanal.'));
+    else if (reason === 'deleted') toast(t('Der Sprachkanal wurde gelöscht.'), 'error');
     renderVoiceUi();
   });
 
@@ -601,6 +636,7 @@ function applyBootstrap(data) {
   renderMe();
   renderAnnouncement();
   checkVersion(data.version);
+  document.dispatchEvent(new CustomEvent('nexora:ready'));
 
   const params = new URLSearchParams(location.search);
   const invite = params.get('invite');
@@ -768,16 +804,16 @@ function renderSidebar() {
     head.innerHTML = `
       <div class="hub-title">
         <h2>${hub.icon ? esc(hub.icon) + ' ' : ''}${esc(hub.name)}</h2>
-        <button class="icon-btn" data-act="settings" title="Hub-Einstellungen">${ICONS.gear}</button>
+        <button class="icon-btn" data-act="settings" title="${t('Hub-Einstellungen')}">${ICONS.gear}</button>
       </div>
       <div class="hub-sub">
-        <button class="chip" data-act="invite" title="Einladen">${ICONS.invite} ${esc(hub.inviteCode)}</button>
-        <span>${hub.members.length} Mitglied${hub.members.length === 1 ? '' : 'er'}</span>
+        <button class="chip" data-act="invite" title="${t('Einladen')}">${ICONS.invite} ${esc(hub.inviteCode)}</button>
+        <span>${plural(hub.members.length, 'Mitglied', 'Mitglieder')}</span>
       </div>`;
     head.querySelector('[data-act=settings]').onclick = () => openHubSettings(hub.id);
     head.querySelector('[data-act=invite]').onclick = () => openInvite(hub.id);
 
-    body.innerHTML = `<div class="section-label"><span>Textkanäle</span>${isOwner ? `<button class="icon-btn" data-act="add" title="Kanal erstellen">${ICONS.plus}</button>` : ''}</div>`;
+    body.innerHTML = `<div class="section-label"><span>${t('Textkanäle')}</span>${isOwner ? `<button class="icon-btn" data-act="add" title="${t('Kanal erstellen')}">${ICONS.plus}</button>` : ''}</div>`;
     body.querySelector('[data-act=add]')?.addEventListener('click', () => openChannelEditor(hub.id));
     for (const c of hub.channels.filter((x) => x.kind !== 'voice')) {
       const u = state.unread.get(c.id);
@@ -785,7 +821,7 @@ function renderSidebar() {
       const item = h(`<button class="nav-item ${active ? 'active' : ''} ${u ? 'unread' : ''}">
         <span class="hash">#</span><span class="label">${esc(c.name)}</span>
         ${u?.mention ? `<span class="badge">${u.count}</span>` : ''}
-        ${isOwner ? `<span class="row-actions"><span class="icon-btn" data-act="edit" title="Kanal bearbeiten">${ICONS.gear}</span></span>` : ''}
+        ${isOwner ? `<span class="row-actions"><span class="icon-btn" data-act="edit" title="${t('Kanal bearbeiten')}">${ICONS.gear}</span></span>` : ''}
       </button>`);
       item.addEventListener('click', (e) => {
         if (e.target.closest('[data-act=edit]')) return openChannelEditor(hub.id, c.id);
@@ -796,7 +832,7 @@ function renderSidebar() {
 
     const voiceChannels = hub.channels.filter((x) => x.kind === 'voice');
     if (voiceChannels.length || isOwner) {
-      const label = h(`<div class="section-label"><span>Sprachkanäle</span>${isOwner ? `<button class="icon-btn" title="Sprachkanal erstellen">${ICONS.plus}</button>` : ''}</div>`);
+      const label = h(`<div class="section-label"><span>${t('Sprachkanäle')}</span>${isOwner ? `<button class="icon-btn" title="${t('Sprachkanal erstellen')}">${ICONS.plus}</button>` : ''}</div>`);
       label.querySelector('.icon-btn')?.addEventListener('click', () => openChannelEditor(hub.id, null, 'voice'));
       body.append(label);
     }
@@ -806,7 +842,7 @@ function renderSidebar() {
       const item = h(`<button class="nav-item voice-item ${active ? 'active' : ''} ${vc.channelId === c.id ? 'connected' : ''}">
         <span class="hash">${ICONS.speaker}</span><span class="label">${esc(c.name)}</span>
         ${members.length ? `<span class="voice-count">${members.length}</span>` : ''}
-        ${isOwner ? `<span class="row-actions"><span class="icon-btn" data-act="edit" title="Kanal bearbeiten">${ICONS.gear}</span></span>` : ''}
+        ${isOwner ? `<span class="row-actions"><span class="icon-btn" data-act="edit" title="${t('Kanal bearbeiten')}">${ICONS.gear}</span></span>` : ''}
       </button>`);
       item.addEventListener('click', (e) => {
         if (e.target.closest('[data-act=edit]')) return openChannelEditor(hub.id, c.id);
@@ -819,7 +855,7 @@ function renderSidebar() {
           const u = userOf(m.userId);
           const row = h(`<button class="voice-user ${state.speaking.has(m.userId) ? 'speaking' : ''}" data-voice-user="${esc(m.userId)}">
             ${avatar(u, { size: 24 })}<span class="label">${esc(u.displayName)}</span>
-            ${m.deafened ? `<span class="vs-icon" title="Stumm geschaltet (Ton aus)">${ICONS.headphonesOff}</span>` : m.muted ? `<span class="vs-icon" title="Mikrofon aus">${ICONS.micOff}</span>` : ''}
+            ${m.deafened ? `<span class="vs-icon" title="${t('Stumm geschaltet (Ton aus)')}">${ICONS.headphonesOff}</span>` : m.muted ? `<span class="vs-icon" title="${t('Mikrofon aus')}">${ICONS.micOff}</span>` : ''}
           </button>`);
           row.onclick = () => showProfile(m.userId, row);
           list.append(row);
@@ -831,14 +867,14 @@ function renderSidebar() {
     head.className = 'sidebar-head';
     head.style.removeProperty('--hub-color');
     head.innerHTML = `
-      <button class="search-pill" style="width:100%" data-act="find">${ICONS.search}<span>Unterhaltung finden</span></button>`;
+      <button class="search-pill" style="width:100%" data-act="find">${ICONS.search}<span>${t('Unterhaltung finden')}</span></button>`;
     head.querySelector('[data-act=find]').onclick = openPalette;
 
-    body.innerHTML = `<div class="section-label"><span>Direktnachrichten</span><button class="icon-btn" data-act="new" title="Neue Nachricht">${ICONS.plus}</button></div>`;
+    body.innerHTML = `<div class="section-label"><span>${t('Direktnachrichten')}</span><button class="icon-btn" data-act="new" title="${t('Neue Nachricht')}">${ICONS.plus}</button></div>`;
     body.querySelector('[data-act=new]').onclick = openNewDm;
     const dms = sortedDms();
     if (!dms.length) {
-      body.append(h('<div class="empty-hint">Noch keine Unterhaltungen.<br>Klick auf ein Mitglied oder auf <b>+</b>, um loszulegen.</div>'));
+      body.append(h(`<div class="empty-hint">${t('Noch keine Unterhaltungen.<br>Klick auf ein Mitglied oder auf <b>+</b>, um loszulegen.')}</div>`));
     }
     for (const dm of dms) {
       const p = dmPartner(dm);
@@ -860,8 +896,8 @@ function renderMe() {
   card.innerHTML = `
     ${avatar(me, { dot: true })}
     <div class="who${exClass(me)}"><div class="name">${esc(me.displayName)}${verified(me)}</div><div class="handle">${esc(STATUS_LABEL[me.status] || '')} · @${esc(me.username)}</div></div>
-    <button class="icon-btn" data-act="bots" title="Meine Bots">${ICONS.bot}</button>
-    <button class="icon-btn" data-act="settings" title="Einstellungen">${ICONS.gear}</button>`;
+    <button class="icon-btn" data-act="bots" title="${t('Meine Bots')}">${ICONS.bot}</button>
+    <button class="icon-btn" data-act="settings" title="${t('Einstellungen')}">${ICONS.gear}</button>`;
   card.querySelector('[data-act=bots]').onclick = () => openBotManager();
   card.querySelector('[data-act=settings]').onclick = openSettings;
   $('#admin-btn').classList.toggle('hidden', !me.official);
@@ -878,18 +914,18 @@ function renderChatHeader() {
 
   if (channel?.kind === 'voice') {
     const n = (state.voiceStates.get(channel.id) || []).length;
-    title.innerHTML = `<div class="hash-big voice">${ICONS.speaker}</div><h1>${esc(channel.name)}</h1><div class="topic">${n ? `${n} im Kanal` : 'Sprachkanal'}</div>`;
+    title.innerHTML = `<div class="hash-big voice">${ICONS.speaker}</div><h1>${esc(channel.name)}</h1><div class="topic">${n ? t('{n} im Kanal', { n }) : t('Sprachkanal')}</div>`;
   } else if (channel) {
     title.innerHTML = `<div class="hash-big">#</div><h1>${esc(channel.name)}</h1>${channel.topic ? `<div class="topic">${esc(channel.topic)}</div>` : ''}`;
-    composer.placeholder = `Nachricht an #${channel.name}`;
+    composer.placeholder = t('Nachricht an #{name}', { name: channel.name });
   } else if (dm) {
     const p = dmPartner(dm);
     title.innerHTML = `${avatar(p, { dot: true })}<h1>${esc(p.displayName)}${verified(p)}</h1><div class="topic">@${esc(p.username)}</div>`;
     title.querySelector('.avatar').onclick = (e) => showProfile(p.id, e.currentTarget);
-    composer.placeholder = `Nachricht an @${p.displayName}`;
+    composer.placeholder = t('Nachricht an @{name}', { name: p.displayName });
   } else {
-    title.innerHTML = `<div class="hash-big">✦</div><h1>Zentrale</h1>`;
-    composer.placeholder = 'Wähle eine Unterhaltung';
+    title.innerHTML = `<div class="hash-big">✦</div><h1>${t('Zentrale')}</h1>`;
+    composer.placeholder = t('Wähle eine Unterhaltung');
   }
   const hasTarget = Boolean(channel || dm);
   $('.composer-wrap').classList.toggle('hidden', !hasTarget || channel?.kind === 'voice');
@@ -909,7 +945,7 @@ function renderMembers() {
         <h4>${esc(p.displayName)}${verified(p)}</h4>
         <div class="handle">@${esc(p.username)} · ${STATUS_LABEL[statusOf(p.id)]}</div>
         ${p.bio ? `<div class="bio">${esc(p.bio)}</div>` : ''}
-        <div class="meta">Dabei seit ${fullFmt.format(p.createdAt).split(',')[0]}</div>
+        <div class="meta">${t('Dabei seit {date}', { date: dateFmt.format(p.createdAt) })}</div>
       </div>`;
     return;
   }
@@ -929,19 +965,19 @@ function renderMembers() {
     panel.append(h(`<div class="section-label"><span>${label} — ${list.length}</span></div>`));
     for (const m of list) {
       const st = statusOf(m.id);
-      const sub = m.bot ? (m.disabled ? 'Gesperrt' : `${m.commands?.length || 0} Befehl${m.commands?.length === 1 ? '' : 'e'}`) : m.bio || STATUS_LABEL[st];
+      const sub = m.bot ? (m.disabled ? t('Gesperrt') : plural(m.commands?.length || 0, 'Befehl', 'Befehle')) : m.bio || STATUS_LABEL[st];
       const row = h(`<button class="member ${st === 'offline' ? 'offline' : ''}" style="--c:${esc(m.color)}">
         ${avatar(m, { dot: true })}
-        <div class="info"><div class="name">${esc(m.displayName)}${verified(m)}${m.id === hub.ownerId ? '<span class="crown" title="Besitzer">👑</span>' : ''}</div>
+        <div class="info"><div class="name">${esc(m.displayName)}${verified(m)}${m.id === hub.ownerId ? `<span class="crown" title="${t('Besitzer')}">👑</span>` : ''}</div>
         <div class="bio">${esc(sub)}</div></div>
       </button>`);
       row.onclick = () => showProfile(m.id, row);
       panel.append(row);
     }
   };
-  section('Online', onlineList);
-  section('Offline', offlineList);
-  section('Bots', botList);
+  section(t('Online'), onlineList);
+  section(t('Offline'), offlineList);
+  section(t('Bots'), botList);
 }
 
 function renderTyping() {
@@ -950,9 +986,9 @@ function renderTyping() {
   const names = map ? [...map.keys()].map((id) => userOf(id).displayName) : [];
   if (!names.length) { box.innerHTML = ''; return; }
   let text;
-  if (names.length === 1) text = `<b>${esc(names[0])}</b> schreibt`;
-  else if (names.length <= 3) text = `<b>${names.map(esc).join(', ')}</b> schreiben`;
-  else text = 'Mehrere Leute schreiben';
+  if (names.length === 1) text = t('<b>{name}</b> schreibt', { name: esc(names[0]) });
+  else if (names.length <= 3) text = t('<b>{names}</b> schreiben', { names: names.map(esc).join(', ') });
+  else text = t('Mehrere Leute schreiben');
   box.innerHTML = `<span class="typing-dots"><i></i><i></i><i></i></span><span>${text}…</span>`;
 }
 
@@ -963,7 +999,7 @@ function renderAnnouncement() {
   if (!a || store('dismissedAnnouncement') === a.id) return;
   const bar = h(`<div class="announce-bar" id="announce-bar">${ICONS.megaphone}
     <div class="announce-text"><b>Nexora</b><span>${formatMessage(a.text)}</span></div>
-    <button class="icon-btn" title="Ausblenden">${ICONS.x}</button></div>`);
+    <button class="icon-btn" title="${t('Ausblenden')}">${ICONS.x}</button></div>`);
   bar.querySelector('button').onclick = () => {
     store('dismissedAnnouncement', a.id);
     bar.remove();
@@ -989,10 +1025,10 @@ function renderMessagesShell() {
     const hasDms = state.dms.size > 0;
     box.append(h(`<div class="channel-intro">
       <div class="hash-huge">✦</div>
-      <h2>Willkommen, ${esc(state.me.displayName)}!</h2>
-      <p>${hasDms ? 'Wähle links eine Unterhaltung aus.' : 'Starte eine Direktnachricht mit <b>+</b> oder klick auf ein Mitglied in einem Hub.'}</p>
-      <p style="margin-top:14px"><button class="btn primary" data-act="new">${ICONS.chat} Neue Nachricht</button>
-      <button class="btn" data-act="hub" style="margin-left:6px">${ICONS.plus} Hub erstellen</button></p>
+      <h2>${t('Willkommen, {name}!', { name: esc(state.me.displayName) })}</h2>
+      <p>${hasDms ? t('Wähle links eine Unterhaltung aus.') : t('Starte eine Direktnachricht mit <b>+</b> oder klick auf ein Mitglied in einem Hub.')}</p>
+      <p style="margin-top:14px"><button class="btn primary" data-act="new">${ICONS.chat} ${t('Neue Nachricht')}</button>
+      <button class="btn" data-act="hub" style="margin-left:6px">${ICONS.plus} ${t('Hub erstellen')}</button></p>
     </div>`));
     box.querySelector('[data-act=new]').onclick = openNewDm;
     box.querySelector('[data-act=hub]').onclick = openCreateHub;
@@ -1036,13 +1072,13 @@ function channelIntro() {
   const dm = currentDm();
   if (channel) {
     return h(`<div class="channel-intro"><div class="hash-huge">#</div>
-      <h2>Willkommen in #${esc(channel.name)}</h2>
-      <p>${channel.topic ? esc(channel.topic) : 'Das ist der Anfang dieses Kanals.'}</p></div>`);
+      <h2>${t('Willkommen in #{name}', { name: esc(channel.name) })}</h2>
+      <p>${channel.topic ? esc(channel.topic) : t('Das ist der Anfang dieses Kanals.')}</p></div>`);
   }
   const p = dmPartner(dm);
   const node = h(`<div class="channel-intro">${avatar(p, { size: 72 })}
     <h2 style="margin-top:16px">${esc(p.displayName)}${verified(p)}</h2>
-    <p>Das ist der Anfang deiner Unterhaltung mit <b>@${esc(p.username)}</b>.</p></div>`);
+    <p>${t('Das ist der Anfang deiner Unterhaltung mit <b>@{name}</b>.', { name: esc(p.username) })}</p></div>`);
   return node;
 }
 
@@ -1056,7 +1092,7 @@ function rerenderMessages(scrollToBottom = false) {
   const frag = document.createDocumentFragment();
   if (!ch.hasMore) frag.append(channelIntro());
   else {
-    const more = h('<button class="btn load-more">Ältere Nachrichten laden</button>');
+    const more = h(`<button class="btn load-more">${t('Ältere Nachrichten laden')}</button>`);
     more.onclick = () => loadChannel(state.view.channelId, true);
     frag.append(more);
   }
@@ -1090,7 +1126,7 @@ function attachmentsHtml(m) {
       }
       return `<a class="att-image" href="${fileUrl(a)}" target="_blank" rel="noopener" data-name="${esc(a.name)}"><img src="${fileUrl(a)}" alt="${esc(a.name)}" style="${style}" /></a>`;
     }
-    return `<a class="att-file" href="${fileUrl(a)}?download" download="${esc(a.name)}" title="${esc(a.name)} herunterladen">
+    return `<a class="att-file" href="${fileUrl(a)}?download" download="${esc(a.name)}" title="${esc(t('{name} herunterladen', { name: a.name }))}">
       <span class="att-ico">${ICONS.file}</span>
       <span class="att-meta"><span class="att-name">${esc(a.name)}</span><span class="att-size">${formatSize(a.size)}</span></span>
       <span class="att-dl">${ICONS.download}</span></a>`;
@@ -1108,7 +1144,7 @@ function pollHtml(m, canClose) {
     const pct = voters.size ? Math.round((o.votes.length / voters.size) * 100) : 0;
     const win = p.closed && top > 0 && o.votes.length === top;
     const names = o.votes.map((id) => userOf(id).displayName).join(', ');
-    return `<button class="poll-opt ${mine ? 'mine' : ''} ${win ? 'win' : ''}" data-act="vote" data-option="${esc(o.id)}" ${p.closed ? 'disabled' : ''} title="${esc(names || 'Noch keine Stimmen')}">
+    return `<button class="poll-opt ${mine ? 'mine' : ''} ${win ? 'win' : ''}" data-act="vote" data-option="${esc(o.id)}" ${p.closed ? 'disabled' : ''} title="${esc(names || t('Noch keine Stimmen'))}">
       <span class="poll-bar" style="width:${pct}%"></span>
       <span class="poll-check">${mine ? ICONS.check : ''}</span>
       <span class="poll-text">${esc(o.text)}</span>
@@ -1116,11 +1152,11 @@ function pollHtml(m, canClose) {
     </button>`;
   }).join('');
   return `<div class="poll ${p.closed ? 'closed' : ''}">
-    <div class="poll-head">${ICONS.poll}<span>${p.closed ? 'Umfrage beendet' : p.multi ? 'Umfrage · Mehrfachauswahl' : 'Umfrage · eine Antwort'}</span></div>
+    <div class="poll-head">${ICONS.poll}<span>${p.closed ? t('Umfrage beendet') : p.multi ? t('Umfrage · Mehrfachauswahl') : t('Umfrage · eine Antwort')}</span></div>
     <div class="poll-q">${esc(p.question)}</div>
     <div class="poll-opts">${options}</div>
-    <div class="poll-foot"><span>${voters.size} ${voters.size === 1 ? 'Stimme' : 'Stimmen'}</span>
-      ${canClose && !p.closed ? '<button class="poll-close" data-act="close-poll">Umfrage beenden</button>' : ''}</div>
+    <div class="poll-foot"><span>${plural(voters.size, 'Stimme', 'Stimmen')}</span>
+      ${canClose && !p.closed ? `<button class="poll-close" data-act="close-poll">${t('Umfrage beenden')}</button>` : ''}</div>
   </div>`;
 }
 
@@ -1138,8 +1174,8 @@ function messageNode(m, prev) {
     return `<button class="reaction ${users.includes(state.me.id) ? 'mine' : ''}" data-emoji="${esc(emoji)}" title="${esc(names)}">${esc(emoji)}<span class="n">${users.length}</span></button>`;
   }).join('');
 
-  const edited = m.editedAt ? `<span class="edited" title="${esc(fullFmt.format(m.editedAt))}">(bearbeitet)</span>` : '';
-  const used = m.interaction ? `<div class="msg-interaction"><b>${esc(userOf(m.interaction.userId).displayName)}</b> hat <code>/${esc(m.interaction.command)}</code> benutzt</div>` : '';
+  const edited = m.editedAt ? `<span class="edited" title="${esc(fullFmt.format(m.editedAt))}">${t('(bearbeitet)')}</span>` : '';
+  const used = m.interaction ? `<div class="msg-interaction">${t('<b>{name}</b> hat <code>/{command}</code> benutzt', { name: esc(userOf(m.interaction.userId).displayName), command: esc(m.interaction.command) })}</div>` : '';
   if (m.ephemeral) {
     return h(`<div class="msg first ephemeral" data-id="${esc(m.id)}">
       ${avatar(author)}
@@ -1147,7 +1183,7 @@ function messageNode(m, prev) {
         ${used}
         <div class="msg-head"><span class="msg-author${exClass(author)}" style="--c:${esc(author.color)}">${esc(author.displayName)}</span>${verified(author)}<span class="msg-time">${esc(stamp(m.createdAt))}</span></div>
         <div class="msg-body">${formatMessage(m.content)}</div>
-        <div class="ephemeral-note">Nur für dich sichtbar · <button data-act="dismiss">Ausblenden</button></div>
+        <div class="ephemeral-note">${t('Nur für dich sichtbar')} · <button data-act="dismiss">${t('Ausblenden')}</button></div>
       </div>
     </div>`);
   }
@@ -1155,7 +1191,7 @@ function messageNode(m, prev) {
     ${cont ? `<div class="gutter-time" title="${esc(stamp(m.createdAt))}">${timeFmt.format(m.createdAt)}</div>` : avatar(author)}
     <div class="msg-main">
       ${used}
-      ${m.replyTo ? `<div class="msg-reply" data-ref="${esc(m.replyTo)}">${ref ? `<b>${esc(userOf(ref.authorId).displayName)}</b><span>${esc(previewText(ref))}</span>` : '<span><i>Ursprüngliche Nachricht nicht geladen oder gelöscht</i></span>'}</div>` : ''}
+      ${m.replyTo ? `<div class="msg-reply" data-ref="${esc(m.replyTo)}">${ref ? `<b>${esc(userOf(ref.authorId).displayName)}</b><span>${esc(previewText(ref))}</span>` : `<span><i>${t('Ursprüngliche Nachricht nicht geladen oder gelöscht')}</i></span>`}</div>` : ''}
       ${cont ? '' : `<div class="msg-head"><span class="msg-author${exClass(author)}" style="--c:${esc(author.color)}">${esc(author.displayName)}</span>${verified(author)}${hub && hub.ownerId === author.id ? '<span class="owner-tag">OWNER</span>' : ''}<span class="msg-time" title="${esc(fullFmt.format(m.createdAt))}">${esc(stamp(m.createdAt))}</span></div>`}
       ${m.content ? `<div class="msg-body ${isJumbo(m.content) ? 'jumbo' : ''}">${formatMessage(m.content)}${edited}</div>` : ''}
       ${pollHtml(m, canDelete)}
@@ -1164,12 +1200,12 @@ function messageNode(m, prev) {
       ${reactions ? `<div class="reactions">${reactions}</div>` : ''}
     </div>
     <div class="msg-tools">
-      ${QUICK_REACTIONS.map((e) => `<button class="icon-btn quick" data-act="react" data-emoji="${e}" title="Mit ${e} reagieren">${e}</button>`).join('')}
-      <button class="icon-btn" data-act="pick" title="Reaktion hinzufügen">${ICONS.smile}</button>
-      <button class="icon-btn" data-act="reply" title="Antworten">${ICONS.reply}</button>
-      ${m.content ? `<button class="icon-btn" data-act="copy" title="Text kopieren">${ICONS.copy}</button>` : ''}
-      ${mine && m.content ? `<button class="icon-btn" data-act="edit" title="Bearbeiten">${ICONS.edit}</button>` : ''}
-      ${canDelete ? `<button class="icon-btn danger" data-act="delete" title="Löschen">${ICONS.trash}</button>` : ''}
+      ${QUICK_REACTIONS.map((e) => `<button class="icon-btn quick" data-act="react" data-emoji="${e}" title="${t('Mit {emoji} reagieren', { emoji: e })}">${e}</button>`).join('')}
+      <button class="icon-btn" data-act="pick" title="${t('Reaktion hinzufügen')}">${ICONS.smile}</button>
+      <button class="icon-btn" data-act="reply" title="${t('Antworten')}">${ICONS.reply}</button>
+      ${m.content ? `<button class="icon-btn" data-act="copy" title="${t('Text kopieren')}">${ICONS.copy}</button>` : ''}
+      ${mine && m.content ? `<button class="icon-btn" data-act="edit" title="${t('Bearbeiten')}">${ICONS.edit}</button>` : ''}
+      ${canDelete ? `<button class="icon-btn danger" data-act="delete" title="${t('Löschen')}">${ICONS.trash}</button>` : ''}
     </div>
   </div>`);
   if (m.id === state.editingId) startEdit(m.id, node);
@@ -1234,8 +1270,8 @@ function updateJumpBtn() {
   btn.classList.toggle('hidden', !far || !state.channels.has(state.view.channelId));
   btn.classList.toggle('has-new', state.missed > 0);
   btn.innerHTML = state.missed
-    ? `${state.missed > 99 ? '99+' : state.missed} neue Nachricht${state.missed === 1 ? '' : 'en'} ${ICONS.arrowDown}`
-    : `Zum Neuesten ${ICONS.arrowDown}`;
+    ? `${state.missed > 99 ? t('99+ neue Nachrichten') : plural(state.missed, 'neue Nachricht', 'neue Nachrichten')} ${ICONS.arrowDown}`
+    : `${t('Zum Neuesten')} ${ICONS.arrowDown}`;
 }
 
 $('#jump-btn').addEventListener('click', () => {
@@ -1249,7 +1285,7 @@ function findMsg(id) {
 
 function jumpTo(id) {
   const node = $(`.msg[data-id="${id}"]`);
-  if (!node) return toast('Nachricht ist nicht geladen.', 'error');
+  if (!node) return toast(t('Nachricht ist nicht geladen.'), 'error');
   node.scrollIntoView({ behavior: 'smooth', block: 'center' });
   node.classList.remove('highlight');
   void node.offsetWidth;
@@ -1270,10 +1306,11 @@ function onMessageNew(msg) {
     const box = $('#messages');
     const atBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 160;
     const prev = ch.list[ch.list.length - 2];
-    if (prev && !sameDay(prev.createdAt, msg.createdAt)) box.append(h(`<div class="day-divider">${esc(dayLabel(msg.createdAt))}</div>`));
+    if (!prev || !sameDay(prev.createdAt, msg.createdAt)) box.append(h(`<div class="day-divider">${esc(dayLabel(msg.createdAt))}</div>`));
     const node = messageNode(msg, prev);
     node.classList.add('new');
     box.append(node);
+    document.dispatchEvent(new CustomEvent('nexora:message', { detail: msg }));
     if (atBottom || mine) box.scrollTop = box.scrollHeight;
     else state.missed += 1;
     updateJumpBtn();
@@ -1346,7 +1383,7 @@ async function votePoll(messageId, optionId) {
 
 async function closePoll(messageId) {
   const channelId = state.view.channelId;
-  if (!(await confirmDialog('Umfrage beenden?', 'Danach kann niemand mehr abstimmen. Das Ergebnis bleibt sichtbar.', 'Beenden'))) return;
+  if (!(await confirmDialog(t('Umfrage beenden?'), t('Danach kann niemand mehr abstimmen. Das Ergebnis bleibt sichtbar.'), t('Beenden')))) return;
   try {
     await req('poll:close', { channelId, messageId });
   } catch (ex) {
@@ -1358,7 +1395,7 @@ async function deleteMessage(id) {
   const msg = findMsg(id);
   if (!msg) return;
   const text = previewText(msg);
-  const ok = await confirmDialog('Nachricht löschen?', `„${text.slice(0, 120)}${text.length > 120 ? '…' : ''}“ wird für alle entfernt.`, 'Löschen');
+  const ok = await confirmDialog(t('Nachricht löschen?'), t('„{text}“ wird für alle entfernt.', { text: text.slice(0, 120) + (text.length > 120 ? '…' : '') }), t('Löschen'));
   if (!ok) return;
   try {
     await req('message:delete', { channelId: state.view.channelId, messageId: id });
@@ -1373,7 +1410,7 @@ function startEdit(id, node = $(`.msg[data-id="${id}"]`)) {
   state.editingId = id;
   const body = node.querySelector('.msg-body');
   const box = h(`<div class="edit-box"><textarea rows="1" maxlength="2000"></textarea>
-    <small>Esc zum <b data-act="cancel">Abbrechen</b> · Enter zum <b data-act="save">Speichern</b></small></div>`);
+    <small>${t('Esc zum <b data-act="cancel">Abbrechen</b> · Enter zum <b data-act="save">Speichern</b>')}</small></div>`);
   const ta = box.querySelector('textarea');
   ta.value = msg.content;
   body.replaceWith(box);
@@ -1433,7 +1470,7 @@ function renderReplyBar() {
   const msg = state.replyTo;
   if (!msg) { bar.classList.add('hidden'); return; }
   bar.classList.remove('hidden');
-  bar.innerHTML = `Antwort an <b>${esc(userOf(msg.authorId).displayName)}</b><button class="icon-btn x" title="Abbrechen">${ICONS.x}</button>`;
+  bar.innerHTML = `${t('Antwort an <b>{name}</b>', { name: esc(userOf(msg.authorId).displayName) })}<button class="icon-btn x" title="${t('Abbrechen')}">${ICONS.x}</button>`;
   bar.querySelector('.x').onclick = () => setReply(null);
 }
 
@@ -1514,7 +1551,7 @@ async function sendMessage() {
   const text = input.value.trim();
   const channelId = state.view.channelId;
   if (!channelId) return;
-  if (state.uploads.some((u) => !u.attachment && !u.error)) return toast('Warte kurz, die Dateien werden noch hochgeladen.');
+  if (state.uploads.some((u) => !u.attachment && !u.error)) return toast(t('Warte kurz, die Dateien werden noch hochgeladen.'));
   const sent = state.uploads.filter((u) => u.attachment);
   if (!text && !sent.length) return;
   const match = !sent.length && matchCommand(text);
@@ -1585,13 +1622,13 @@ function renderSlash(resetSelection = true) {
     slash.items = all.filter((c) => c.name.startsWith(term)).concat(all.filter((c) => !c.name.startsWith(term) && c.name.includes(term))).slice(0, 8);
     slash.sel = Math.min(slash.sel, Math.max(0, slash.items.length - 1));
     if (!slash.items.length) {
-      pop.innerHTML = `<div class="slash-empty">${all.length ? 'Kein passender Befehl.' : currentHub() ? `In diesem Hub gibt es noch keine Bots. Erstelle einen unter ${ICONS.bot} <b>Meine Bots</b>.` : 'Slash-Befehle gibt es nur in Hubs.'}</div>`;
+      pop.innerHTML = `<div class="slash-empty">${all.length ? t('Kein passender Befehl.') : currentHub() ? t('In diesem Hub gibt es noch keine Bots. Erstelle einen unter {icon} <b>Meine Bots</b>.', { icon: ICONS.bot }) : t('Slash-Befehle gibt es nur in Hubs.')}</div>`;
       pop.classList.remove('hidden');
       return;
     }
-    pop.innerHTML = `<div class="slash-head">Befehle</div>${slash.items.map((c, i) => `<button type="button" class="slash-item ${i === slash.sel ? 'sel' : ''}" data-i="${i}">
+    pop.innerHTML = `<div class="slash-head">${t('Befehle')}</div>${slash.items.map((c, i) => `<button type="button" class="slash-item ${i === slash.sel ? 'sel' : ''}" data-i="${i}">
       ${avatar(c.bot, { size: 26 })}
-      <span class="slash-main"><span class="slash-name">${esc(commandUsage(c))}</span><span class="slash-desc">${esc(c.description || 'Keine Beschreibung')}</span></span>
+      <span class="slash-main"><span class="slash-name">${esc(commandUsage(c))}</span><span class="slash-desc">${esc(c.description ? tServer(c.description) : t('Keine Beschreibung'))}</span></span>
       <span class="slash-bot">${esc(c.bot.displayName)}</span>
     </button>`).join('')}`;
     pop.classList.remove('hidden');
@@ -1607,7 +1644,7 @@ function renderSlash(resetSelection = true) {
   const current = Math.min(command.options.length - 1, /\s$/.test(value) ? words : Math.max(0, words - 1));
   const opt = command.options[current];
   pop.innerHTML = `<div class="slash-hint"><code>/${esc(command.name)}</code> ${command.options.map((o, i) => `<span class="slash-opt ${i === current ? 'sel' : ''}">${o.required ? '&lt;' : '['}${esc(o.name)}${o.required ? '&gt;' : ']'}</span>`).join(' ')}
-    ${opt.description ? `<div class="slash-desc">${esc(opt.name)}: ${esc(opt.description)}${opt.required ? '' : ' (optional)'}</div>` : ''}</div>`;
+    ${opt.description ? `<div class="slash-desc">${esc(opt.name)}: ${esc(tServer(opt.description))}${opt.required ? '' : ` ${t('(optional)')}`}</div>` : ''}</div>`;
   pop.classList.remove('hidden');
 }
 
@@ -1650,7 +1687,7 @@ async function runCommand(channelId, command, args, raw) {
   $('#send-btn').disabled = true;
   try {
     const res = await req('command:run', { channelId, botId: command.bot.id, name: command.name, text: args });
-    for (const text of res.ephemeral || []) addEphemeral(channelId, res.botId, res.command || command.name, text);
+    for (const text of res.ephemeral || []) addEphemeral(channelId, res.botId, res.command || command.name, tServer(text));
   } catch (ex) {
     toast(ex.message, 'error');
     if (!input.value && state.view.channelId === channelId) { input.value = raw; autosize(input); saveDraft(); }
@@ -1686,18 +1723,18 @@ function addFiles(files) {
   if (!channelId || isVoiceChannel(channelId)) return;
   for (const file of files) {
     if (state.uploads.length >= MAX_ATTACHMENTS) {
-      toast(`Maximal ${MAX_ATTACHMENTS} Dateien pro Nachricht.`, 'error');
+      toast(t('Maximal {n} Dateien pro Nachricht.', { n: MAX_ATTACHMENTS }), 'error');
       break;
     }
     if (file.size > MAX_FILE) {
-      toast(`„${file.name}“ ist zu groß (max. ${MAX_FILE / 1024 / 1024} MB).`, 'error');
+      toast(t('„{name}“ ist zu groß (max. {n} MB).', { name: file.name, n: MAX_FILE / 1024 / 1024 }), 'error');
       continue;
     }
     if (!file.size) {
-      toast(`„${file.name}“ ist leer.`, 'error');
+      toast(t('„{name}“ ist leer.', { name: file.name }), 'error');
       continue;
     }
-    const up = { file, name: file.name || 'bild.png', progress: 0, attachment: null, error: null, xhr: null, preview: null };
+    const up = { file, name: file.name || t('bild.png'), progress: 0, attachment: null, error: null, xhr: null, preview: null };
     if (file.type.startsWith('image/')) up.preview = URL.createObjectURL(file);
     state.uploads.push(up);
     upload(up);
@@ -1735,7 +1772,7 @@ async function upload(up) {
     let data = {};
     try { data = JSON.parse(xhr.responseText); } catch { /* not JSON */ }
     if (xhr.status === 200 && data.attachment) up.attachment = data.attachment;
-    else up.error = data.error || 'Upload fehlgeschlagen.';
+    else up.error = data.error ? tServer(data.error) : t('Upload fehlgeschlagen.');
     if (up.error) toast(`${up.name}: ${up.error}`, 'error');
     renderAttachTray();
     updateComposerState();
@@ -1766,7 +1803,7 @@ function renderAttachTray() {
     const chip = h(`<div class="att-chip ${status}" data-key="${i}" title="${esc(up.error || up.name)}">
       ${up.preview ? `<img src="${up.preview}" alt="" />` : `<span class="att-ico">${ICONS.file}</span>`}
       <span class="att-meta"><span class="att-name">${esc(up.name)}</span><span class="att-size">${up.error ? esc(up.error) : formatSize(up.file.size)}</span></span>
-      <button type="button" class="icon-btn" title="Entfernen">${ICONS.x}</button>
+      <button type="button" class="icon-btn" title="${t('Entfernen')}">${ICONS.x}</button>
       ${status === 'busy' ? `<span class="att-progress"><i style="width:${Math.round(up.progress * 100)}%"></i></span>` : ''}
     </div>`);
     chip.querySelector('button').onclick = () => removeUpload(up);
@@ -1864,10 +1901,11 @@ function showProfile(userId, anchor) {
       ${avatar(u, { dot: true })}
       <h4>${esc(u.displayName)}${verified(u)}</h4>
       <div class="handle">@${esc(u.username)} · ${STATUS_LABEL[st]}</div>
-      ${ex ? `<div class="ex-badge">${esc(ex.badge)} · Exklusiv</div>` : ''}
+      ${ex ? `<div class="ex-badge">${esc(ex.badge)} · ${t('Exklusiv')}</div>` : ''}
+      ${ghostBadge(u)}
       ${u.bio ? `<div class="bio">${esc(u.bio)}</div>` : '<div style="height:12px"></div>'}
-      <div class="meta">Dabei seit ${u.createdAt ? esc(fullFmt.format(u.createdAt).split(',')[0]) : '–'}</div>
-      ${isMe ? `<button class="btn block" data-act="edit">${ICONS.edit} Profil bearbeiten</button>` : `<button class="btn primary block" data-act="dm">${ICONS.chat} Nachricht senden</button>`}
+      <div class="meta">${t('Dabei seit {date}', { date: u.createdAt ? esc(dateFmt.format(u.createdAt)) : '–' })}</div>
+      ${isMe ? `<button class="btn block" data-act="edit">${ICONS.edit} ${t('Profil bearbeiten')}</button>` : `<button class="btn primary block" data-act="dm">${ICONS.chat} ${t('Nachricht senden')}</button>`}
     </div>
   </div>`);
   pop.querySelector('[data-act]').onclick = () => (isMe ? (closePopover(), openSettings()) : openDmWith(u.id));
@@ -1875,7 +1913,7 @@ function showProfile(userId, anchor) {
 }
 
 function showBotProfile(u, anchor) {
-  const commands = (u.commands || []).map((c) => `<li><code>/${esc(c.name)}</code><span>${esc(c.description || '')}</span></li>`).join('');
+  const commands = (u.commands || []).map((c) => `<li><code>/${esc(c.name)}</code><span>${esc(c.description ? tServer(c.description) : '')}</span></li>`).join('');
   const mine = u.ownerId === state.me.id;
   const ex = exclusiveOf(u);
   const pop = h(`<div class="popover${exClass(u)}" style="--c:${esc(u.color)}">
@@ -1883,11 +1921,11 @@ function showBotProfile(u, anchor) {
     <div class="profile-body">
       ${avatar(u, { dot: true })}
       <h4>${esc(u.displayName)}${verified(u)}</h4>
-      <div class="handle">@${esc(u.username)} · ${u.system ? 'Offizieller Bot' : u.disabled ? 'Gesperrt' : 'Bot'}${u.ownerId ? ` · von ${esc(userOf(u.ownerId).displayName)}` : ''}</div>
-      ${ex ? `<div class="ex-badge">${esc(ex.badge)} · Exklusiv</div>` : ''}
-      ${u.bio ? `<div class="bio">${esc(u.bio)}</div>` : '<div style="height:12px"></div>'}
-      ${u.system && !state.me.official ? '' : commands ? `<div class="field"><span>Befehle${u.system ? ' <em>– nur für das Nexora-Team</em>' : ''}</span></div><ul class="bot-cmd-list">${commands}</ul>` : '<div class="meta">Noch keine Befehle.</div>'}
-      ${mine ? `<button class="btn block" data-act="edit">${ICONS.bot} Bot bearbeiten</button>` : ''}
+      <div class="handle">@${esc(u.username)} · ${u.system ? t('Offizieller Bot') : u.disabled ? t('Gesperrt') : 'Bot'}${u.ownerId ? ` · ${t('von {name}', { name: esc(userOf(u.ownerId).displayName) })}` : ''}</div>
+      ${ex ? `<div class="ex-badge">${esc(ex.badge)} · ${t('Exklusiv')}</div>` : ''}
+      ${u.bio ? `<div class="bio">${esc(u.system ? tServer(u.bio) : u.bio)}</div>` : '<div style="height:12px"></div>'}
+      ${u.system && !state.me.official ? '' : commands ? `<div class="field"><span>${t('Befehle')}${u.system ? ` <em>${t('– nur für das Nexora-Team')}</em>` : ''}</span></div><ul class="bot-cmd-list">${commands}</ul>` : `<div class="meta">${t('Noch keine Befehle.')}</div>`}
+      ${mine ? `<button class="btn block" data-act="edit">${ICONS.bot} ${t('Bot bearbeiten')}</button>` : ''}
     </div>
   </div>`);
   pop.querySelector('[data-act=edit]')?.addEventListener('click', () => { closePopover(); openBotEditor(u.id); });
@@ -1896,7 +1934,7 @@ function showBotProfile(u, anchor) {
 
 function openEmojiPicker(anchor, onPick, onClose) {
   closePopover();
-  const pop = h(`<div class="popover emoji-pop"><div class="section-label"><span>Emojis</span></div><div class="emoji-grid">
+  const pop = h(`<div class="popover emoji-pop"><div class="section-label"><span>${t('Emojis')}</span></div><div class="emoji-grid">
     ${EMOJIS.map((e) => `<button data-e="${e}">${e}</button>`).join('')}</div></div>`);
   pop.addEventListener('click', (e) => {
     const b = e.target.closest('[data-e]');
@@ -1939,10 +1977,10 @@ function closeAllModals() {
   $$('#modal-root .modal-backdrop').forEach((b) => b.dispatchEvent(new MouseEvent('mousedown', { bubbles: true })));
 }
 
-function confirmDialog(title, text, confirmLabel = 'Bestätigen') {
+function confirmDialog(title, text, confirmLabel = t('Bestätigen')) {
   return new Promise((resolve) => {
     const { modal, close } = openModal(`<h3>${esc(title)}</h3><p class="sub">${esc(text)}</p>
-      <div class="modal-actions"><button class="btn" data-close>Abbrechen</button><button class="btn danger" data-ok>${esc(confirmLabel)}</button></div>`);
+      <div class="modal-actions"><button class="btn" data-close>${t('Abbrechen')}</button><button class="btn danger" data-ok>${esc(confirmLabel)}</button></div>`);
     let done = false;
     const finish = (v) => { if (!done) { done = true; resolve(v); } };
     modal.querySelector('[data-ok]').onclick = () => { finish(true); close(); };
@@ -1953,7 +1991,7 @@ function confirmDialog(title, text, confirmLabel = 'Bestätigen') {
 }
 
 function iconPicker(selected) {
-  return `<div class="icon-picker">${HUB_ICONS.map((i) => `<button type="button" data-icon="${i}" class="${i === selected ? 'sel' : ''}" title="${i ? '' : 'Initialen'}">${i || 'Aa'}</button>`).join('')}</div>`;
+  return `<div class="icon-picker">${HUB_ICONS.map((i) => `<button type="button" data-icon="${i}" class="${i === selected ? 'sel' : ''}" title="${i ? '' : t('Initialen')}">${i || 'Aa'}</button>`).join('')}</div>`;
 }
 
 function bindIconPicker(modal) {
@@ -1982,37 +2020,37 @@ async function submitting(form, fn) {
 
 function openCreateHub() {
   const { modal, close } = openModal(`
-    <h3>Neuen Hub starten</h3>
-    <p class="sub">Ein Hub ist euer eigener Ort mit Kanälen. Lad Freunde per Code ein.</p>
+    <h3>${t('Neuen Hub starten')}</h3>
+    <p class="sub">${t('Ein Hub ist euer eigener Ort mit Kanälen. Lad Freunde per Code ein.')}</p>
     <form>
-      <label class="field"><span>Name</span><input name="name" maxlength="40" required placeholder="z. B. Late Night Squad" /></label>
-      <div class="field"><span>Symbol</span></div>
+      <label class="field"><span>${t('Name')}</span><input name="name" maxlength="40" required placeholder="${t('z. B. Late Night Squad')}" /></label>
+      <div class="field"><span>${t('Symbol')}</span></div>
       ${iconPicker('🔥')}
       <p class="form-error"></p>
-      <div class="modal-actions"><button type="button" class="btn" data-close>Abbrechen</button><button type="submit" class="btn primary">Hub erstellen</button></div>
+      <div class="modal-actions"><button type="button" class="btn" data-close>${t('Abbrechen')}</button><button type="submit" class="btn primary">${t('Hub erstellen')}</button></div>
     </form>`);
   const getIcon = bindIconPicker(modal);
   const form = modal.querySelector('form');
   form.onsubmit = (e) => {
     e.preventDefault();
     submitting(form, async () => {
-      const { hub } = await req('hub:create', { name: form.name.value, icon: getIcon() });
+      const { hub } = await req('hub:create', { name: form.name.value, icon: getIcon(), lang: LANG });
       state.hubs.set(hub.id, hub);
       close();
       openHub(hub.id);
-      toast(`„${hub.name}“ ist live!`);
+      toast(t('„{name}“ ist live!', { name: hub.name }));
     });
   };
 }
 
 function openJoinHub() {
   const { modal, close } = openModal(`
-    <h3>Hub beitreten</h3>
-    <p class="sub">Gib einen Einladungscode oder -link ein.</p>
+    <h3>${t('Hub beitreten')}</h3>
+    <p class="sub">${t('Gib einen Einladungscode oder -link ein.')}</p>
     <form>
-      <label class="field"><span>Einladung</span><input name="code" required placeholder="z. B. NEXORA oder https://…/?invite=ABC123" /></label>
+      <label class="field"><span>${t('Einladung')}</span><input name="code" required placeholder="${t('z. B. NEXORA oder https://…/?invite=ABC123')}" /></label>
       <p class="form-error"></p>
-      <div class="modal-actions"><button type="button" class="btn" data-close>Abbrechen</button><button type="submit" class="btn primary">Beitreten</button></div>
+      <div class="modal-actions"><button type="button" class="btn" data-close>${t('Abbrechen')}</button><button type="submit" class="btn primary">${t('Beitreten')}</button></div>
     </form>`);
   const form = modal.querySelector('form');
   form.onsubmit = (e) => {
@@ -2029,7 +2067,7 @@ async function joinHub(code, throwErrors = false) {
     const { hub } = await req('hub:join', { code });
     state.hubs.set(hub.id, hub);
     openHub(hub.id);
-    toast(`Willkommen in „${hub.name}“`);
+    toast(t('Willkommen in „{name}“', { name: hub.name }));
   } catch (ex) {
     if (throwErrors) throw ex;
     toast(ex.message, 'error');
@@ -2044,11 +2082,11 @@ function inviteLink(hub) {
 function openInvite(hubId) {
   const hub = state.hubs.get(hubId);
   const { modal } = openModal(`
-    <h3>Leute in ${esc(hub.name)} einladen</h3>
-    <p class="sub">Teile den Code oder den Link. Wer ihn hat, kann beitreten.</p>
-    <div class="invite-box"><code>${esc(hub.inviteCode)}</code><button class="btn primary" data-act="code">${ICONS.copy} Code</button></div>
-    <div class="invite-box"><code style="font-size:13px;letter-spacing:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(inviteLink(hub))}</code><button class="btn" data-act="link">${ICONS.copy} Link</button></div>
-    <div class="modal-actions"><button class="btn" data-close>Fertig</button></div>`);
+    <h3>${t('Leute in {name} einladen', { name: esc(hub.name) })}</h3>
+    <p class="sub">${t('Teile den Code oder den Link. Wer ihn hat, kann beitreten.')}</p>
+    <div class="invite-box"><code>${esc(hub.inviteCode)}</code><button class="btn primary" data-act="code">${ICONS.copy} ${t('Code')}</button></div>
+    <div class="invite-box"><code style="font-size:13px;letter-spacing:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(inviteLink(hub))}</code><button class="btn" data-act="link">${ICONS.copy} ${t('Link')}</button></div>
+    <div class="modal-actions"><button class="btn" data-close>${t('Fertig')}</button></div>`);
   modal.querySelector('[data-act=code]').onclick = () => copyText(hub.inviteCode);
   modal.querySelector('[data-act=link]').onclick = () => copyText(inviteLink(hub));
 }
@@ -2060,43 +2098,43 @@ function openHubSettings(hubId) {
   if (!isOwner) {
     const { modal, close } = openModal(`
       <h3>${hub.icon ? esc(hub.icon) + ' ' : ''}${esc(hub.name)}</h3>
-      <p class="sub">${hub.members.length} Mitglieder · Besitzer: ${hub.ownerId ? esc(userOf(hub.ownerId).displayName) : 'Nexora'}</p>
-      <div class="invite-box"><code>${esc(hub.inviteCode)}</code><button class="btn primary" data-act="copy">${ICONS.copy} Kopieren</button></div>
-      <div class="modal-actions"><button class="btn danger" data-act="leave">${ICONS.logout} Hub verlassen</button><span class="spacer"></span><button class="btn" data-close>Schließen</button></div>`);
+      <p class="sub">${plural(hub.members.length, 'Mitglied', 'Mitglieder')} · ${t('Besitzer: {name}', { name: hub.ownerId ? esc(userOf(hub.ownerId).displayName) : 'Nexora' })}</p>
+      <div class="invite-box"><code>${esc(hub.inviteCode)}</code><button class="btn primary" data-act="copy">${ICONS.copy} ${t('Kopieren')}</button></div>
+      <div class="modal-actions"><button class="btn danger" data-act="leave">${ICONS.logout} ${t('Hub verlassen')}</button><span class="spacer"></span><button class="btn" data-close>${t('Schließen')}</button></div>`);
     modal.querySelector('[data-act=copy]').onclick = () => copyText(inviteLink(hub));
     modal.querySelector('[data-act=leave]').onclick = async () => {
       close();
-      if (!(await confirmDialog('Hub verlassen?', `Du verlässt „${hub.name}“. Du kannst jederzeit per Einladung zurückkommen.`, 'Verlassen'))) return;
+      if (!(await confirmDialog(t('Hub verlassen?'), t('Du verlässt „{name}“. Du kannst jederzeit per Einladung zurückkommen.', { name: hub.name }), t('Verlassen')))) return;
       req('hub:leave', { hubId }).catch((ex) => toast(ex.message, 'error'));
     };
     return;
   }
 
   const { modal, close } = openModal(`
-    <h3>Hub-Einstellungen</h3>
-    <p class="sub">Nur ${hub.isLounge ? 'offizielle Accounts' : 'du als Besitzer'} ${hub.isLounge ? 'sehen' : 'siehst'} diese Optionen.</p>
+    <h3>${t('Hub-Einstellungen')}</h3>
+    <p class="sub">${hub.isLounge ? t('Nur offizielle Accounts sehen diese Optionen.') : t('Nur du als Besitzer siehst diese Optionen.')}</p>
     <form>
-      <label class="field"><span>Name</span><input name="name" maxlength="40" required /></label>
-      <div class="field"><span>Symbol</span></div>
+      <label class="field"><span>${t('Name')}</span><input name="name" maxlength="40" required /></label>
+      <div class="field"><span>${t('Symbol')}</span></div>
       ${iconPicker(hub.icon)}
       <p class="form-error"></p>
-      <div class="modal-actions"><button type="submit" class="btn primary">Speichern</button></div>
+      <div class="modal-actions"><button type="submit" class="btn primary">${t('Speichern')}</button></div>
     </form>
     <hr />
-    <div class="field"><span>Einladungscode</span></div>
+    <div class="field"><span>${t('Einladungscode')}</span></div>
     <div class="invite-box"><code data-code>${esc(hub.inviteCode)}</code>
-      <button class="btn" data-act="copy" title="Link kopieren">${ICONS.copy}</button>
-      <button class="btn" data-act="regen">Neu</button></div>
+      <button class="btn" data-act="copy" title="${t('Link kopieren')}">${ICONS.copy}</button>
+      <button class="btn" data-act="regen">${t('Neu')}</button></div>
     <hr />
-    <div class="field"><span>Bots</span></div>
+    <div class="field"><span>${t('Bots')}</span></div>
     <div class="hub-bots"></div>
     <form class="bot-add-row">
-      <input class="input" name="bot" maxlength="32" placeholder="Bot-Name, z. B. wuerfelbot" autocomplete="off" />
-      <button type="submit" class="btn">${ICONS.plus} Hinzufügen</button>
+      <input class="input" name="bot" maxlength="32" placeholder="${t('Bot-Name, z. B. wuerfelbot')}" autocomplete="off" />
+      <button type="submit" class="btn">${ICONS.plus} ${t('Hinzufügen')}</button>
     </form>
     <div class="my-bot-chips"></div>
     <hr />
-    <div class="modal-actions">${hub.isLounge ? '' : `<button class="btn danger" data-act="delete">${ICONS.trash} Hub löschen</button>`}<span class="spacer"></span><button class="btn" data-close>Schließen</button></div>`);
+    <div class="modal-actions">${hub.isLounge ? '' : `<button class="btn danger" data-act="delete">${ICONS.trash} ${t('Hub löschen')}</button>`}<span class="spacer"></span><button class="btn" data-close>${t('Schließen')}</button></div>`);
   const form = modal.querySelector('form');
   form.name.value = hub.name;
   const getIcon = bindIconPicker(modal);
@@ -2104,7 +2142,7 @@ function openHubSettings(hubId) {
     e.preventDefault();
     submitting(form, async () => {
       await req('hub:update', { hubId, name: form.name.value, icon: getIcon() });
-      toast('Gespeichert');
+      toast(t('Gespeichert'));
     });
   };
   modal.querySelector('[data-act=copy]').onclick = () => copyText(inviteLink(state.hubs.get(hubId)));
@@ -2112,7 +2150,7 @@ function openHubSettings(hubId) {
     try {
       const { inviteCode } = await req('hub:regenerateInvite', { hubId });
       modal.querySelector('[data-code]').textContent = inviteCode;
-      toast('Neuer Code erstellt – der alte gilt nicht mehr');
+      toast(t('Neuer Code erstellt – der alte gilt nicht mehr'));
     } catch (ex) {
       toast(ex.message, 'error');
     }
@@ -2134,7 +2172,7 @@ function openHubSettings(hubId) {
   const deleteBtn = modal.querySelector('[data-act=delete]');
   if (deleteBtn) deleteBtn.onclick = async () => {
     close();
-    if (!(await confirmDialog('Hub endgültig löschen?', `„${hub.name}“ und alle Nachrichten werden für alle Mitglieder gelöscht. Das kann nicht rückgängig gemacht werden.`, 'Endgültig löschen'))) return;
+    if (!(await confirmDialog(t('Hub endgültig löschen?'), t('„{name}“ und alle Nachrichten werden für alle Mitglieder gelöscht. Das kann nicht rückgängig gemacht werden.', { name: hub.name }), t('Endgültig löschen')))) return;
     req('hub:delete', { hubId }).catch((ex) => toast(ex.message, 'error'));
   };
 }
@@ -2145,7 +2183,7 @@ async function addBotToHub(hubId, bot) {
   state.presence.set(res.bot.id, res.bot.disabled ? 'offline' : 'online');
   const hub = state.hubs.get(hubId);
   if (hub && !hub.members.includes(res.bot.id)) hub.members.push(res.bot.id);
-  toast(`${res.bot.displayName} ist jetzt in „${hub?.name || 'dem Hub'}“`);
+  toast(hub ? t('{bot} ist jetzt in „{hub}“', { bot: res.bot.displayName, hub: hub.name }) : t('{bot} ist jetzt im Hub', { bot: res.bot.displayName }));
 }
 
 // The bots of a hub inside its settings, plus one-click chips for the user's own bots.
@@ -2154,11 +2192,11 @@ async function renderHubBots(modal, hubId) {
   const list = modal.querySelector('.hub-bots');
   if (!hub || !list) return;
   const inHub = hub.members.map((m) => state.users.get(m)).filter((u) => u?.bot);
-  list.innerHTML = inHub.length ? '' : '<div class="empty-hint" style="padding:4px 0 12px">Noch keine Bots in diesem Hub.</div>';
+  list.innerHTML = inHub.length ? '' : `<div class="empty-hint" style="padding:4px 0 12px">${t('Noch keine Bots in diesem Hub.')}</div>`;
   for (const u of inHub) {
     const row = h(`<div class="bot-row">${avatar(u, { size: 30 })}<div class="info"><div class="name">${esc(u.displayName)}${verified(u)}</div>
-      <div class="bio">@${esc(u.username)} · ${u.commands?.length || 0} Befehle</div></div>
-      <button class="icon-btn" title="Aus dem Hub entfernen">${ICONS.x}</button></div>`);
+      <div class="bio">@${esc(u.username)} · ${plural(u.commands?.length || 0, 'Befehl', 'Befehle')}</div></div>
+      <button class="icon-btn" title="${t('Aus dem Hub entfernen')}">${ICONS.x}</button></div>`);
     row.querySelector('button').onclick = async () => {
       try {
         await req('bot:hub:remove', { hubId, botId: u.id });
@@ -2174,7 +2212,7 @@ async function renderHubBots(modal, hubId) {
   try {
     const { bots } = await req('bot:list');
     const addable = bots.filter((b) => !hub.members.includes(b.id) && !b.disabled);
-    chips.innerHTML = addable.length ? '<span class="chips-label">Deine Bots:</span>' : '';
+    chips.innerHTML = addable.length ? `<span class="chips-label">${t('Deine Bots:')}</span>` : '';
     for (const b of addable) {
       const chip = h(`<button type="button" class="chip">${ICONS.plus} ${esc(b.displayName)}</button>`);
       chip.onclick = async () => {
@@ -2197,21 +2235,21 @@ function openChannelEditor(hubId, channelId, initialKind = 'text') {
   const channel = channelId && hub.channels.find((c) => c.id === channelId);
   let kind = channel ? channel.kind || 'text' : initialKind;
   const { modal, close } = openModal(`
-    <h3>${channel ? 'Kanal bearbeiten' : 'Kanal erstellen'}</h3>
-    <p class="sub">${channel ? `${esc(channelLabel(channel.id))} in ${esc(hub.name)}` : `Neuer Kanal in ${esc(hub.name)}`}</p>
+    <h3>${channel ? t('Kanal bearbeiten') : t('Kanal erstellen')}</h3>
+    <p class="sub">${channel ? t('{channel} in {hub}', { channel: esc(channelLabel(channel.id)), hub: esc(hub.name) }) : t('Neuer Kanal in {hub}', { hub: esc(hub.name) })}</p>
     <form>
-      ${channel ? '' : `<div class="field"><span>Art</span></div>
+      ${channel ? '' : `<div class="field"><span>${t('Art')}</span></div>
       <div class="kind-row">
-        <button type="button" class="kind-opt" data-kind="text"><b>#</b><span><strong>Text</strong><small>Nachrichten, Emojis, Links</small></span></button>
-        <button type="button" class="kind-opt" data-kind="voice">${ICONS.speaker}<span><strong>Sprache</strong><small>Zusammen reden in Echtzeit</small></span></button>
+        <button type="button" class="kind-opt" data-kind="text"><b>#</b><span><strong>${t('Text')}</strong><small>${t('Nachrichten, Emojis, Links')}</small></span></button>
+        <button type="button" class="kind-opt" data-kind="voice">${ICONS.speaker}<span><strong>${t('Sprache')}</strong><small>${t('Zusammen reden in Echtzeit')}</small></span></button>
       </div>`}
-      <label class="field"><span>Name</span><input name="name" maxlength="32" required placeholder="neuer-kanal" /></label>
-      <label class="field topic-field"><span>Thema <em>(optional)</em></span><input name="topic" maxlength="120" placeholder="Worum geht's hier?" /></label>
+      <label class="field"><span>${t('Name')}</span><input name="name" maxlength="32" required placeholder="${t('neuer-kanal')}" /></label>
+      <label class="field topic-field"><span>${t('Thema')} <em>${t('(optional)')}</em></span><input name="topic" maxlength="120" placeholder="${t("Worum geht's hier?")}" /></label>
       <p class="form-error"></p>
       <div class="modal-actions">
-        ${channel ? `<button type="button" class="btn danger" data-act="delete">${ICONS.trash} Löschen</button><span class="spacer"></span>` : ''}
-        <button type="button" class="btn" data-close>Abbrechen</button>
-        <button type="submit" class="btn primary">${channel ? 'Speichern' : 'Erstellen'}</button>
+        ${channel ? `<button type="button" class="btn danger" data-act="delete">${ICONS.trash} ${t('Löschen')}</button><span class="spacer"></span>` : ''}
+        <button type="button" class="btn" data-close>${t('Abbrechen')}</button>
+        <button type="submit" class="btn primary">${channel ? t('Speichern') : t('Erstellen')}</button>
       </div>
     </form>`);
   const form = modal.querySelector('form');
@@ -2222,7 +2260,7 @@ function openChannelEditor(hubId, channelId, initialKind = 'text') {
   const applyKind = () => {
     modal.querySelectorAll('.kind-opt').forEach((b) => b.classList.toggle('sel', b.dataset.kind === kind));
     modal.querySelector('.topic-field').classList.toggle('hidden', kind === 'voice');
-    form.name.placeholder = kind === 'voice' ? 'Treffpunkt' : 'neuer-kanal';
+    form.name.placeholder = kind === 'voice' ? t('Treffpunkt') : t('neuer-kanal');
   };
   modal.querySelector('.kind-row')?.addEventListener('click', (e) => {
     const b = e.target.closest('.kind-opt');
@@ -2253,8 +2291,8 @@ function openChannelEditor(hubId, channelId, initialKind = 'text') {
   };
   modal.querySelector('[data-act=delete]')?.addEventListener('click', async () => {
     close();
-    const text = channel.kind === 'voice' ? `${channelLabel(channel.id)} wird gelöscht. Wer gerade drin ist, fliegt raus.` : `#${channel.name} und alle Nachrichten darin werden gelöscht.`;
-    if (!(await confirmDialog('Kanal löschen?', text, 'Löschen'))) return;
+    const text = channel.kind === 'voice' ? t('{channel} wird gelöscht. Wer gerade drin ist, fliegt raus.', { channel: channelLabel(channel.id) }) : t('#{name} und alle Nachrichten darin werden gelöscht.', { name: channel.name });
+    if (!(await confirmDialog(t('Kanal löschen?'), text, t('Löschen')))) return;
     req('channel:delete', { channelId }).catch((ex) => toast(ex.message, 'error'));
   });
 }
@@ -2263,16 +2301,16 @@ function openPollCreator() {
   const channelId = state.view.channelId;
   if (!channelId || isVoiceChannel(channelId)) return;
   const { modal, close } = openModal(`
-    <h3>Umfrage erstellen</h3>
-    <p class="sub">Frag deine Crew – alle sehen die Ergebnisse live.</p>
+    <h3>${t('Umfrage erstellen')}</h3>
+    <p class="sub">${t('Frag deine Crew – alle sehen die Ergebnisse live.')}</p>
     <form>
-      <label class="field"><span>Frage</span><input name="question" maxlength="200" required placeholder="z. B. Wann zocken wir heute?" /></label>
-      <div class="field"><span>Antworten</span></div>
+      <label class="field"><span>${t('Frage')}</span><input name="question" maxlength="200" required placeholder="${t('z. B. Wann zocken wir heute?')}" /></label>
+      <div class="field"><span>${t('Antworten')}</span></div>
       <div class="poll-inputs"></div>
-      <button type="button" class="btn poll-add" data-act="add">${ICONS.plus} Antwort hinzufügen</button>
-      <label class="check-row"><input type="checkbox" name="multi" /><span>Mehrfachauswahl erlauben</span></label>
+      <button type="button" class="btn poll-add" data-act="add">${ICONS.plus} ${t('Antwort hinzufügen')}</button>
+      <label class="check-row"><input type="checkbox" name="multi" /><span>${t('Mehrfachauswahl erlauben')}</span></label>
       <p class="form-error"></p>
-      <div class="modal-actions"><button type="button" class="btn" data-close>Abbrechen</button><button type="submit" class="btn primary">${ICONS.poll} Umfrage starten</button></div>
+      <div class="modal-actions"><button type="button" class="btn" data-close>${t('Abbrechen')}</button><button type="submit" class="btn primary">${ICONS.poll} ${t('Umfrage starten')}</button></div>
     </form>`);
   const form = modal.querySelector('form');
   const list = modal.querySelector('.poll-inputs');
@@ -2280,13 +2318,13 @@ function openPollCreator() {
   const sync = () => {
     const rows = $$('.poll-input', list);
     rows.forEach((row, i) => {
-      row.querySelector('input').placeholder = `Antwort ${i + 1}`;
+      row.querySelector('input').placeholder = t('Antwort {n}', { n: i + 1 });
       row.querySelector('button').disabled = rows.length <= 2;
     });
     addBtn.classList.toggle('hidden', rows.length >= MAX_POLL_OPTIONS);
   };
   const addRow = (focus = false) => {
-    const row = h(`<div class="poll-input"><input maxlength="80" /><button type="button" class="icon-btn" title="Entfernen">${ICONS.x}</button></div>`);
+    const row = h(`<div class="poll-input"><input maxlength="80" /><button type="button" class="icon-btn" title="${t('Entfernen')}">${ICONS.x}</button></div>`);
     row.querySelector('button').onclick = () => { row.remove(); sync(); };
     // Enter jumps to the next answer (and adds one at the end) instead of submitting.
     row.querySelector('input').addEventListener('keydown', (e) => {
@@ -2307,7 +2345,7 @@ function openPollCreator() {
     e.preventDefault();
     submitting(form, async () => {
       const options = $$('.poll-input input', list).map((i) => i.value.trim()).filter(Boolean);
-      if (options.length < 2) throw new Error('Gib mindestens 2 Antworten ein.');
+      if (options.length < 2) throw new Error(t('Gib mindestens 2 Antworten ein.'));
       await req('poll:create', { channelId, question: form.question.value, options, multi: form.multi.checked });
       close();
     });
@@ -2318,22 +2356,22 @@ function openLightbox(url, name) {
   const { modal } = openModal(`
     <img src="${esc(url)}" alt="${esc(name)}" />
     <div class="lightbox-bar"><span>${esc(name)}</span>
-      <a class="btn" href="${esc(url)}?download" download="${esc(name)}">${ICONS.download} Herunterladen</a>
-      <button class="btn" data-close>Schließen</button></div>`, { className: 'lightbox' });
+      <a class="btn" href="${esc(url)}?download" download="${esc(name)}">${ICONS.download} ${t('Herunterladen')}</a>
+      <button class="btn" data-close>${t('Schließen')}</button></div>`, { className: 'lightbox' });
   modal.querySelector('img').onclick = () => modal.querySelector('[data-close]').click();
 }
 
 function openNewDm() {
   const { modal, close } = openModal(`
-    <h3>Neue Direktnachricht</h3>
-    <p class="sub">Suche nach Benutzername oder Anzeigename.</p>
-    <label class="field"><span>Suchen</span><input name="q" placeholder="Name eingeben…" autocomplete="off" /></label>
+    <h3>${t('Neue Direktnachricht')}</h3>
+    <p class="sub">${t('Suche nach Benutzername oder Anzeigename.')}</p>
+    <label class="field"><span>${t('Suchen')}</span><input name="q" placeholder="${t('Name eingeben…')}" autocomplete="off" /></label>
     <div class="result-list"></div>
-    <div class="modal-actions"><button class="btn" data-close>Schließen</button></div>`);
+    <div class="modal-actions"><button class="btn" data-close>${t('Schließen')}</button></div>`);
   const q = modal.querySelector('[name=q]');
   const list = modal.querySelector('.result-list');
   const render = (users) => {
-    list.innerHTML = users.length ? '' : '<div class="empty-hint">Niemand gefunden.</div>';
+    list.innerHTML = users.length ? '' : `<div class="empty-hint">${t('Niemand gefunden.')}</div>`;
     for (const u of users) {
       const row = h(`<button class="member${exClass(u)}" style="--c:${esc(u.color)}">${avatar(u, { dot: true })}<div class="info"><div class="name">${esc(u.displayName)}${verified(u)}</div><div class="bio">@${esc(u.username)}</div></div></button>`);
       row.onclick = () => { close(); openDmWith(u.id); };
@@ -2363,24 +2401,27 @@ function openSettings() {
   closePopover();
   const me = state.me;
   const { modal, close } = openModal(`
-    <h3>Dein Profil</h3>
+    <h3>${t('Dein Profil')}</h3>
     <p class="sub">@${esc(me.username)}</p>
     <form>
-      <label class="field"><span>Anzeigename</span><input name="displayName" maxlength="32" required /></label>
-      <label class="field"><span>Über mich <em>(optional)</em></span><textarea name="bio" maxlength="190" rows="3" placeholder="Erzähl was über dich"></textarea></label>
-      <div class="field"><span>Akzentfarbe</span></div>
+      <label class="field"><span>${t('Anzeigename')}</span><input name="displayName" maxlength="32" required /></label>
+      <label class="field"><span>${t('Über mich')} <em>${t('(optional)')}</em></span><textarea name="bio" maxlength="190" rows="3" placeholder="${t('Erzähl was über dich')}"></textarea></label>
+      <div class="field"><span>${t('Akzentfarbe')}</span></div>
       <div class="color-row">${ACCENTS.map((c) => `<button type="button" class="swatch ${c === me.color ? 'sel' : ''}" style="--c:${c}" data-c="${c}"></button>`).join('')}
-        <input type="color" value="${esc(me.color)}" title="Eigene Farbe" /></div>
-      <div class="field"><span>Halloween-Accessoire 🎃 <em>(alle sehen es)</em></span></div>
+        <input type="color" value="${esc(me.color)}" title="${t('Eigene Farbe')}" /></div>
+      <div class="field"><span>${t('Halloween-Accessoire 🎃')} <em>${t('(alle sehen es)')}</em></span></div>
       <div class="acc-row"></div>
-      <div class="field"><span>Status</span></div>
-      <div class="status-row">${['online', 'idle', 'dnd', 'invisible'].map((s) => `<button type="button" class="status-opt ${s === me.status ? 'sel' : ''}" data-s="${s}"><span class="dot ${s === 'invisible' ? 'offline' : s}"></span>${STATUS_LABEL[s]}</button>`).join('')}</div>
-      <label class="check-row"><input type="checkbox" name="notify" /><span>Desktop-Benachrichtigungen bei Erwähnungen und DMs <em>(auf diesem Gerät)</em></span></label>
-      <label class="check-row"><input type="checkbox" name="spooky" /><span>Gruseleffekte: Fledermäuse, Nebel und Geister zum Fangen 👻 <em>(auf diesem Gerät)</em></span></label>
+      <div class="field"><span>${t('Status')}</span></div>
+      <div class="status-row">${['online', 'idle', 'dnd', 'invisible'].map((s) => `<button type="button" class="status-opt ${s === me.status ? 'sel' : ''}" data-s="${s}">${statusDot(s === 'invisible' ? 'offline' : s)}${STATUS_LABEL[s]}</button>`).join('')}</div>
+      <div class="field"><span>${LANG === 'en' ? 'Language · Sprache' : 'Sprache · Language'}</span></div>
+      <div class="lang-row">${LANGS.map((l) => `<button type="button" class="status-opt lang-opt ${l.id === LANG ? 'sel' : ''}" data-lang="${l.id}"><span class="flag">${l.flag}</span>${esc(l.name)}</button>`).join('')}</div>
+      ${ghostStats(me)}
+      <label class="check-row"><input type="checkbox" name="notify" /><span>${t('Desktop-Benachrichtigungen bei Erwähnungen und DMs')} <em>${t('(auf diesem Gerät)')}</em></span></label>
+      <label class="check-row"><input type="checkbox" name="spooky" /><span>${t('Gruseleffekte: Fledermäuse, Nebel und Geister zum Fangen 👻')} <em>${t('(auf diesem Gerät)')}</em></span></label>
       <p class="form-error"></p>
       <div class="modal-actions sticky">
-        <button type="button" class="btn danger" data-act="logout" title="Abmelden">${ICONS.logout}<span class="btn-label">Abmelden</span></button><span class="spacer"></span>
-        <button type="button" class="btn" data-close>Abbrechen</button><button type="submit" class="btn primary">Speichern</button>
+        <button type="button" class="btn danger" data-act="logout" title="${t('Abmelden')}">${ICONS.logout}<span class="btn-label">${t('Abmelden')}</span></button><span class="spacer"></span>
+        <button type="button" class="btn" data-close>${t('Abbrechen')}</button><button type="submit" class="btn primary">${t('Speichern')}</button>
       </div>
     </form>`);
   const form = modal.querySelector('form');
@@ -2412,6 +2453,10 @@ function openSettings() {
     status = s.dataset.s;
     modal.querySelectorAll('.status-opt').forEach((x) => x.classList.toggle('sel', x === s));
   });
+  modal.querySelector('.lang-row').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-lang]');
+    if (b) setLanguage(b.dataset.lang);
+  });
   modal.querySelector('[data-act=logout]').onclick = logout;
   const notifyBox = form.notify;
   notifyBox.checked = Boolean(store('notify')) && 'Notification' in window && Notification.permission === 'granted';
@@ -2419,15 +2464,15 @@ function openSettings() {
     if (!notifyBox.checked) return store('notify', false);
     if (!('Notification' in window)) {
       notifyBox.checked = false;
-      return toast('Dein Browser unterstützt keine Benachrichtigungen.', 'error');
+      return toast(t('Dein Browser unterstützt keine Benachrichtigungen.'), 'error');
     }
     const permission = Notification.permission === 'default' ? await Notification.requestPermission() : Notification.permission;
     if (permission !== 'granted') {
       notifyBox.checked = false;
-      return toast('Benachrichtigungen sind im Browser blockiert. Erlaube sie in den Website-Einstellungen.', 'error');
+      return toast(t('Benachrichtigungen sind im Browser blockiert. Erlaube sie in den Website-Einstellungen.'), 'error');
     }
     store('notify', true);
-    toast('Benachrichtigungen sind an');
+    toast(t('Benachrichtigungen sind an'));
   });
   form.onsubmit = (e) => {
     e.preventDefault();
@@ -2437,7 +2482,7 @@ function openSettings() {
       state.users.set(user.id, user);
       renderMe();
       close();
-      toast('Profil gespeichert');
+      toast(t('Profil gespeichert'));
     });
   };
 }
@@ -2447,9 +2492,9 @@ function openSettings() {
 function openPalette() {
   if ($('.palette')) return;
   const { modal, close } = openModal(`
-    <div class="palette-input">${ICONS.search}<input placeholder="Wohin willst du? Hubs, Kanäle, Leute…" autocomplete="off" /></div>
+    <div class="palette-input">${ICONS.search}<input placeholder="${t('Wohin willst du? Hubs, Kanäle, Leute…')}" autocomplete="off" /></div>
     <div class="palette-list"></div>
-    <div class="palette-foot"><span><kbd>↑</kbd> <kbd>↓</kbd> auswählen</span><span><kbd>Enter</kbd> öffnen</span><span><kbd>Esc</kbd> schließen</span></div>`,
+    <div class="palette-foot"><span><kbd>↑</kbd> <kbd>↓</kbd> ${t('auswählen')}</span><span><kbd>Enter</kbd> ${t('öffnen')}</span><span><kbd>Esc</kbd> ${t('schließen')}</span></div>`,
   { className: 'palette', backdropClass: 'palette-backdrop' });
   const q = modal.querySelector('input');
   const list = modal.querySelector('.palette-list');
@@ -2457,8 +2502,8 @@ function openPalette() {
   let sel = 0;
 
   const all = () => {
-    const out = [{ label: 'Meine Bots', kind: 'Bots & Slash-Befehle', ico: '🤖', go: () => openBotManager() }];
-    if (state.me.official) out.push({ label: 'Admin-Panel', kind: 'Nexora verwalten', ico: '🛡️', go: () => openAdminPanel() });
+    const out = [{ label: t('Meine Bots'), kind: t('Bots & Slash-Befehle'), ico: '🤖', go: () => openBotManager() }];
+    if (state.me.official) out.push({ label: t('Admin-Panel'), kind: t('Nexora verwalten'), ico: '🛡️', go: () => openAdminPanel() });
     for (const hub of state.hubs.values()) {
       out.push({ label: hub.name, kind: 'Hub', ico: hub.icon || initials(hub.name), go: () => openHub(hub.id) });
       for (const c of hub.channels) {
@@ -2469,7 +2514,7 @@ function openPalette() {
     for (const dm of sortedDms()) {
       const p = dmPartner(dm);
       dmUsers.add(p.id);
-      out.push({ label: p.displayName, kind: 'Direktnachricht', user: p, go: () => openDm(dm.id), unread: state.unread.has(dm.id) });
+      out.push({ label: p.displayName, kind: t('Direktnachricht'), user: p, go: () => openDm(dm.id), unread: state.unread.has(dm.id) });
     }
     for (const u of state.users.values()) {
       if (u.id === state.me.id || dmUsers.has(u.id)) continue;
@@ -2487,7 +2532,7 @@ function openPalette() {
       : source.filter((i) => i.unread).concat(source.filter((i) => !i.unread));
     items = items.slice(0, 40);
     sel = Math.min(sel, Math.max(0, items.length - 1));
-    list.innerHTML = items.length ? '' : '<div class="empty-hint">Nichts gefunden.</div>';
+    list.innerHTML = items.length ? '' : `<div class="empty-hint">${t('Nichts gefunden.')}</div>`;
     items.forEach((it, i) => {
       const row = h(`<button class="palette-item ${i === sel ? 'sel' : ''}">
         ${it.user ? avatar(it.user, { dot: true }) : `<span class="ico">${esc(it.ico)}</span>`}
@@ -2604,7 +2649,7 @@ function updateSpeaking() {
 async function joinVoice(channelId) {
   if (vc.joining || vc.channelId === channelId) return;
   if (!navigator.mediaDevices?.getUserMedia || !window.RTCPeerConnection) {
-    return toast('Dein Browser unterstützt keine Sprachkanäle (HTTPS nötig).', 'error');
+    return toast(t('Dein Browser unterstützt keine Sprachkanäle (HTTPS nötig).'), 'error');
   }
   vc.joining = true;
   renderVoiceUi();
@@ -2614,7 +2659,7 @@ async function joinVoice(channelId) {
     const stream = await navigator.mediaDevices.getUserMedia({
       audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
     }).catch(() => {
-      throw new Error('Kein Mikrofon-Zugriff. Erlaube das Mikrofon in den Browser-Einstellungen.');
+      throw new Error(t('Kein Mikrofon-Zugriff. Erlaube das Mikrofon in den Browser-Einstellungen.'));
     });
     stream.getAudioTracks().forEach((t) => (t.enabled = !vc.muted));
     let res;
@@ -2695,7 +2740,7 @@ function createPeer(socketId, userId) {
   pc.onconnectionstatechange = () => {
     if (pc.connectionState === 'failed' && !peer.warned) {
       peer.warned = true;
-      toast(`Keine Sprachverbindung zu ${userOf(peer.userId).displayName} – das Netzwerk blockiert sie.`, 'error');
+      toast(t('Keine Sprachverbindung zu {name} – das Netzwerk blockiert sie.', { name: userOf(peer.userId).displayName }), 'error');
     }
   };
   return peer;
@@ -2776,9 +2821,9 @@ function onVoiceState({ channelId, members }) {
 function voiceButtons(big = false) {
   const cls = big ? 'stage-btn' : 'icon-btn';
   return `
-    <button class="${cls} ${vc.muted ? 'off' : ''}" data-voice="mute" title="${vc.muted ? 'Mikrofon an' : 'Stumm schalten'}">${vc.muted ? ICONS.micOff : ICONS.mic}</button>
-    <button class="${cls} ${vc.deafened ? 'off' : ''}" data-voice="deafen" title="${vc.deafened ? 'Ton an' : 'Ton aus'}">${vc.deafened ? ICONS.headphonesOff : ICONS.headphones}</button>
-    <button class="${cls} hangup" data-voice="leave" title="Verlassen">${ICONS.hangup}</button>`;
+    <button class="${cls} ${vc.muted ? 'off' : ''}" data-voice="mute" title="${vc.muted ? t('Mikrofon an') : t('Stumm schalten')}">${vc.muted ? ICONS.micOff : ICONS.mic}</button>
+    <button class="${cls} ${vc.deafened ? 'off' : ''}" data-voice="deafen" title="${vc.deafened ? t('Ton an') : t('Ton aus')}">${vc.deafened ? ICONS.headphonesOff : ICONS.headphones}</button>
+    <button class="${cls} hangup" data-voice="leave" title="${t('Verlassen')}">${ICONS.hangup}</button>`;
 }
 
 function bindVoiceButtons(root) {
@@ -2803,8 +2848,8 @@ function renderVoiceBar() {
   const channel = hub?.channels.find((c) => c.id === vc.channelId);
   bar.classList.remove('hidden');
   bar.innerHTML = `
-    <div class="vb-info" title="Zum Sprachkanal">
-      <span class="vb-status"><i></i>Sprachverbindung</span>
+    <div class="vb-info" title="${t('Zum Sprachkanal')}">
+      <span class="vb-status"><i></i>${t('Sprachverbindung')}</span>
       <span class="vb-where">${esc(channel?.name || '')} · ${esc(hub?.name || '')}</span>
     </div>
     <div class="vb-actions">${voiceButtons()}</div>`;
@@ -2825,7 +2870,7 @@ function renderStage() {
   </div>`);
   const grid = stage.querySelector('.stage-grid');
   if (!members.length) {
-    grid.append(h(`<div class="stage-empty"><div class="hash-huge">${ICONS.speaker}</div><h2>${esc(channel.name)}</h2><p>Noch niemand da. Sei die erste Person!</p></div>`));
+    grid.append(h(`<div class="stage-empty"><div class="hash-huge">${ICONS.speaker}</div><h2>${esc(channel.name)}</h2><p>${t('Noch niemand da. Sei die erste Person!')}</p></div>`));
   }
   for (const m of members) {
     const u = userOf(m.userId);
@@ -2843,7 +2888,7 @@ function renderStage() {
     bindVoiceButtons(controls);
   } else {
     const full = members.length >= 10;
-    controls.innerHTML = `<button class="btn primary stage-join" ${full || vc.joining ? 'disabled' : ''}>${ICONS.speaker} ${vc.joining ? 'Verbinde…' : full ? 'Kanal ist voll' : vc.channelId ? 'Hierher wechseln' : 'Beitreten'}</button>`;
+    controls.innerHTML = `<button class="btn primary stage-join" ${full || vc.joining ? 'disabled' : ''}>${ICONS.speaker} ${vc.joining ? t('Verbinde…') : full ? t('Kanal ist voll') : vc.channelId ? t('Hierher wechseln') : t('Beitreten')}</button>`;
     controls.querySelector('.stage-join').onclick = () => joinVoice(channel.id);
   }
   box.append(stage);
@@ -2872,20 +2917,20 @@ const versionReady = fetch('/api/version', { cache: 'no-store' })
   })
   .catch(() => {});
 
-const dateOnlyFmt = new Intl.DateTimeFormat('de-DE', { day: 'numeric', month: 'long', year: 'numeric' });
+const dateOnlyFmt = new Intl.DateTimeFormat(LOCALE, { day: 'numeric', month: 'long', year: 'numeric' });
 
 function openChangelog() {
   if (!state.changelog) return;
   store('seenVersion', state.version);
   const entries = state.changelog.map((e, i) => `<section class="cl-entry">
     <div class="cl-head"><span class="cl-version ${i === 0 ? 'current' : ''}">${esc(e.version)}</span><span class="cl-date">${esc(dateOnlyFmt.format(new Date(e.date + 'T12:00:00')))}</span></div>
-    <h4>${esc(e.title)}</h4>
-    <ul>${e.changes.map((c) => `<li><span class="cl-ico">${esc(c.icon)}</span><span>${formatMessage(c.text)}</span></li>`).join('')}</ul>
+    <h4>${esc((LANG === 'en' && e.titleEn) || e.title)}</h4>
+    <ul>${e.changes.map((c) => `<li><span class="cl-ico">${esc(c.icon)}</span><span>${formatMessage((LANG === 'en' && c.textEn) || c.text)}</span></li>`).join('')}</ul>
   </section>`).join('');
   openModal(`
-    <div class="cl-hero"><div class="logo-mark"><span>N</span></div><div><h3>Was ist neu?</h3><p class="sub">Du nutzt Nexora <b>${esc(state.version)}</b></p></div></div>
+    <div class="cl-hero"><div class="logo-mark"><span>N</span></div><div><h3>${t('Was ist neu?')}</h3><p class="sub">${t('Du nutzt Nexora <b>{version}</b>', { version: esc(state.version) })}</p></div></div>
     <div class="cl-list">${entries}</div>
-    <div class="modal-actions"><button class="btn primary" data-close>Los geht's</button></div>`, { className: 'changelog' });
+    <div class="modal-actions"><button class="btn primary" data-close>${t("Los geht's")}</button></div>`, { className: 'changelog' });
 }
 
 // The version of the code running in this tab, written into the page by the server.
@@ -2900,7 +2945,7 @@ async function checkVersion(serverVersion) {
   if (serverVersion && serverVersion !== running) {
     if (!input.value.trim() && !state.uploads.length && !$('.modal') && !state.editingId) return location.reload();
     if ($('.update-banner')) return;
-    const banner = h(`<div class="update-banner"><span>🎃 <b>${esc(serverVersion)}</b> ist da!</span><button class="btn primary">Jetzt laden</button></div>`);
+    const banner = h(`<div class="update-banner"><span>🎃 ${t('<b>{version}</b> ist da!', { version: esc(serverVersion) })}</span><button class="btn primary">${t('Jetzt laden')}</button></div>`);
     banner.querySelector('button').onclick = () => location.reload();
     document.body.append(banner);
     return;

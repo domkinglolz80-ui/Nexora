@@ -21,6 +21,8 @@ const MAX_BOTS_PER_HUB = 10;
 const MAX_COMMANDS = 25;
 const MAX_COMMAND_OPTIONS = 5;
 const MAX_SCRIPT = 10000;
+const GHOST_COOLDOWN = 10_000;
+const MAX_SYNCED_GHOSTS = 500;
 const STARTED_AT = Date.now();
 // The newest changelog entry is the running version; clients compare it to reload on updates.
 const CHANGELOG = require('./changelog.json');
@@ -297,6 +299,7 @@ function publicUser(u) {
     status: u.status,
     bio: u.bio || '',
     accessory: (u.accessory && accessoryOf(u.accessory, u)) || '',
+    ghosts: u.ghosts || 0,
     createdAt: u.createdAt,
   };
   if (u.system) {
@@ -348,7 +351,13 @@ function newChannel(name, topic = '', kind = 'text') {
   return { id: id(), name, topic, kind };
 }
 
-function createHub({ name, icon, ownerId, inviteCode: code }) {
+// Starter channels of a new hub, in the language of the person creating it.
+const STARTER_CHANNELS = {
+  de: [['willkommen', 'Sag hallo und stell dich vor 👋'], ['allgemein', 'Alles, was gerade los ist'], ['medien', 'Links, Clips & Screenshots'], ['Treffpunkt']],
+  en: [['welcome', 'Say hi and introduce yourself 👋'], ['general', "Whatever's going on right now"], ['media', 'Links, clips & screenshots'], ['Hangout']],
+};
+
+function createHub({ name, icon, ownerId, inviteCode: code, lang }) {
   const hub = {
     id: id(),
     name,
@@ -357,12 +366,7 @@ function createHub({ name, icon, ownerId, inviteCode: code }) {
     ownerId,
     inviteCode: code || inviteCode(),
     members: ownerId ? [ownerId] : [],
-    channels: [
-      newChannel('willkommen', 'Sag hallo und stell dich vor 👋'),
-      newChannel('allgemein', 'Alles, was gerade los ist'),
-      newChannel('medien', 'Links, Clips & Screenshots'),
-      newChannel('Treffpunkt', '', 'voice'),
-    ],
+    channels: (lang === 'en' ? STARTER_CHANNELS.en : STARTER_CHANNELS.de).map(([channelName, topic]) => newChannel(channelName, topic || '', topic ? 'text' : 'voice')),
     createdAt: Date.now(),
   };
   db.hubs[hub.id] = hub;
@@ -473,7 +477,7 @@ app.use(express.json({ limit: '32kb' }));
 const INDEX_HTML = fs
   .readFileSync(path.join(__dirname, 'public', 'index.html'), 'utf8')
   .replace('<head>', `<head>\n  <meta name="nexora-version" content="${VERSION}" />`)
-  .replace(/(src|href)="\/(app|bots|admin|halloween)\.(js|css)"/g, `$1="/$2.$3?v=${encodeURIComponent(VERSION)}"`);
+  .replace(/(src|href)="\/(i18n|app|bots|admin|halloween)\.(js|css)"/g, `$1="/$2.$3?v=${encodeURIComponent(VERSION)}"`);
 app.get(['/', '/index.html'], (_req, res) => {
   res.setHeader('Cache-Control', 'no-cache');
   res.type('html').send(INDEX_HTML);
@@ -1212,10 +1216,10 @@ io.on('connection', (socket) => {
     };
   });
 
-  on('hub:create', ({ name, icon }) => {
+  on('hub:create', ({ name, icon, lang }) => {
     const hubName = str(name, 40);
     if (hubName.length < 2) return { error: 'Der Hub-Name braucht mindestens 2 Zeichen.' };
-    const hub = createHub({ name: hubName, icon: str(icon, 8), ownerId: userId });
+    const hub = createHub({ name: hubName, icon: str(icon, 8), ownerId: userId, lang });
     io.in(`user:${userId}`).socketsJoin(`hub:${hub.id}`);
     io.to(`user:${userId}`).emit('hub:update', hubView(hub));
     return { hub: hubView(hub) };
@@ -1579,7 +1583,7 @@ io.on('connection', (socket) => {
     bots: Object.values(db.bots).filter((b) => b.ownerId === userId).map(botView),
   }));
 
-  on('bot:create', ({ username, displayName }) => {
+  on('bot:create', ({ username, displayName, lang }) => {
     if (Object.values(db.bots).filter((b) => b.ownerId === userId).length >= MAX_BOTS_PER_USER) {
       return { error: `Du kannst maximal ${MAX_BOTS_PER_USER} Bots haben.` };
     }
@@ -1604,7 +1608,9 @@ io.on('connection', (socket) => {
       public: false,
       disabled: false,
       // A first command, so the bot answers something right away.
-      commands: [{ id: id(), name: 'hallo', description: 'Sagt hallo', options: [], type: 'text', response: 'Hey {user}! 👋', script: '', ephemeral: false }],
+      commands: [lang === 'en'
+        ? { id: id(), name: 'hello', description: 'Says hello', options: [], type: 'text', response: 'Hey {user}! 👋', script: '', ephemeral: false }
+        : { id: id(), name: 'hallo', description: 'Sagt hallo', options: [], type: 'text', response: 'Hey {user}! 👋', script: '', ephemeral: false }],
       store: {},
       createdAt: Date.now(),
     };
@@ -1914,6 +1920,32 @@ io.on('connection', (socket) => {
   });
 
   onAdmin('admin:announce', ({ text }) => ({ announcement: setAnnouncement(text) }));
+
+  // Halloween Edition: the ghost hunt counter belongs to the account. Ghosts appear at
+  // most every 15 seconds, so faster catches are ignored.
+  let lastGhost = 0;
+  on('halloween:ghost', ({ golden }) => {
+    const user = me();
+    const now = Date.now();
+    if (now - lastGhost >= GHOST_COOLDOWN) {
+      lastGhost = now;
+      user.ghosts = (user.ghosts || 0) + (golden ? 3 : 1);
+      save();
+    }
+    return { ghosts: user.ghosts || 0 };
+  });
+
+  // Counters from before V0.1.5.5 lived on the device; they are taken over once.
+  on('halloween:sync', ({ count }) => {
+    const user = me();
+    if (!user.ghostsSynced) {
+      user.ghostsSynced = true;
+      const local = Number.isInteger(count) ? Math.min(Math.max(count, 0), MAX_SYNCED_GHOSTS) : 0;
+      user.ghosts = Math.max(user.ghosts || 0, local);
+      save();
+    }
+    return { ghosts: user.ghosts || 0 };
+  });
 
   socket.on('disconnect', () => {
     voiceLeave(socket);

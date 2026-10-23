@@ -15,13 +15,14 @@ Nexora ist eine Echtzeit-Chat-Plattform mit eigenem Look: dunkles Glas-Design mi
 - **Formatierung** – `**fett**`, `*kursiv*`, `~~durch~~`, `` `code` ``, Codeblöcke, `> Zitat`, `||Spoiler||`, Links, `@erwähnungen`
 - **Direktnachrichten** – privat mit jedem Mitglied schreiben
 - **Sprachkanäle** – in Echtzeit reden, mit Sprech-Anzeige, Stummschalten, Ton aus und Sprachleiste
-- **Präsenz** – Online / Abwesend / Nicht stören / Unsichtbar, Tipp-Anzeige
+- **Präsenz** – Online / Abwesend / Nicht stören / Unsichtbar mit animierten Status-Punkten (pulsierend, schaukelnder Mond, atmend), Tipp-Anzeige
 - **Ungelesen-Markierungen** – Badges für Erwähnungen und DMs, Ton bei Erwähnung (stumm bei „Nicht stören“), optional Desktop-Benachrichtigungen
 - **Komfort** – Entwürfe pro Kanal, „Zum Neuesten“-Knopf, Text kopieren, Zeichenzähler
 - **Bots & Slash-Befehle** – eigene Bots mit Befehlen wie `/wuerfel`, als Textantwort oder als JavaScript-Skript
 - **Admin-Panel** – für offizielle Accounts: Statistiken, Ankündigungen, Nutzer, Hubs und Bots verwalten
 - **Befehlspalette** – `Strg`+`K` springt zu jedem Hub, Kanal oder Menschen
 - **Profile** – Anzeigename, Bio, Akzentfarbe
+- **Deutsch & Englisch** – Sprache beim Login oder in den Profil-Einstellungen wählen, beim ersten Besuch wird sie automatisch erkannt
 - **Responsive** – funktioniert auch auf dem Handy
 - **Halloween Edition 2026** – gruseliger Look, animierte Profil-Accessoires und Geisterjagd
 
@@ -52,9 +53,25 @@ Ab **V0.1.5 Beta** trägt Nexora Halloween: Vollmond, Nebel, Spinnennetz und Fle
 
 `@nexora` bekommt den Kürbiskönig beim ersten Serverstart einmal automatisch angelegt und kann danach frei wechseln. Auch weitere offizielle Accounts aus `NEXORA_OFFICIAL` können ihn nicht tragen.
 
-**Geisterjagd** – alle 40–90 Sekunden schwebt ein Geist über den Bildschirm. Wer ihn anklickt, fängt ihn; der Zähler bleibt auf dem Gerät gespeichert.
+**Geisterjagd** – alle 40–90 Sekunden (in der Halloween-Nacht alle 15–35 Sekunden) schwebt ein Geist über den Bildschirm. Wer ihn anklickt, fängt ihn, und es platzen Süßigkeiten heraus. Jeder achte ist ein **goldener Geist**, der dreifach zählt. Der Zähler gehört zum Account (Zähler älterer Versionen vom Gerät werden einmal übernommen) und bringt Ränge, die im Profil stehen:
+
+| Geister | Rang               |
+| ------- | ------------------ |
+| 1       | Geisterlehrling    |
+| 5       | Spukjäger:in       |
+| 13      | Geisterjäger:in    |
+| 31      | Kürbismeister:in   |
+| 66      | Legende der Nacht  |
+
+**Süßigkeitenregen** – wer „Süßes oder Saures“, „Trick or treat“ oder „Happy Halloween“ in den Chat schreibt, lässt bei allen, die den Kanal offen haben, Süßigkeiten regnen.
 
 Die Effekte lassen sich pro Gerät in den Profil-Einstellungen abschalten, bei „Bewegung reduzieren“ im System sind alle Animationen aus. Das saisonale Design steckt in `public/halloween.css` und `public/halloween.js` (plus Mond, Fledermäuse und Login-Texte in `public/index.html`). Nach Halloween reicht es, diese wieder herauszunehmen – die Accessoires sind fester Teil der Profile und bleiben erhalten.
+
+## Sprachen
+
+Nexora gibt es auf **Deutsch** und **Englisch**. Beim ersten Besuch richtet sich die Sprache nach dem Browser; ändern lässt sie sich oben auf der Login-Seite oder in den Profil-Einstellungen unter „Sprache · Language“ (gespeichert pro Gerät).
+
+Deutsch ist die Ausgangssprache: Alle Texte stehen im Code auf Deutsch und laufen durch `t()`, das in `public/i18n.js` die englische Fassung nachschlägt. Fehlt eine Übersetzung, erscheint einfach der deutsche Text. Meldungen vom Server (z. B. Fehler) übersetzt der Client mit `tServer()`. Neue Hubs bekommen ihre Startkanäle (`#welcome`, `#general` …) und neue Bots ihren ersten Befehl (`/hello`) in der gewählten Sprache. Inhalte, die alle teilen – Nachrichten, die Kanäle der Nexora Lounge und die Antworten des Nexora Helpers – bleiben wie sie sind.
 
 ## Offizieller Nexora-Account
 
@@ -152,12 +169,12 @@ Die Stimmen laufen per **WebRTC direkt zwischen den Geräten**; der Server vermi
 
 ## Versionen & Updates
 
-Aktuelle Version: **V0.1.4 Beta**. Alle Änderungen stehen in [`changelog.json`](changelog.json) – der oberste Eintrag ist die laufende Version.
+Aktuelle Version: **V0.1.5.5 Beta**. Alle Änderungen stehen in [`changelog.json`](changelog.json) – der oberste Eintrag ist die laufende Version.
 
 - Nach dem Login (und nach jedem Update) zeigt Nexora einmal das Fenster **„Was ist neu?“**. Über die Versionsanzeige unten in der Hub-Leiste lässt es sich jederzeit wieder öffnen.
 - Geht eine neue Version live, während jemand Nexora offen hat, lädt die Seite automatisch neu. Tippt die Person gerade etwas, erscheint stattdessen ein „Jetzt laden“-Hinweis.
 
-Neue Version veröffentlichen: oben in `changelog.json` einen Eintrag mit `version`, `date`, `title` und `changes` ergänzen und deployen.
+Neue Version veröffentlichen: oben in `changelog.json` einen Eintrag mit `version`, `date`, `title` und `changes` ergänzen und deployen. Die englische Fassung steht daneben in `titleEn` und `textEn` (fehlt sie, wird der deutsche Text gezeigt).
 
 ## Starten
 
@@ -221,6 +238,7 @@ Kann der Server die Datenbank nicht erreichen, startet er absichtlich nicht (sta
 server.js          Express + Socket.IO Server, Daten in MongoDB oder data/db.json
 bots.js            Bot-Befehle: Text-Platzhalter und Skript-Sandbox (QuickJS)
 public/index.html  Oberfläche
+public/i18n.js     Übersetzungen (Deutsch → Englisch), auch für Server-Meldungen
 public/app.css     Design (Ember-Theme)
 public/app.js      Client-Logik
 public/bots.js     Bots verwalten, Befehle und Skripte bearbeiten

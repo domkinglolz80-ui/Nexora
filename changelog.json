@@ -1,20 +1,72 @@
 [
   {
+    "version": "V0.1.5.5 Beta",
+    "date": "2026-10-23",
+    "title": "Lebendige Status, Englisch & Halloween-Upgrade",
+    "titleEn": "Live statuses, English & a Halloween upgrade",
+    "changes": [
+      {
+        "icon": "🟢",
+        "text": "Status-Anzeigen leben: **Online** pulsiert sanft, **Abwesend** ist ein schaukelnder Mond, **Nicht stören** atmet – kein Profil wirkt mehr eingefroren",
+        "textEn": "Statuses come alive: **Online** gently pulses, **Away** is a rocking moon, **Do not disturb** breathes – no profile looks frozen anymore"
+      },
+      {
+        "icon": "🇬🇧",
+        "text": "Nexora gibt es jetzt auch auf **Englisch** – Sprache beim Login oder in den Profil-Einstellungen wählen. Beim ersten Besuch erkennt Nexora sie automatisch",
+        "textEn": "Nexora is now available in **English** – pick your language on the login screen or in the profile settings. On your first visit Nexora detects it automatically"
+      },
+      {
+        "icon": "🌐",
+        "text": "Neue Hubs und Bots starten in deiner Sprache, z. B. mit #welcome oder `/hello`",
+        "textEn": "New hubs and bots start in your language, e.g. with #welcome or `/hello`"
+      },
+      {
+        "icon": "✨",
+        "text": "Geisterjagd: seltene **goldene Geister** zählen dreifach, und bei jedem Fang platzen Süßigkeiten heraus",
+        "textEn": "Ghost hunt: rare **golden ghosts** count three times, and sweets burst out with every catch"
+      },
+      {
+        "icon": "👻",
+        "text": "Dein Geisterzähler gehört jetzt zu deinem Account – mit Rängen vom **Geisterlehrling** bis zur **Legende der Nacht**, sichtbar in deinem Profil",
+        "textEn": "Your ghost counter now belongs to your account – with ranks from **Ghost Apprentice** to **Legend of the Night**, shown on your profile"
+      },
+      {
+        "icon": "🍬",
+        "text": "Schreib „Süßes oder Saures“ oder „Trick or treat“ in den Chat – dann regnet es Süßigkeiten",
+        "textEn": "Write \"Trick or treat\" or \"Süßes oder Saures\" in the chat – and it rains sweets"
+      },
+      {
+        "icon": "🌕",
+        "text": "In der Halloween-Nacht spuken die Geister mehr als doppelt so oft",
+        "textEn": "On Halloween night the ghosts haunt more than twice as often"
+      },
+      {
+        "icon": "🔧",
+        "text": "Fixes: Der Tages-Trenner erscheint jetzt auch über der ersten neuen Nachricht eines Kanals, der Countdown zählt nach Halloween aufs nächste Jahr weiter, und gefangene Geister gehen beim Gerätewechsel oder Löschen der Browserdaten nicht mehr verloren",
+        "textEn": "Fixes: the day divider now also shows above the first new message in a channel, the countdown keeps counting to next year after Halloween, and caught ghosts are no longer lost when you switch devices or clear your browser data"
+      }
+    ]
+  },
+  {
     "version": "V0.1.5.4 Beta",
     "date": "2026-10-23",
     "title": "Exklusive Accessoires für alle sichtbar",
+    "titleEn": "Exclusive accessories visible to everyone",
     "changes": [
       {
         "icon": "👀",
-        "text": "Kürbiskönig und Irrlicht-Wächter sind jetzt für **alle** sichtbar – Geräte mit einer veralteten Nexora-Version aktualisieren sich jetzt zuverlässig selbst"
+        "text": "Kürbiskönig und Irrlicht-Wächter sind jetzt für **alle** sichtbar – Geräte mit einer veralteten Nexora-Version aktualisieren sich jetzt zuverlässig selbst",
+        "textEn": "Pumpkin King and Will-o’-the-Wisp Warden are now visible to **everyone** – devices running an outdated Nexora version now reliably update themselves"
       },
       {
         "icon": "🔄",
-        "text": "Updates kommen sicherer an: Nexora prüft beim Zurückkehren in den Tab und alle paar Minuten, ob es eine neue Version gibt"
+        "text": "Updates kommen sicherer an: Nexora prüft beim Zurückkehren in den Tab und alle paar Minuten, ob es eine neue Version gibt",
+        "textEn": "Updates arrive more reliably: Nexora checks for a new version when you return to the tab and every few minutes"
       },
       {
         "icon": "👑",
-        "text": "Krone und Laterne sitzen wieder in der richtigen Größe über dem Avatar"
+        "text": "Krone und Laterne sitzen wieder in der richtigen Größe über dem Avatar",
+        "textEn": "Crown and lantern sit above the avatar at the right size again"
       }
     ]
   },
@@ -22,14 +74,17 @@
     "version": "V0.1.5.3 Beta",
     "date": "2026-10-23",
     "title": "Der Kürbiskönig ist einzigartig",
+    "titleEn": "The Pumpkin King is one of a kind",
     "changes": [
       {
         "icon": "👑",
-        "text": "Den **Kürbiskönig** gibt es jetzt nur noch ein einziges Mal – er gehört **@nexora** allein"
+        "text": "Den **Kürbiskönig** gibt es jetzt nur noch ein einziges Mal – er gehört **@nexora** allein",
+        "textEn": "There is now only one **Pumpkin King** – it belongs to **@nexora** alone"
       },
       {
         "icon": "🏮",
-        "text": "Der **Irrlicht-Wächter** bleibt exklusiv beim Nexora Helper"
+        "text": "Der **Irrlicht-Wächter** bleibt exklusiv beim Nexora Helper",
+        "textEn": "The **Will-o’-the-Wisp Warden** stays exclusive to the Nexora Helper"
       }
     ]
   },
@@ -37,18 +92,22 @@
     "version": "V0.1.5.2 Beta",
     "date": "2026-10-23",
     "title": "Exklusive Accessoires",
+    "titleEn": "Exclusive accessories",
     "changes": [
       {
         "icon": "👑",
-        "text": "**Kürbiskönig** – exklusiv für das Nexora-Team: Feuerring, goldene Krone mit Kürbis-Juwel und aufsteigende Funken"
+        "text": "**Kürbiskönig** – exklusiv für das Nexora-Team: Feuerring, goldene Krone mit Kürbis-Juwel und aufsteigende Funken",
+        "textEn": "**Pumpkin King** – exclusive to the Nexora team: ring of fire, golden crown with a pumpkin jewel and rising sparks"
       },
       {
         "icon": "🏮",
-        "text": "**Irrlicht-Wächter** – exklusiv für den Nexora Helper: grüner Geisterring, schwingende Laterne und kreisende Irrlichter"
+        "text": "**Irrlicht-Wächter** – exklusiv für den Nexora Helper: grüner Geisterring, schwingende Laterne und kreisende Irrlichter",
+        "textEn": "**Will-o’-the-Wisp Warden** – exclusive to the Nexora Helper: green ghost ring, swinging lantern and circling will-o’-the-wisps"
       },
       {
         "icon": "🌕",
-        "text": "Exklusive Accessoires verwandeln das ganze Profil: eigene animierte Profilkarte, leuchtender Name im Chat und ein Exklusiv-Abzeichen"
+        "text": "Exklusive Accessoires verwandeln das ganze Profil: eigene animierte Profilkarte, leuchtender Name im Chat und ein Exklusiv-Abzeichen",
+        "textEn": "Exclusive accessories transform the whole profile: their own animated profile card, a glowing name in chat and an exclusive badge"
       }
     ]
   },
@@ -56,14 +115,17 @@
     "version": "V0.1.5.1 Beta",
     "date": "2026-10-23",
     "title": "Hotfix: Speichern auf dem Handy",
+    "titleEn": "Hotfix: saving on phones",
     "changes": [
       {
         "icon": "📱",
-        "text": "Profil-Einstellungen auf dem Handy: **Speichern** ist jetzt immer unten sichtbar – auch mit Accessoire-Auswahl"
+        "text": "Profil-Einstellungen auf dem Handy: **Speichern** ist jetzt immer unten sichtbar – auch mit Accessoire-Auswahl",
+        "textEn": "Profile settings on phones: **Save** is now always visible at the bottom – even with the accessory picker"
       },
       {
         "icon": "🎃",
-        "text": "Accessoire-Auswahl auf dem Handy kompakter: vier pro Reihe"
+        "text": "Accessoire-Auswahl auf dem Handy kompakter: vier pro Reihe",
+        "textEn": "More compact accessory picker on phones: four per row"
       }
     ]
   },
@@ -71,38 +133,47 @@
     "version": "V0.1.5 Beta",
     "date": "2026-10-23",
     "title": "🎃 Halloween Edition 2026",
+    "titleEn": "🎃 Halloween Edition 2026",
     "changes": [
       {
         "icon": "🌕",
-        "text": "Ganz Nexora im Halloween-Look: Vollmond, Nebel, Spinnennetz und Fledermäuse, die durch die Nacht flattern"
+        "text": "Ganz Nexora im Halloween-Look: Vollmond, Nebel, Spinnennetz und Fledermäuse, die durch die Nacht flattern",
+        "textEn": "All of Nexora in Halloween style: full moon, fog, a spider web and bats fluttering through the night"
       },
       {
         "icon": "🎃",
-        "text": "Neue **Accessoires** für dein Profil – allen voran der **lachende Kürbis**, der auf deinem Avatar hüpft und sich kaputtlacht"
+        "text": "Neue **Accessoires** für dein Profil – allen voran der **lachende Kürbis**, der auf deinem Avatar hüpft und sich kaputtlacht",
+        "textEn": "New **accessories** for your profile – above all the **laughing pumpkin** that hops on your avatar and cracks up"
       },
       {
         "icon": "🧙",
-        "text": "Außerdem: Hexenhut, kleiner Geist, Fledermaus, Teufelshörner, Spinne und Katzenohren – alle animiert, und alle anderen sehen sie"
+        "text": "Außerdem: Hexenhut, kleiner Geist, Fledermaus, Teufelshörner, Spinne und Katzenohren – alle animiert, und alle anderen sehen sie",
+        "textEn": "Also: witch hat, little ghost, bat, devil horns, spider and cat ears – all animated, and everyone else sees them"
       },
       {
         "icon": "⚙️",
-        "text": "Accessoire wählen: Profil-Einstellungen → „Halloween-Accessoire“ – mit Live-Vorschau. Auch deine Bots können eins tragen"
+        "text": "Accessoire wählen: Profil-Einstellungen → „Halloween-Accessoire“ – mit Live-Vorschau. Auch deine Bots können eins tragen",
+        "textEn": "Pick an accessory: profile settings → \"Halloween accessory\" – with a live preview. Your bots can wear one too"
       },
       {
         "icon": "👻",
-        "text": "Geisterjagd: Ab und zu schwebt ein Geist über den Bildschirm – klick ihn an und sammle so viele wie möglich"
+        "text": "Geisterjagd: Ab und zu schwebt ein Geist über den Bildschirm – klick ihn an und sammle so viele wie möglich",
+        "textEn": "Ghost hunt: every now and then a ghost floats across the screen – click it and catch as many as you can"
       },
       {
         "icon": "🕯️",
-        "text": "Countdown bis Halloween auf der Login-Seite und neuer Kanal #halloween in der Nexora Lounge"
+        "text": "Countdown bis Halloween auf der Login-Seite und neuer Kanal #halloween in der Nexora Lounge",
+        "textEn": "Countdown to Halloween on the login page and a new #halloween channel in the Nexora Lounge"
       },
       {
         "icon": "🦇",
-        "text": "Halloween-Emojis ganz vorne in der Auswahl, gruselige Schnell-Reaktionen und neue Hub-Symbole"
+        "text": "Halloween-Emojis ganz vorne in der Auswahl, gruselige Schnell-Reaktionen und neue Hub-Symbole",
+        "textEn": "Halloween emojis first in the picker, spooky quick reactions and new hub icons"
       },
       {
         "icon": "🌙",
-        "text": "Zu viel Grusel? Die Effekte lassen sich in den Profil-Einstellungen abschalten"
+        "text": "Zu viel Grusel? Die Effekte lassen sich in den Profil-Einstellungen abschalten",
+        "textEn": "Too spooky? The effects can be turned off in the profile settings"
       }
     ]
   },
@@ -110,26 +181,32 @@
     "version": "V0.1.4 Beta",
     "date": "2026-10-23",
     "title": "Der Nexora Helper",
+    "titleEn": "The Nexora Helper",
     "changes": [
       {
         "icon": "🛡️",
-        "text": "Neuer offizieller Bot **Nexora Helper** mit ✓-Abzeichen – nur das Nexora-Team kann ihn benutzen"
+        "text": "Neuer offizieller Bot **Nexora Helper** mit ✓-Abzeichen – nur das Nexora-Team kann ihn benutzen",
+        "textEn": "New official bot **Nexora Helper** with a ✓ badge – only the Nexora team can use it"
       },
       {
         "icon": "🔨",
-        "text": "Moderation direkt im Chat: `/ban`, `/unban`, `/kick`, `/verwarnen` und `/abmelden`"
+        "text": "Moderation direkt im Chat: `/ban`, `/unban`, `/kick`, `/verwarnen` und `/abmelden`",
+        "textEn": "Moderation right in the chat: `/ban`, `/unban`, `/kick`, `/verwarnen` (warn) and `/abmelden` (sign out)"
       },
       {
         "icon": "🧹",
-        "text": "`/loeschen` räumt die letzten Nachrichten eines Kanals auf"
+        "text": "`/loeschen` räumt die letzten Nachrichten eines Kanals auf",
+        "textEn": "`/loeschen` cleans up the latest messages of a channel"
       },
       {
         "icon": "📊",
-        "text": "`/info`, `/stats` und `/ankuendigung` für schnelle Infos und Hinweise an alle"
+        "text": "`/info`, `/stats` und `/ankuendigung` für schnelle Infos und Hinweise an alle",
+        "textEn": "`/info`, `/stats` and `/ankuendigung` (announcement) for quick info and notices to everyone"
       },
       {
         "icon": "✅",
-        "text": "Offizielle Bots zeigen jetzt das ✓-Abzeichen zusätzlich zu BOT"
+        "text": "Offizielle Bots zeigen jetzt das ✓-Abzeichen zusätzlich zu BOT",
+        "textEn": "Official bots now show the ✓ badge next to BOT"
       }
     ]
   },
@@ -137,38 +214,47 @@
     "version": "V0.1.3 Beta",
     "date": "2026-10-23",
     "title": "Bots & Admin-Panel",
+    "titleEn": "Bots & admin panel",
     "changes": [
       {
         "icon": "🤖",
-        "text": "Eigene Bots: Erstelle bis zu 5 Bots unter „Meine Bots“ (Roboter-Knopf unten links) und hol sie in deine Hubs"
+        "text": "Eigene Bots: Erstelle bis zu 5 Bots unter „Meine Bots“ (Roboter-Knopf unten links) und hol sie in deine Hubs",
+        "textEn": "Your own bots: create up to 5 bots under \"My bots\" (robot button at the bottom left) and bring them into your hubs"
       },
       {
         "icon": "⌨️",
-        "text": "Slash-Befehle: Tippe `/` im Chat und wähle einen Befehl – mit Vorschlägen, Beschreibung und Hinweisen zu den Optionen"
+        "text": "Slash-Befehle: Tippe `/` im Chat und wähle einen Befehl – mit Vorschlägen, Beschreibung und Hinweisen zu den Optionen",
+        "textEn": "Slash commands: type `/` in the chat and pick a command – with suggestions, a description and hints for the options"
       },
       {
         "icon": "🛠️",
-        "text": "Befehle selbst einstellen: Name, Beschreibung, bis zu 5 Optionen und eine Antwort mit Platzhaltern wie `{user}` oder `{random:1-6}`"
+        "text": "Befehle selbst einstellen: Name, Beschreibung, bis zu 5 Optionen und eine Antwort mit Platzhaltern wie `{user}` oder `{random:1-6}`",
+        "textEn": "Set up commands yourself: name, description, up to 5 options and a reply with placeholders like `{user}` or `{random:1-6}`"
       },
       {
         "icon": "📜",
-        "text": "Skripte: Befehle können eigenes JavaScript ausführen – mit Zufall, dauerhaftem Speicher und Antworten nur für dich. Sicher abgeschottet auf dem Server"
+        "text": "Skripte: Befehle können eigenes JavaScript ausführen – mit Zufall, dauerhaftem Speicher und Antworten nur für dich. Sicher abgeschottet auf dem Server",
+        "textEn": "Scripts: commands can run their own JavaScript – with randomness, permanent storage and replies only you can see. Safely sandboxed on the server"
       },
       {
         "icon": "🧪",
-        "text": "Befehle direkt im Editor testen, bevor sie live gehen – inklusive Beispielen wie Würfel, 8-Ball und Punktesystem"
+        "text": "Befehle direkt im Editor testen, bevor sie live gehen – inklusive Beispielen wie Würfel, 8-Ball und Punktesystem",
+        "textEn": "Test commands right in the editor before they go live – including examples like dice, 8-ball and a points system"
       },
       {
         "icon": "🌍",
-        "text": "Öffentliche Bots können auch andere Hub-Besitzer über den Namen hinzufügen"
+        "text": "Öffentliche Bots können auch andere Hub-Besitzer über den Namen hinzufügen",
+        "textEn": "Other hub owners can add public bots by their name"
       },
       {
         "icon": "🛡️",
-        "text": "Admin-Panel für @Nexora: Statistiken, Nutzer sperren, abmelden und Passwörter zurücksetzen, Hubs und Bots verwalten"
+        "text": "Admin-Panel für @Nexora: Statistiken, Nutzer sperren, abmelden und Passwörter zurücksetzen, Hubs und Bots verwalten",
+        "textEn": "Admin panel for @Nexora: statistics, ban users, sign them out and reset passwords, manage hubs and bots"
       },
       {
         "icon": "📣",
-        "text": "Ankündigungen: Das Nexora-Team kann wichtige Infos oben im Chat für alle einblenden"
+        "text": "Ankündigungen: Das Nexora-Team kann wichtige Infos oben im Chat für alle einblenden",
+        "textEn": "Announcements: the Nexora team can show important info on top of the chat for everyone"
       }
     ]
   },
@@ -176,42 +262,52 @@
     "version": "V0.1.2 Beta",
     "date": "2026-10-23",
     "title": "Dateien & Umfragen",
+    "titleEn": "Files & polls",
     "changes": [
       {
         "icon": "📎",
-        "text": "Dateien und Bilder teilen – per Büroklammer, Drag & Drop oder Einfügen mit Strg+V (bis 8 MB, bis zu 5 pro Nachricht)"
+        "text": "Dateien und Bilder teilen – per Büroklammer, Drag & Drop oder Einfügen mit Strg+V (bis 8 MB, bis zu 5 pro Nachricht)",
+        "textEn": "Share files and images – with the paper clip, drag & drop or pasting with Ctrl+V (up to 8 MB, up to 5 per message)"
       },
       {
         "icon": "🖼️",
-        "text": "Bilder erscheinen direkt im Chat – ein Tipp öffnet die Großansicht mit Download"
+        "text": "Bilder erscheinen direkt im Chat – ein Tipp öffnet die Großansicht mit Download",
+        "textEn": "Images show up right in the chat – a tap opens the large view with a download"
       },
       {
         "icon": "📊",
-        "text": "Umfragen erstellen: bis zu 10 Antworten, eine oder mehrere Stimmen, Ergebnisse live"
+        "text": "Umfragen erstellen: bis zu 10 Antworten, eine oder mehrere Stimmen, Ergebnisse live",
+        "textEn": "Create polls: up to 10 answers, one or several votes, live results"
       },
       {
         "icon": "📝",
-        "text": "Entwürfe: Angefangene Nachrichten bleiben pro Kanal erhalten, auch nach einem Neuladen"
+        "text": "Entwürfe: Angefangene Nachrichten bleiben pro Kanal erhalten, auch nach einem Neuladen",
+        "textEn": "Drafts: unfinished messages are kept per channel, even after a reload"
       },
       {
         "icon": "⬇️",
-        "text": "„Zum Neuesten“-Knopf zeigt beim Hochscrollen, wie viele neue Nachrichten da sind"
+        "text": "„Zum Neuesten“-Knopf zeigt beim Hochscrollen, wie viele neue Nachrichten da sind",
+        "textEn": "The \"Jump to latest\" button shows how many new messages arrived while you scroll up"
       },
       {
         "icon": "🔔",
-        "text": "Desktop-Benachrichtigungen für Erwähnungen und DMs – in den Profileinstellungen einschalten"
+        "text": "Desktop-Benachrichtigungen für Erwähnungen und DMs – in den Profileinstellungen einschalten",
+        "textEn": "Desktop notifications for mentions and DMs – turn them on in the profile settings"
       },
       {
         "icon": "🌙",
-        "text": "„Nicht stören“ schaltet jetzt auch den Erwähnungston stumm"
+        "text": "„Nicht stören“ schaltet jetzt auch den Erwähnungston stumm",
+        "textEn": "\"Do not disturb\" now also mutes the mention sound"
       },
       {
         "icon": "📋",
-        "text": "Nachrichtentext mit einem Klick kopieren"
+        "text": "Nachrichtentext mit einem Klick kopieren",
+        "textEn": "Copy a message text with one click"
       },
       {
         "icon": "🔢",
-        "text": "Zeichenzähler kurz vor dem Limit von 2000 Zeichen"
+        "text": "Zeichenzähler kurz vor dem Limit von 2000 Zeichen",
+        "textEn": "Character counter shortly before the 2000-character limit"
       }
     ]
   },
@@ -219,34 +315,42 @@
     "version": "V0.1.1 Beta",
     "date": "2026-10-22",
     "title": "Sprachkanäle sind da",
+    "titleEn": "Voice channels are here",
     "changes": [
       {
         "icon": "🔊",
-        "text": "Neue Sprachkanäle: Tritt bei und rede in Echtzeit mit deiner Crew"
+        "text": "Neue Sprachkanäle: Tritt bei und rede in Echtzeit mit deiner Crew",
+        "textEn": "New voice channels: join and talk with your crew in real time"
       },
       {
         "icon": "🟢",
-        "text": "Leuchtende Rahmen zeigen, wer gerade spricht"
+        "text": "Leuchtende Rahmen zeigen, wer gerade spricht",
+        "textEn": "Glowing rings show who is speaking"
       },
       {
         "icon": "🎙️",
-        "text": "Mikrofon stumm schalten, Ton aus und Auflegen mit einem Tipp"
+        "text": "Mikrofon stumm schalten, Ton aus und Auflegen mit einem Tipp",
+        "textEn": "Mute the microphone, turn off sound and hang up with one tap"
       },
       {
         "icon": "📡",
-        "text": "Sprachleiste unten links: Bleib verbunden, während du in Textkanälen schreibst"
+        "text": "Sprachleiste unten links: Bleib verbunden, während du in Textkanälen schreibst",
+        "textEn": "Voice bar at the bottom left: stay connected while you write in text channels"
       },
       {
         "icon": "👀",
-        "text": "In der Kanalliste siehst du, wer gerade in welchem Sprachkanal ist"
+        "text": "In der Kanalliste siehst du, wer gerade in welchem Sprachkanal ist",
+        "textEn": "The channel list shows who is in which voice channel"
       },
       {
         "icon": "🛠️",
-        "text": "Hub-Besitzer können beim Erstellen zwischen Text- und Sprachkanal wählen"
+        "text": "Hub-Besitzer können beim Erstellen zwischen Text- und Sprachkanal wählen",
+        "textEn": "Hub owners can choose between a text and a voice channel when creating one"
       },
       {
         "icon": "🌐",
-        "text": "Die Nexora Lounge hat jetzt die Sprachkanäle Treffpunkt und Gaming"
+        "text": "Die Nexora Lounge hat jetzt die Sprachkanäle Treffpunkt und Gaming",
+        "textEn": "The Nexora Lounge now has the voice channels Treffpunkt and Gaming"
       }
     ]
   },
@@ -254,50 +358,62 @@
     "version": "V0.1 Beta",
     "date": "2026-10-22",
     "title": "Der Start von Nexora",
+    "titleEn": "The launch of Nexora",
     "changes": [
       {
         "icon": "🛰️",
-        "text": "Hubs mit eigenen Kanälen erstellen und per Code oder Link Freunde einladen"
+        "text": "Hubs mit eigenen Kanälen erstellen und per Code oder Link Freunde einladen",
+        "textEn": "Create hubs with their own channels and invite friends with a code or link"
       },
       {
         "icon": "⚡",
-        "text": "Nachrichten in Echtzeit – antworten, bearbeiten, löschen und mit Emojis reagieren"
+        "text": "Nachrichten in Echtzeit – antworten, bearbeiten, löschen und mit Emojis reagieren",
+        "textEn": "Real-time messages – reply, edit, delete and react with emojis"
       },
       {
         "icon": "💬",
-        "text": "Direktnachrichten mit jedem Mitglied"
+        "text": "Direktnachrichten mit jedem Mitglied",
+        "textEn": "Direct messages with every member"
       },
       {
         "icon": "✨",
-        "text": "Formatierung: **fett**, *kursiv*, `code`, Zitate, ||Spoiler|| und @Erwähnungen"
+        "text": "Formatierung: **fett**, *kursiv*, `code`, Zitate, ||Spoiler|| und @Erwähnungen",
+        "textEn": "Formatting: **bold**, *italic*, `code`, quotes, ||spoilers|| and @mentions"
       },
       {
         "icon": "🟢",
-        "text": "Online-Status, Tipp-Anzeige und Ungelesen-Badges mit Ton bei Erwähnungen"
+        "text": "Online-Status, Tipp-Anzeige und Ungelesen-Badges mit Ton bei Erwähnungen",
+        "textEn": "Online status, typing indicator and unread badges with a sound for mentions"
       },
       {
         "icon": "⌘",
-        "text": "Befehlspalette mit Strg+K – spring sofort zu jedem Hub, Kanal oder Menschen"
+        "text": "Befehlspalette mit Strg+K – spring sofort zu jedem Hub, Kanal oder Menschen",
+        "textEn": "Command palette with Ctrl+K – jump straight to any hub, channel or person"
       },
       {
         "icon": "🎨",
-        "text": "Profile mit Anzeigename, Bio und eigener Akzentfarbe"
+        "text": "Profile mit Anzeigename, Bio und eigener Akzentfarbe",
+        "textEn": "Profiles with display name, bio and your own accent colour"
       },
       {
         "icon": "✅",
-        "text": "Offizielle Nexora-Accounts mit Abzeichen"
+        "text": "Offizielle Nexora-Accounts mit Abzeichen",
+        "textEn": "Official Nexora accounts with a badge"
       },
       {
         "icon": "💾",
-        "text": "Alle Accounts und Nachrichten werden dauerhaft gespeichert"
+        "text": "Alle Accounts und Nachrichten werden dauerhaft gespeichert",
+        "textEn": "All accounts and messages are stored permanently"
       },
       {
         "icon": "📱",
-        "text": "Optimiert fürs Handy"
+        "text": "Optimiert fürs Handy",
+        "textEn": "Optimised for phones"
       },
       {
         "icon": "🔔",
-        "text": "Update-Hinweise: Du siehst immer, was neu ist, und bekommst automatisch die neueste Version"
+        "text": "Update-Hinweise: Du siehst immer, was neu ist, und bekommst automatisch die neueste Version",
+        "textEn": "Update notes: you always see what's new and get the latest version automatically"
       }
     ]
   }

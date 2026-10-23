@@ -77,7 +77,7 @@ body { background: radial-gradient(ellipse at 50% 120%, #1c0d2a 0%, var(--bg) 60
   100% { transform: translate(115vw, -2vh); }
 }
 
-body.calm .hw-bat, body.calm .hw-fog, body.calm .hw-ghost { display: none; }
+body.calm .hw-bat, body.calm .hw-fog, body.calm .hw-ghost, body.calm .hw-candy { display: none; }
 
 /* ---------- logo & brand ---------- */
 .logo-mark { background: var(--grad-spooky); }
@@ -140,6 +140,27 @@ body.calm .hw-bat, body.calm .hw-fog, body.calm .hw-ghost { display: none; }
 }
 @keyframes hw-ghost-bob { from { transform: translateY(-6px) rotate(-4deg); } to { transform: translateY(6px) rotate(4deg); } }
 @keyframes hw-ghost-caught { to { transform: scale(1.8) rotate(25deg); opacity: 0; filter: blur(6px); } }
+
+/* rare golden ghost: counts three times */
+.hw-ghost.golden { filter: drop-shadow(0 0 16px rgba(255, 196, 60, 0.95)); animation-duration: 11s; }
+.hw-ghost.golden .body { fill: #ffd76a; }
+.hw-ghost.golden .eye { fill: #6b3a00; }
+.hw-ghost.golden:hover { filter: drop-shadow(0 0 26px rgba(255, 220, 120, 1)); }
+
+/* sweets bursting out of a caught ghost, and the "trick or treat" candy rain */
+.hw-candy { position: fixed; z-index: 46; pointer-events: none; font-size: 22px; line-height: 1; margin: -11px 0 0 -11px; animation: hw-burst 0.9s cubic-bezier(.15, .7, .3, 1) forwards; }
+.hw-candy.rain { top: -40px; margin: 0; font-size: 26px; animation: hw-rain 3s linear forwards; }
+@keyframes hw-burst {
+  0% { transform: translate(0, 0) scale(0.4) rotate(0); opacity: 1; }
+  70% { opacity: 1; }
+  100% { transform: translate(var(--dx), var(--dy)) scale(1) rotate(var(--r)); opacity: 0; }
+}
+@keyframes hw-rain {
+  0% { transform: translateY(0) rotate(0); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translateY(calc(100vh + 80px)) rotate(var(--r)); opacity: 0; }
+}
 
 .toast.spooky { border-color: rgba(155, 93, 229, 0.6); box-shadow: 0 0 24px -4px rgba(155, 93, 229, 0.8); }
 

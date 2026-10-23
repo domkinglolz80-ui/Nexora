@@ -311,10 +311,30 @@ button.chip:hover { background: rgba(255, 122, 24, 0.24); }
   border: 3px solid var(--panel-solid);
   background: var(--offline);
 }
-.dot.online { background: var(--success); box-shadow: 0 0 8px var(--success); }
-.dot.idle { background: var(--idle); }
-.dot.dnd { background: var(--dnd); }
 .dot.offline { background: var(--offline); }
+
+/* Live presence: online sends out a soft pulse, away is a rocking moon, do-not-disturb
+   breathes. Offline stays still. Everything stops with "reduce motion". */
+.dot::before, .dot::after { content: ''; position: absolute; pointer-events: none; }
+.dot.online { background: var(--success); animation: st-glow 2.4s ease-in-out infinite; }
+.dot.online::after { inset: 0; border-radius: 50%; background: var(--success); animation: st-ping 2.4s cubic-bezier(0, 0, .2, 1) infinite; }
+.dot.idle { background: var(--panel-solid); }
+.dot.idle::before {
+  inset: -1px; border-radius: 50%; background: var(--idle);
+  -webkit-mask: radial-gradient(circle at 26% 28%, transparent 0 40%, #000 42%);
+  mask: radial-gradient(circle at 26% 28%, transparent 0 40%, #000 42%);
+  filter: drop-shadow(0 0 2px rgba(255, 204, 51, 0.7));
+  animation: st-rock 3.2s ease-in-out infinite alternate;
+}
+.dot.dnd { background: var(--dnd); animation: st-breathe 2s ease-in-out infinite; }
+.dot.dnd::before { left: 18%; right: 18%; top: 50%; height: 2px; margin-top: -1px; border-radius: 2px; background: var(--panel-solid); }
+@keyframes st-glow { 0%, 100% { box-shadow: 0 0 3px var(--success); } 50% { box-shadow: 0 0 10px var(--success); } }
+@keyframes st-ping { 0% { transform: scale(1); opacity: 0.55; } 70%, 100% { transform: scale(2.3); opacity: 0; } }
+@keyframes st-rock { from { transform: rotate(-22deg); } to { transform: rotate(18deg); } }
+@keyframes st-breathe {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 61, 87, 0); }
+  50% { transform: scale(1.12); box-shadow: 0 0 8px 1px rgba(255, 61, 87, 0.65); }
+}
 
 /* ---------- me card ---------- */
 .me-card { display: flex; align-items: center; gap: 10px; padding: 12px; border-top: 1px solid var(--line); background: rgba(0, 0, 0, 0.25); }
@@ -542,7 +562,20 @@ button.chip:hover { background: rgba(255, 122, 24, 0.24); }
 .status-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 14px; }
 .status-opt { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); background: rgba(0, 0, 0, 0.3); text-align: left; }
 .status-opt.sel { border-color: var(--orange); background: rgba(255, 122, 24, 0.12); }
-.status-opt .dot { position: static; width: 10px; height: 10px; border: 0; border-radius: 50%; }
+.status-opt .dot { position: relative; flex-shrink: 0; width: 10px; height: 10px; border: 0; border-radius: 50%; }
+.status-opt .dot.idle { background: transparent; }
+.lang-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 14px; }
+.lang-opt .flag { font-size: 16px; line-height: 1; }
+.lang-switch { display: flex; justify-content: flex-end; gap: 6px; margin: -12px -12px 14px 0; }
+.lang-switch button { padding: 5px 10px; border-radius: 999px; border: 1px solid var(--line); background: rgba(0, 0, 0, 0.25); color: var(--muted); font: 600 12px var(--font); }
+.lang-switch button:hover { color: var(--text); border-color: var(--line-strong); }
+.lang-switch button.active { color: var(--text); border-color: var(--orange); background: rgba(255, 122, 24, 0.14); }
+.ghost-badge { display: inline-flex; align-items: center; gap: 6px; margin-top: 8px; padding: 4px 10px; border-radius: 999px; background: rgba(155, 93, 229, 0.16); border: 1px solid rgba(155, 93, 229, 0.4); color: #e3ccff; font: 600 12px var(--font); }
+.ghost-stats { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; padding: 12px 14px; border-radius: 14px; border: 1px solid rgba(155, 93, 229, 0.4); background: linear-gradient(135deg, rgba(155, 93, 229, 0.16), rgba(255, 122, 24, 0.08)); }
+.ghost-stats .gs-ico { font-size: 26px; animation: acc-float 2.4s ease-in-out infinite alternate; }
+.ghost-stats b { font: 700 14px var(--display); }
+.ghost-stats small { display: block; color: var(--muted); font-size: 12px; }
+@keyframes acc-float { from { transform: translateY(-3px); } to { transform: translateY(3px); } }
 
 .invite-box { display: flex; gap: 8px; align-items: center; padding: 6px 6px 6px 16px; background: rgba(0, 0, 0, 0.4); border: 1px solid var(--line-strong); border-radius: 14px; margin-bottom: 14px; }
 .invite-box code { flex: 1; font: 600 20px var(--mono); letter-spacing: 0.2em; color: var(--orange-2); }
