@@ -24,7 +24,7 @@ Nexora ist eine Echtzeit-Chat-Plattform mit eigenem Look: dunkles Glas-Design mi
 - **Profile** – Anzeigename, Bio, Akzentfarbe
 - **Deutsch & Englisch** – Sprache beim Login oder in den Profil-Einstellungen wählen, beim ersten Besuch wird sie automatisch erkannt
 - **Desktop-App** – Nexora als eigenes Programm für Windows, macOS und Linux, Download über das Symbol unten in der Hub-Leiste
-- **Responsive** – funktioniert auch auf dem Handy
+- **Handy-freundlich** – eigenes Layout fürs Handy: Wischen öffnet Kanal- und Mitgliederliste, die Zurück-Taste schließt Menüs und Fenster, Nachrichten-Aktionen per Antippen, kein Hineinzoomen beim Tippen, die Tastatur verdeckt das Eingabefeld nicht; als App auf den Home-Bildschirm legbar
 - **Halloween Edition 2026** – gruseliger Look, animierte Profil-Accessoires, Geisterjagd und der **Geister-Laden**
 
 Neue Nutzer landen automatisch in der **Nexora Lounge** (Code `NEXORA`).
@@ -93,7 +93,7 @@ Und diese zur Halloween Edition:
 
 `@Zorvecx` bekommt den Höllenfürsten genauso einmal automatisch (beim Serverstart oder bei der Registrierung). `@nexora` bekommt den Kürbiskönig beim ersten Serverstart einmal automatisch angelegt und kann danach frei wechseln. Auch weitere offizielle Accounts aus `NEXORA_OFFICIAL` können ihn nicht tragen.
 
-**Geisterjagd** – alle 40–90 Sekunden (in der Halloween-Nacht alle 15–35 Sekunden) schwebt ein Geist über den Bildschirm. Wer ihn anklickt, fängt ihn, und es platzen Süßigkeiten heraus. Jeder achte ist ein **goldener Geist**, der dreifach zählt. Der Zähler gehört zum Account (Zähler älterer Versionen vom Gerät werden einmal übernommen) und bringt Ränge, die im Profil stehen:
+**Geisterjagd** – alle 40–90 Sekunden (in der Halloween-Nacht alle 15–35 Sekunden) schwebt ein Geist über den Bildschirm. Wer ihn anklickt, fängt ihn, und es platzen Süßigkeiten heraus. Jeder achte ist ein **goldener Geist**, der dreifach zählt – während der **Goldenen Geisternacht** sogar jeder zweite. Der Zähler gehört zum Account (Zähler älterer Versionen vom Gerät werden einmal übernommen) und bringt Ränge, die im Profil stehen:
 
 | Geister | Rang               |
 | ------- | ------------------ |
@@ -104,6 +104,8 @@ Und diese zur Halloween Edition:
 | 66      | Legende der Nacht  |
 
 Der Rang zählt **alle jemals gefangenen Geister** – auch die, die du im Laden ausgegeben hast.
+
+**Goldene Geisternacht** (ab V0.7.0 Beta) – ein Event, bei dem **jeder zweite Geist golden** ist statt jeder achte. Solange es läuft, steht oben im Chat ein goldenes Banner mit der Restzeit (ausblendbar). Das erste Event läuft am **23. Oktober 2026 bis Mitternacht** (deutsche Zeit, `GOLDEN_EVENT` in `server.js`). `@nexora` kann es jederzeit mit dem Helper steuern: `/event an [stunden]` startet oder verlängert es, `/event aus` beendet es, `/event` zeigt den Stand. Das Banner erscheint und verschwindet bei allen sofort.
 
 **Geister-Laden** (ab V0.4.0 Beta) – gefangene Geister sind jetzt Geld: Über das Geist-Symbol in der Hub-Leiste, „Geister-Laden“ in den Profil-Einstellungen oder die Schnellsuche öffnet sich der Laden mit **Halloween-Dekoration** für den Avatar. Jedes Stück zeigt eine Live-Vorschau mit deinem eigenen Avatar. Beim Kauf (zweiter Klick bestätigt) werden die Geister abgezogen und sind weg – die Dekoration gehört dir **für immer**, wird sofort angelegt und steht danach in der Accessoire-Auswahl. Je teurer, desto spektakulärer:
 
@@ -203,20 +205,23 @@ Der **Nexora Helper** (`@NexoraHelper`) ist der offizielle Bot von Nexora, mit �
 | **Nexora**                            |                                                                      |
 | `/ankuendigung [text]`                | setzt das Banner für alle, ohne Text wird es entfernt                |
 | `/wartung [text]` 🔒                  | Wartungsmodus an (alle außer dem Team werden abgemeldet); `/wartung aus` beendet ihn |
-| `/info <nutzer>`                      | Account-Infos: dabei seit, Geräte, Hubs, Nachrichten, Sperre, Stummschaltung |
+| `/info <nutzer>`                      | Account-Infos: dabei seit, Geräte, Hubs, Nachrichten, Sperre, Stummschaltung, Geister und Accessoire |
 | `/suche <name>`                       | findet Accounts nach Benutzer- oder Anzeigename                      |
 | `/online`                             | wer gerade online ist                                                |
 | `/hubs`                               | die 10 größten Hubs mit Einladungscode                               |
 | `/stats`                              | Nexora in Zahlen                                                     |
 | `/system`                             | Technik-Check: Laufzeit, Speicher, Datenbank, Verbindungen, Sessions |
 | `/protokoll [anzahl]`                 | die letzten 1–25 Einträge aus dem Protokoll                          |
+| **Halloween**                         |                                                                      |
+| `/event [an\|aus] [stunden]`          | Goldene Geisternacht: ohne Angabe der Stand, `an 3` startet oder verlängert sie für 3 Stunden ab jetzt (1–72), `aus` beendet sie |
+| `/geister <nutzer> <anzahl>`          | schenkt 1–1000 Geister für den Geister-Laden, sichtbar im Kanal; die Person bekommt einen Hinweis |
 | **Helper**                            |                                                                      |
-| `/hilfe`                              | alle Befehle, nach Gruppen sortiert                                  |
+| `/hilfe [befehl]`                     | alle Befehle nach Gruppen – mit Befehl alles dazu (Optionen, 🔒); bei Tippfehlern schlägt er den passenden Befehl vor |
 | `/ja` · `/abbrechen`                  | bestätigt oder verwirft den wartenden 🔒-Befehl                       |
 | `/einladen [code]` · `/ausladen [code]` | holt den Helper sichtbar in einen Hub oder wieder heraus           |
 | `/status <status>`                    | `online`, `abwesend`, `nichtstoeren` oder `unsichtbar` (englisch geht auch: `idle`, `dnd`, `invisible`) |
 
-`<nutzer>` ist der Benutzername, mit oder ohne `@`. Sperren, Stummschaltungen, Verwarnungen, Kicks und `/sagen` schreibt der Helper sichtbar in den Kanal, alles andere sieht nur `@nexora`.
+`<nutzer>` ist der Benutzername, mit oder ohne `@`. Sperren, Stummschaltungen, Verwarnungen, Kicks, Geister-Geschenke und `/sagen` schreibt der Helper sichtbar in den Kanal, alles andere sieht nur `@nexora`.
 
 ## Bots & Slash-Befehle
 
@@ -304,7 +309,7 @@ Selbst bauen: `cd desktop && npm install && npm start` (Testen) bzw. `npm run di
 
 ## Versionen & Updates
 
-Aktuelle Version: **V0.6.1 Beta** (Desktop-App 0.6.0). Alle Änderungen stehen in [`changelog.json`](changelog.json) – der oberste Eintrag ist die laufende Version.
+Aktuelle Version: **V0.7.0 Beta** (Desktop-App 0.6.0). Alle Änderungen stehen in [`changelog.json`](changelog.json) – der oberste Eintrag ist die laufende Version.
 
 - Nach dem Login (und nach jedem Update) zeigt Nexora einmal das Fenster **„Was ist neu?“**. Über die Versionsanzeige unten in der Hub-Leiste lässt es sich jederzeit wieder öffnen.
 - Geht eine neue Version live, während jemand Nexora offen hat, lädt die Seite automatisch neu. Tippt die Person gerade etwas, erscheint stattdessen ein „Jetzt laden“-Hinweis.

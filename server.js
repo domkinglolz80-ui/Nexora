@@ -41,6 +41,18 @@ const shopView = () => ({
   discount: SHOP_DISCOUNT,
   prices: Object.fromEntries(Object.keys(SHOP).map((item) => [item, { price: shopPrice(item), regular: SHOP[item] }])),
 });
+// Golden ghosts: normally one ghost in eight is golden. During the Goldene Geisternacht
+// (V0.7.0, all of October 23rd in Germany) it is every second one. @nexora can start,
+// extend or end the event with the helper's /event; that overrides this window.
+const GOLDEN_CHANCE = 1 / 8;
+const GOLDEN_EVENT = {
+  name: 'Goldene Geisternacht',
+  start: Date.parse('2026-10-23T00:00:00+02:00'),
+  end: Date.parse('2026-10-24T00:00:00+02:00'),
+  chance: 1 / 2,
+};
+const MAX_EVENT_HOURS = 72;
+const MAX_GIFT_GHOSTS = 1000;
 const STARTED_AT = Date.now();
 // The newest changelog entry is the running version; clients compare it to reload on updates.
 const CHANGELOG = require('./changelog.json');
@@ -82,7 +94,7 @@ function mongoHint(err) {
 }
 
 function emptyDb() {
-  return { users: {}, sessions: {}, hubs: {}, dms: {}, messages: {}, bots: {}, announcement: null, team: [], audit: [], maintenance: null, retention: null };
+  return { users: {}, sessions: {}, hubs: {}, dms: {}, messages: {}, bots: {}, announcement: null, team: [], audit: [], maintenance: null, retention: null, ghostEvent: null };
 }
 
 const db = emptyDb();
@@ -154,8 +166,8 @@ const mongoStore = {
   },
 
   async write() {
-    const { users, sessions, hubs, dms, bots, announcement, team, audit, maintenance, retention } = db;
-    const docs = new Map([['meta', { data: { users, sessions, hubs, dms, bots, announcement, team, audit, maintenance, retention } }]]);
+    const { users, sessions, hubs, dms, bots, announcement, team, audit, maintenance, retention, ghostEvent } = db;
+    const docs = new Map([['meta', { data: { users, sessions, hubs, dms, bots, announcement, team, audit, maintenance, retention, ghostEvent } }]]);
     for (const [channelId, list] of Object.entries(db.messages)) docs.set('ch:' + channelId, { list });
 
     const ops = [];
@@ -1069,6 +1081,24 @@ function setAnnouncement(text) {
   return db.announcement;
 }
 
+// The golden ghost event that is running or still to come; null once it is over.
+// Clients start and end it themselves from start/end, so nothing has to be sent at the edges.
+function ghostEvent() {
+  const event = { ...GOLDEN_EVENT, ...(db.ghostEvent || {}) };
+  return event.end > Date.now() && event.end > event.start ? event : null;
+}
+
+const ghostEventActive = () => {
+  const event = ghostEvent();
+  return Boolean(event) && event.start <= Date.now();
+};
+
+function setGhostEvent(start, end) {
+  db.ghostEvent = { start, end };
+  save();
+  io.emit('ghostEvent', ghostEvent());
+}
+
 function platformCounts() {
   const humans = Object.values(db.users).filter((u) => !u.bot);
   const dayAgo = Date.now() - 86400000;
@@ -1352,7 +1382,30 @@ const canModerate = (name) => !moderatable(userByMention(name)).error;
 const validPurge = (value) => Number.isInteger(Number(value)) && Number(value) >= 1 && Number(value) <= MAX_PURGE;
 const isOff = (text) => /^(aus|off|ende|stop)$/i.test(String(text || '').trim());
 
-const HELPER_GROUPS = ['Moderation', 'Kanal', 'Nexora', 'Helper'];
+const HELPER_GROUPS = ['Moderation', 'Kanal', 'Nexora', 'Halloween', 'Helper'];
+
+// "2 Std. 5 Min.": the time left until a timestamp.
+const leftText = (until) => uptimeText(Math.max(0, (until - Date.now()) / 1000));
+const chanceText = (chance) => `1 von ${Math.round(1 / chance)}`;
+
+// Typos like "/hilfe stauts": the closest helper command, if it is only one or two letters off.
+function closestHelperCommand(name) {
+  const distance = (a, b) => {
+    let row = Array.from({ length: b.length + 1 }, (_, i) => i);
+    for (let i = 1; i <= a.length; i++) {
+      const next = [i];
+      for (let j = 1; j <= b.length; j++) next[j] = Math.min(row[j] + 1, next[j - 1] + 1, row[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+      row = next;
+    }
+    return row[b.length];
+  };
+  let best = null;
+  for (const c of HELPER_COMMANDS) {
+    const d = distance(name, c.name);
+    if (d <= 2 && (!best || d < best.d)) best = { d, command: c };
+  }
+  return best?.command || null;
+}
 
 // Each run gets { invoker, access, channelId, options } and returns
 // { public: [texts posted by the helper], ephemeral: [texts only the invoker sees] }.
@@ -1361,18 +1414,36 @@ const HELPER_COMMANDS = [
   {
     name: 'hilfe',
     group: 'Helper',
-    description: 'Zeigt alle Befehle des Nexora Helpers',
-    options: [],
-    run: () => ({
-      ephemeral: [[
-        `🛡️ **Nexora Helper** · nur für @nexora · ${VERSION}`,
-        ...HELPER_GROUPS.flatMap((group) => [
-          `**${group}**`,
-          ...HELPER_COMMANDS.filter((c) => c.group === group).map((c) => `\`${commandUsage(c)}\`${c.confirm ? ' 🔒' : ''} – ${c.description}`),
-        ]),
-        `🔒 = wartet auf \`/ja\` · höchstens ${HELPER_RATE} Befehle pro Minute · jeder Eingriff landet im Protokoll`,
-      ].join('\n')],
-    }),
+    description: 'Zeigt alle Befehle – oder alles zu einem Befehl',
+    options: [option('befehl', 'z. B. stumm – ohne: alle Befehle')],
+    run: ({ options }) => {
+      if (options.befehl) {
+        const name = options.befehl.toLowerCase().replace(/^\//, '');
+        const command = HELPER_COMMANDS.find((c) => c.name === name);
+        if (!command) {
+          const guess = closestHelperCommand(name);
+          return { ephemeral: [`Den Befehl /${name} gibt es nicht.${guess ? ` Meintest du \`/${guess.name}\`?` : ''} Alle Befehle: \`/hilfe\``] };
+        }
+        return {
+          ephemeral: [[
+            `📖 \`${commandUsage(command)}\` · ${command.group}`,
+            command.description,
+            ...command.options.map((o) => `• \`${o.name}\` ${o.required ? '(Pflicht)' : '(optional)'} – ${o.description}`),
+            command.confirm ? '🔒 Wartet auf `/ja`, bevor etwas passiert.' : '',
+          ].filter(Boolean).join('\n')],
+        };
+      }
+      return {
+        ephemeral: [[
+          `🛡️ **Nexora Helper** · nur für @nexora · ${VERSION}`,
+          ...HELPER_GROUPS.flatMap((group) => [
+            `**${group}**`,
+            ...HELPER_COMMANDS.filter((c) => c.group === group).map((c) => `\`${commandUsage(c)}\`${c.confirm ? ' 🔒' : ''} – ${c.description}`),
+          ]),
+          `🔒 = wartet auf \`/ja\` · \`/hilfe <befehl>\` erklärt einen Befehl · höchstens ${HELPER_RATE} Befehle pro Minute · jeder Eingriff landet im Protokoll`,
+        ].join('\n')],
+      };
+    },
   },
   {
     name: 'ja',
@@ -1634,6 +1705,7 @@ const HELPER_COMMANDS = [
           `${numberFmt.format(hubs)} Hubs · ${numberFmt.format(messages)} Nachrichten · ${numberFmt.format(bots)} Bots`,
           u.banned ? `🔨 Gesperrt seit ${dateFmt.format(u.banned.at)}${u.banned.reason ? ` – ${u.banned.reason}` : ''}` : 'Nicht gesperrt',
           muteError(u) ? `🔇 Stumm bis ${stampFmt.format(u.mutedUntil)}${u.muteReason ? ` – ${u.muteReason}` : ''}` : 'Nicht stumm',
+          `👻 ${numberFmt.format(u.ghosts || 0)} Geister (${numberFmt.format(u.ghostsCaught || 0)} insgesamt gefangen) · Accessoire: ${u.accessory || 'keins'}`,
         ].join('\n')],
       };
     },
@@ -1690,6 +1762,7 @@ const HELPER_COMMANDS = [
           `Nutzer: ${n(c.users)} (${n(c.online)} online, +${n(c.newToday)} heute) · gesperrt: ${n(c.banned)}`,
           `Hubs: ${n(c.hubs)} · Kanäle: ${n(c.channels)} · Bots: ${n(c.bots)} · im Sprachkanal: ${n(c.inVoice)}`,
           `Nachrichten: ${n(c.messages)} (${n(c.messagesToday)} in 24 Std.)`,
+          `Geister: ${n(Object.values(db.users).reduce((sum, u) => sum + (u.ghostsCaught || 0), 0))} gefangen · ${ghostEventActive() ? `✨ ${ghostEvent().name} läuft` : 'kein Event'}`,
         ].join('\n')],
       };
     },
@@ -1710,6 +1783,55 @@ const HELPER_COMMANDS = [
           `Wartung: ${db.maintenance ? 'an' : 'aus'} · Helper in ${numberFmt.format(Object.values(db.hubs).filter((h) => h.members.includes(HELPER_ID)).length)} Hubs`,
         ].join('\n')],
       };
+    },
+  },
+  {
+    name: 'event',
+    group: 'Halloween',
+    description: 'Goldene Geisternacht: Status, starten/verlängern oder beenden',
+    options: [option('aktion', 'an oder aus – ohne: Status'), option('stunden', `Wie lange ab jetzt (1–${MAX_EVENT_HOURS}), Standard 3`)],
+    run: ({ invoker, options }) => {
+      const action = String(options.aktion || '').toLowerCase();
+      const event = ghostEvent();
+      const now = Date.now();
+      if (!action || action === 'status') {
+        if (!event) return { ephemeral: [`Gerade läuft kein Event. Goldene Geister: ${chanceText(GOLDEN_CHANCE)}. Starten mit \`/event an 3\`.`] };
+        if (event.start > now) return { ephemeral: [`🕯️ **${event.name}** startet ${stampFmt.format(event.start)} und läuft bis ${stampFmt.format(event.end)}.`] };
+        return { ephemeral: [`✨ **${event.name}** läuft – noch ${leftText(event.end)} (bis ${stampFmt.format(event.end)}). Goldene Geister: ${chanceText(event.chance)} statt ${chanceText(GOLDEN_CHANCE)}.`] };
+      }
+      if (/^(an|on|start)$/.test(action)) {
+        const hours = options.stunden ? Number(String(options.stunden).replace(',', '.')) : 3;
+        if (!Number.isFinite(hours) || hours <= 0 || hours > MAX_EVENT_HOURS) return { ephemeral: [`Bitte eine Dauer von 1 bis ${MAX_EVENT_HOURS} Stunden, z. B. \`/event an 3\`.`] };
+        const running = ghostEventActive();
+        const end = now + Math.round(hours * 3600_000);
+        setGhostEvent(running ? event.start : now, end);
+        audit(invoker.id, 'ghostEvent', `an bis ${stampFmt.format(end)}`);
+        return { ephemeral: [`✨ **${GOLDEN_EVENT.name}** ${running ? 'läuft jetzt' : 'gestartet –'} bis ${stampFmt.format(end)}. Alle sehen das Banner, goldene Geister: ${chanceText(GOLDEN_EVENT.chance)}.`] };
+      }
+      if (isOff(action)) {
+        if (!ghostEventActive()) return { ephemeral: ['Gerade läuft kein Event.'] };
+        setGhostEvent(event.start, now);
+        audit(invoker.id, 'ghostEvent', 'aus');
+        return { ephemeral: [`🌙 **${event.name}** beendet – goldene Geister sind wieder selten (${chanceText(GOLDEN_CHANCE)}).`] };
+      }
+      return { ephemeral: ['Unbekannte Aktion. Möglich: `/event`, `/event an [stunden]`, `/event aus`.'] };
+    },
+  },
+  {
+    name: 'geister',
+    group: 'Halloween',
+    description: `Schenkt jemandem Geister für den Geister-Laden (max. ${MAX_GIFT_GHOSTS})`,
+    options: [option('nutzer', 'Wer die Geister bekommt', true), option('anzahl', `Wie viele (1–${MAX_GIFT_GHOSTS})`, true)],
+    run: ({ invoker, options }) => {
+      const target = userByMention(options.nutzer);
+      if (!target || target.bot) return { ephemeral: ['Benutzer nicht gefunden.'] };
+      const count = Number(options.anzahl);
+      if (!Number.isInteger(count) || count < 1 || count > MAX_GIFT_GHOSTS) return { ephemeral: [`Bitte eine Zahl von 1 bis ${MAX_GIFT_GHOSTS}.`] };
+      target.ghosts = (target.ghosts || 0) + count;
+      save();
+      broadcastToVisible(target.id, 'user:update', publicUser(target));
+      audit(invoker.id, 'ghostGift', `@${target.username} +${count}`);
+      return { public: [`🎁 **@${target.username}** bekommt 👻 ${numberFmt.format(count)} Geister vom Nexora-Team – viel Spaß im Geister-Laden!`] };
     },
   },
   {
@@ -1780,6 +1902,7 @@ io.on('connection', (socket) => {
       version: VERSION,
       helperCommands: isOwner(me()) ? HELPER_COMMANDS.map(helperCommandView) : undefined,
       announcement: db.announcement,
+      ghostEvent: ghostEvent(),
       shop: shopView(),
       me: publicUser(me()),
       hubs: Object.values(db.hubs).filter((h) => h.members.includes(userId)).map(hubView),

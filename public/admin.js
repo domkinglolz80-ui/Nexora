@@ -311,6 +311,8 @@ const AUDIT_LABELS = {
   maintenanceOn: ['🚧', 'hat den Wartungsmodus eingeschaltet'],
   maintenanceOff: ['🟢', 'hat den Wartungsmodus beendet'],
   broadcast: ['📢', 'hat eine Durchsage gesendet'],
+  ghostEvent: ['✨', 'hat die Goldene Geisternacht geändert'],
+  ghostGift: ['🎁', 'hat Geister verschenkt'],
 };
 
 function ownerViews(body, reload) {

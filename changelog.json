@@ -1,5 +1,33 @@
 [
   {
+    "version": "V0.7.0 Beta",
+    "date": "2026-10-23",
+    "title": "Goldene Geisternacht & Nexora fürs Handy",
+    "titleEn": "Golden Ghost Night & Nexora for your phone",
+    "changes": [
+      {
+        "icon": "✨",
+        "text": "**Goldene Geisternacht – heute bis Mitternacht!** Jeder **zweite** Geist ist golden statt jeder achte, und jeder goldene zählt dreifach. Ein goldenes Banner oben im Chat zeigt, wie lange das Event noch läuft",
+        "textEn": "**Golden Ghost Night – today until midnight!** Every **second** ghost is golden instead of every eighth, and each golden one counts three times. A golden banner on top of the chat shows how long the event still runs"
+      },
+      {
+        "icon": "📱",
+        "text": "**Nexora fürs Handy**: Wische nach rechts für die Kanäle und nach links für die Mitglieder, die Zurück-Taste schließt Menüs und Fenster, statt Nexora zu verlassen, und ein Tipp auf eine Nachricht zeigt Reagieren, Antworten & Co.",
+        "textEn": "**Nexora for your phone**: swipe right for the channels and left for the members, the back button closes menus and windows instead of leaving Nexora, and a tap on a message shows react, reply and more"
+      },
+      {
+        "icon": "⌨️",
+        "text": "Tippen am Handy: kein Hineinzoomen mehr beim Antippen eines Feldes, die Tastatur verdeckt das Eingabefeld nicht, sie bleibt nach dem Senden offen und zeigt eine „Senden“-Taste. Dazu größere Knöpfe, ein kompakterer Login und Platz für Notch und abgerundete Ecken",
+        "textEn": "Typing on your phone: no more zooming in when you tap a field, the keyboard doesn't cover the message field, it stays open after sending and shows a “Send” key. Plus bigger buttons, a more compact login and room for notches and rounded corners"
+      },
+      {
+        "icon": "🛡️",
+        "text": "Der **Nexora Helper** kann mehr: `/event` steuert die Goldene Geisternacht, `/geister` verschenkt Geister, `/hilfe <befehl>` erklärt jeden Befehl (mit Vorschlag bei Tippfehlern), und `/info` und `/stats` zeigen jetzt auch Geister",
+        "textEn": "The **Nexora Helper** can do more: `/event` controls the Golden Ghost Night, `/geister` gives away ghosts, `/hilfe <command>` explains every command (with a suggestion for typos), and `/info` and `/stats` now show ghosts too"
+      }
+    ]
+  },
+  {
     "version": "V0.6.1 Beta",
     "date": "2026-10-23",
     "title": "Alles gratis & durchsichtige Nacht",

@@ -2322,3 +2322,71 @@ textarea.code:focus { border-color: var(--orange); box-shadow: 0 0 0 4px rgba(25
 @keyframes fj-hack-up { 0%, 55% { transform: rotate(-22deg); } 63% { transform: rotate(-36deg); } 70% { transform: rotate(6deg); } 74% { transform: rotate(0deg); } 100% { transform: rotate(-22deg); } }
 /* the blood moon floats lower in the member list so it doesn't cover the "Online" heading */
 .member .acc-blutmond .bloodmoon { top: calc(var(--s) * -0.34); width: calc(var(--s) * 0.32); height: calc(var(--s) * 0.32); margin-left: calc(var(--s) * -0.16); }
+
+/* =========================================================================
+   PHONES & TOUCH (V0.7.0)
+   ========================================================================= */
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+/* No pull-to-refresh or rubber band on the whole page; lists still scroll by themselves. */
+body { overscroll-behavior: none; -webkit-tap-highlight-color: transparent; }
+.messages, .sidebar, .members, .rail-hubs, .modal { overscroll-behavior: contain; }
+/* Taps react right away instead of waiting for a possible double tap. */
+button, a, input, textarea, select, label, .nav-item, .msg { touch-action: manipulation; }
+
+@media (pointer: coarse) {
+  /* Below 16px iPhones zoom into a field as soon as it is tapped. */
+  input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]), textarea, select { font-size: 16px !important; }
+}
+
+/* Phones have no hover: a tap on a message shows its actions (app.js), the next one hides them. */
+@media (hover: none) {
+  .msg:hover { background: none; }
+  .msg:hover .msg-tools { display: none; }
+  .msg.touched { background: rgba(255, 140, 60, 0.07); }
+  .msg.touched .msg-tools, .msg .msg-tools.open { display: flex; }
+  .msg.touched .gutter-time { visibility: visible; }
+}
+
+@media (max-width: 760px) {
+  /* Notches and rounded corners in landscape and in the home-screen app. */
+  .app { height: var(--app-h, 100%); padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right); }
+  .rail { padding-top: max(10px, env(safe-area-inset-top)); padding-bottom: env(safe-area-inset-bottom); left: env(safe-area-inset-left); }
+  .sidebar { padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); left: calc(76px + env(safe-area-inset-left)); }
+  .chat-head { padding-top: env(safe-area-inset-top); height: calc(64px + env(safe-area-inset-top)); }
+
+  /* Fingers need bigger targets than a mouse. */
+  .section-label .icon-btn { width: 36px; height: 36px; margin: -6px -6px -6px 0; }
+  .me-card .icon-btn { width: 36px; height: 40px; }
+  .composer .icon-btn { width: 36px; height: 40px; }
+  .composer { gap: 2px; padding: 6px 6px 6px 8px; }
+  .hub-sub .chip { min-height: 32px; }
+  .reply-bar .x { width: 34px; height: 34px; }
+
+  /* The placeholder stays on one line instead of wrapping into a second one. */
+  .composer textarea::placeholder { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* Message actions: larger buttons, and on narrow phones the bar scrolls sideways. */
+  .msg-tools { right: 8px; max-width: calc(100% - 16px); overflow-x: auto; scrollbar-width: none; }
+  .msg-tools::-webkit-scrollbar { display: none; }
+  .msg-tools .icon-btn { width: 38px; height: 38px; flex-shrink: 0; }
+
+  /* Login: logo and slogan smaller, so the form shows up without scrolling. */
+  .auth { padding: max(18px, env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom)); gap: 18px; }
+  .auth-hero .hw-logo-wrap { zoom: 0.66; }
+  .brand { font-size: clamp(36px, 12vw, 52px); margin: 10px 0 4px; }
+  .tagline { font-size: 16px; }
+  .auth-card { padding: 22px 18px; }
+  .auth-tabs { margin-bottom: 18px; }
+
+  .modal-backdrop { padding-bottom: calc(20px + env(safe-area-inset-bottom)); }
+  /* Toasts sit above the message field instead of covering it. */
+  .toast-root { bottom: calc(92px + env(safe-area-inset-bottom)); width: max-content; max-width: calc(100vw - 24px); }
+  .toast { text-align: center; }
+}
+
+/* Small phones (iPhone SE & co.) */
+@media (max-width: 380px) {
+  .chat-head .icon-btn { width: 36px; }
+  .composer .icon-btn { width: 32px; }
+  .me-card .icon-btn { width: 30px; }
+}

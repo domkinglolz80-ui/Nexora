@@ -3,6 +3,7 @@
    Seasonal effects: laughing pumpkins on the splash and login, a countdown,
    ghosts that float by and can be caught (rare golden ones count three times;
    they are spent in the Geister-Laden), a candy burst for every catch and a candy rain for "trick or treat".
+   During the Goldene Geisternacht (an event the server announces) golden ghosts come far more often.
    Uses helpers from app.js.
    ========================================================================= */
 
@@ -90,6 +91,11 @@
   const GHOST_SVG = '<svg viewBox="0 0 30 34"><path class="body" d="M15 2C7 2 3 8 3 15v17l4-3 4 3 4-3 4 3 4-3 4 3V15c0-7-4-13-12-13z"/><ellipse class="eye" cx="11" cy="14" rx="2" ry="3"/><ellipse class="eye" cx="19" cy="14" rx="2" ry="3"/><ellipse class="eye" cx="15" cy="22" rx="2.5" ry="2"/></svg>';
   const GOLDEN_CHANCE = 1 / 8;
   const GOLDEN_VALUE = 3;
+  const eventActive = () => {
+    const event = state.ghostEvent;
+    return Boolean(event) && event.start <= Date.now() && Date.now() < event.end;
+  };
+  const goldenChance = () => (eventActive() ? state.ghostEvent.chance : GOLDEN_CHANCE);
   const MILESTONES = {
     1: t('Buh! Dein erster Geist ist gefangen 👻'),
     5: t('5 Geister! Die Lounge spukt schon weniger 🕯️'),
@@ -149,7 +155,7 @@
     const app = $('#app');
     if (!spooky() || !state.me) return;
     if (!app || app.classList.contains('hidden') || $('.hw-ghost')) return;
-    const golden = Math.random() < GOLDEN_CHANCE;
+    const golden = Math.random() < goldenChance();
     const label = golden ? t('Goldenen Geist fangen') : t('Geist fangen');
     const ghost = h(`<button type="button" class="hw-ghost${golden ? ' golden' : ''}" title="${esc(t('Fang mich!'))}" aria-label="${esc(label)}">${GHOST_SVG}</button>`);
     ghost.style.top = `${12 + Math.random() * 60}%`;
@@ -160,6 +166,49 @@
     });
     document.body.append(ghost);
   }
+
+  /* ---------- Goldene Geisternacht ---------- */
+
+  // A bar on top of the chat while the event runs, with the time left. It can be hidden
+  // per event; it comes back when @nexora starts a new one or extends it.
+  function timeLeft(ms) {
+    const minutes = Math.max(1, Math.ceil(ms / 60000));
+    const hours = Math.floor(minutes / 60);
+    return hours ? t('noch {h} Std. {m} Min.', { h: hours, m: minutes % 60 }) : t('noch {m} Min.', { m: minutes });
+  }
+
+  let eventTimer = null;
+  function renderEvent() {
+    clearTimeout(eventTimer);
+    $('#hw-event-bar')?.remove();
+    const event = state.ghostEvent;
+    if (!event || !state.me) return;
+    const now = Date.now();
+    if (now >= event.end) return;
+    // Not started yet: check again when it does.
+    if (now < event.start) {
+      eventTimer = setTimeout(renderEvent, Math.min(event.start - now + 500, 2 ** 31 - 1));
+      return;
+    }
+    eventTimer = setTimeout(renderEvent, 30000);
+    const key = `${event.start}-${event.end}`;
+    if (store('dismissedGhostEvent') === key) return;
+    const bar = h(`<div class="hw-event-bar" id="hw-event-bar" role="status">
+      <span class="hw-event-ghost" aria-hidden="true">${GHOST_SVG}</span>
+      <div class="hw-event-text"><b>✨ ${esc(t(event.name))}</b>
+        <span>${esc(t('Goldene Geister erscheinen viel öfter – jeder zählt dreifach!'))}</span>
+        <em>${esc(timeLeft(event.end - now))}</em></div>
+      <button class="icon-btn" title="${esc(t('Ausblenden'))}" aria-label="${esc(t('Ausblenden'))}">${ICONS.x}</button></div>`);
+    bar.querySelector('button').onclick = () => {
+      store('dismissedGhostEvent', key);
+      bar.remove();
+    };
+    const announce = $('#announce-bar');
+    if (announce) announce.after(bar);
+    else $('#chat').prepend(bar);
+  }
+  document.addEventListener('nexora:ready', renderEvent);
+  document.addEventListener('nexora:ghostEvent', renderEvent);
 
   // On Halloween night the ghosts come more than twice as often.
   (function schedule(delay) {

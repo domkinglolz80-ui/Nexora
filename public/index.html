@@ -2,7 +2,12 @@
 <html lang="de">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  <meta name="apple-mobile-web-app-title" content="Nexora" />
+  <meta name="format-detection" content="telephone=no" />
   <meta name="theme-color" content="#0a0610" />
   <link rel="manifest" href="/manifest.webmanifest" />
   <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
@@ -149,7 +154,7 @@
             <svg viewBox="0 0 24 24"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
           </button>
           <input type="file" id="file-input" multiple hidden />
-          <textarea id="composer-input" rows="1" maxlength="2000" placeholder="Nachricht…" autocomplete="off"></textarea>
+          <textarea id="composer-input" rows="1" maxlength="2000" placeholder="Nachricht…" autocomplete="off" enterkeyhint="send"></textarea>
           <button type="button" class="icon-btn" id="poll-btn" title="Umfrage erstellen">
             <svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
           </button>

@@ -1000,6 +1000,9 @@ function start(token) {
   socket.on('user:update', (user) => {
     state.users.set(user.id, user);
     if (user.id === state.me?.id) {
+      // More ghosts without catching one: the Nexora team gave some away with /geister.
+      const gift = (user.ghosts || 0) - (state.me.ghosts || 0);
+      if (gift > 0) toast(t('🎁 Du hast 👻 {n} Geister vom Nexora-Team bekommen!', { n: numberFmt.format(gift) }), 'spooky');
       state.me = user;
       rememberAccount(state.token, user);
       renderMe();
@@ -1086,6 +1089,12 @@ function start(token) {
     renderAnnouncement();
   });
 
+  // Golden ghost event (halloween.js shows it); @nexora can start or end it any time.
+  socket.on('ghostEvent', (event) => {
+    state.ghostEvent = event;
+    document.dispatchEvent(new CustomEvent('nexora:ghostEvent'));
+  });
+
   socket.on('owner:broadcast', showBroadcast);
 
   socket.on('voice:state', onVoiceState);
@@ -1125,6 +1134,7 @@ function applyBootstrap(data) {
   // The helper's commands: only @nexora gets them from the server.
   state.helperCommands = data.helperCommands || [];
   state.shop = data.shop || null;
+  state.ghostEvent = data.ghostEvent || null;
   // After a reconnect the cache may be stale — drop it and refetch lazily.
   state.channels.clear();
   state.lastChannel = accountStore('lastChannel') || {};
@@ -3844,6 +3854,119 @@ document.addEventListener('visibilitychange', () => {
     renderRail();
   }
 });
+
+/* =========================================================================
+   Phones & touch (V0.7.0)
+   ========================================================================= */
+
+const noHover = matchMedia('(hover: none)');
+const phoneLayout = matchMedia('(max-width: 1100px)');
+
+// Phones have no hover, so a tap on a message shows its actions; the next tap hides them.
+// Taps on links, buttons, avatars, reactions etc. keep doing what they do.
+$('#messages').addEventListener('click', (e) => {
+  if (!noHover.matches) return;
+  const msgEl = e.target.closest('.msg');
+  const act = e.target.closest('.msg-tools [data-act]');
+  if (act) {
+    if (act.dataset.act !== 'pick') msgEl?.classList.remove('touched');
+    return;
+  }
+  if (!msgEl || e.target.closest('a, button, input, textarea, label, .avatar, .msg-author, .msg-reply, .reaction, .spoiler, .att-image, .edit-box, .msg-tools')) return;
+  if (getSelection().toString()) return;
+  const show = !msgEl.classList.contains('touched');
+  $$('.msg.touched').forEach((m) => m.classList.remove('touched'));
+  msgEl.classList.toggle('touched', show);
+});
+document.addEventListener('click', (e) => {
+  const msgEl = e.target.closest('.msg');
+  $$('.msg.touched').forEach((m) => m !== msgEl && m.classList.remove('touched'));
+});
+
+// The send button keeps the keyboard open, so several messages can be sent in a row.
+$('#send-btn').addEventListener('mousedown', (e) => {
+  if (noHover.matches && document.activeElement === input) e.preventDefault();
+});
+
+// iPhones lay the keyboard over the page instead of making it smaller; the app then
+// takes only the visible height, so the message field stays above the keyboard.
+if (window.visualViewport) {
+  const fitViewport = () => {
+    const vv = window.visualViewport;
+    const covered = innerHeight - vv.height > 80;
+    document.documentElement.style.setProperty('--app-h', covered ? `${Math.round(vv.height)}px` : '100%');
+    if (covered && vv.offsetTop) scrollTo(0, 0);
+  };
+  visualViewport.addEventListener('resize', fitViewport);
+  visualViewport.addEventListener('scroll', fitViewport);
+}
+
+// Swipes: to the right opens the channel list (or closes the member list), to the left
+// closes the channel list (or opens the member list).
+let swipe = null;
+document.addEventListener('touchstart', (e) => {
+  const touch = e.touches[0];
+  const ignore = e.touches.length !== 1 || !phoneLayout.matches || !state.me || $('.modal-backdrop')
+    || e.target.closest('textarea, input, pre, code, .msg-tools, .slash-pop, .attach-tray, .acc-row, .stage, .call-strip');
+  swipe = ignore ? null : { x: touch.clientX, y: touch.clientY, at: Date.now() };
+}, { passive: true });
+document.addEventListener('touchend', (e) => {
+  if (!swipe) return;
+  const touch = e.changedTouches[0];
+  const dx = touch.clientX - swipe.x;
+  const dy = touch.clientY - swipe.y;
+  const quick = Date.now() - swipe.at < 700;
+  swipe = null;
+  if (!quick || Math.abs(dx) < 70 || Math.abs(dy) > Math.abs(dx) * 0.6) return;
+  const app = $('#app');
+  const narrow = matchMedia('(max-width: 760px)').matches;
+  const membersBtn = $('#toggle-members');
+  if (dx > 0) {
+    if (app.classList.contains('show-members')) app.classList.remove('show-members');
+    else if (narrow && !app.classList.contains('drawer-open')) app.classList.add('drawer-open');
+  } else if (app.classList.contains('drawer-open')) {
+    app.classList.remove('drawer-open');
+  } else if (!app.classList.contains('show-members') && membersBtn.offsetParent && !app.classList.contains('no-members')) {
+    membersBtn.click();
+  }
+}, { passive: true });
+
+// The back button (Android) or the back swipe closes what is open – a window, a menu,
+// the channel or member list – instead of leaving Nexora.
+(() => {
+  let guarded = false; // our extra history entry is on top
+  let ignorePop = false;
+  const layerOpen = () =>
+    Boolean($('#modal-root .modal-backdrop') || $('#popover-root').children.length
+      || (phoneLayout.matches && $('#app').matches('.drawer-open, .show-members')));
+  const sync = () => {
+    if (!phoneLayout.matches) return;
+    if (layerOpen() && !guarded) {
+      history.pushState({ nexoraLayer: true }, '');
+      guarded = true;
+    } else if (!layerOpen() && guarded) {
+      // Closed with a button: take our entry back off, so "back" doesn't need two presses.
+      guarded = false;
+      ignorePop = true;
+      history.back();
+    }
+  };
+  addEventListener('popstate', () => {
+    if (ignorePop) return void (ignorePop = false);
+    if (!guarded) return;
+    guarded = false;
+    const modals = $$('#modal-root .modal-backdrop');
+    if (modals.length) modals.at(-1).dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+    else if ($('#popover-root').children.length) closePopover();
+    else $('#app').classList.remove('drawer-open', 'show-members');
+    // Something else still open (e.g. a second window): guard again.
+    setTimeout(sync);
+  });
+  const observer = new MutationObserver(() => setTimeout(sync));
+  observer.observe($('#modal-root'), { childList: true });
+  observer.observe($('#popover-root'), { childList: true });
+  observer.observe($('#app'), { attributes: true, attributeFilter: ['class'] });
+})();
 
 // Boot
 state.showMembers = store('showMembers') ?? true;
