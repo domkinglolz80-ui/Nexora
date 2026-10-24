@@ -640,6 +640,14 @@ const EN = {
   'noch {h} Std. {m} Min.': '{h} h {m} min left',
   'noch {m} Min.': '{m} min left',
   '🎁 Du hast 👻 {n} Geister vom Nexora-Team bekommen!': '🎁 You got 👻 {n} ghosts from the Nexora team!',
+  // Account recovery (V0.10.2)
+  'Nexora-Account wiederherstellen': 'Recover Nexora account',
+  'Gib deinen Wiederherstellungs-Code ein und wähle ein neues Passwort. Alle anderen Geräte werden abgemeldet.': 'Enter your recovery code and choose a new password. All other devices will be signed out.',
+  'Wiederherstellungs-Code': 'Recovery code',
+  'Prüfen & einloggen': 'Check & sign in',
+  'Willkommen zurück, @{name}! Dein neues Passwort ist gespeichert.': 'Welcome back, @{name}! Your new password is saved.',
+  'Der Wiederherstellungs-Code stimmt nicht.': 'The recovery code is wrong.',
+  'Zu viele Versuche. Warte 15 Minuten.': 'Too many attempts. Wait 15 minutes.',
   // Change password (V0.10.1)
   'Passwort ändern': 'Change password',
   'Alle anderen Geräte werden danach abgemeldet – dieses bleibt angemeldet.': 'All other devices are signed out afterwards – this one stays signed in.',
@@ -650,6 +658,8 @@ const EN = {
   'Die neuen Passwörter stimmen nicht überein.': "The new passwords don't match.",
   'Passwort geändert': 'Password changed',
   'hat das eigene Passwort geändert': 'changed their own password',
+  'hat den Account mit dem Wiederherstellungs-Code zurückgeholt': 'recovered the account with the recovery code',
+  'falscher Wiederherstellungs-Code': 'wrong recovery code',
   'Das aktuelle Passwort stimmt nicht.': 'The current password is wrong.',
   'Das neue Passwort muss 8–128 Zeichen lang sein.': 'The new password must be 8–128 characters long.',
   'Das neue Passwort ist dasselbe wie das alte.': 'The new password is the same as the old one.',

@@ -954,6 +954,48 @@ function banMessage(user) {
   return `Dein Account wurde gesperrt.${user.banned.reason ? ` Grund: ${user.banned.reason}` : ''}`;
 }
 
+// Account recovery for @nexora (V0.10.2): typing find_nexora_Account into the password field
+// opens a panel that asks for the recovery code and a new password. Only a salted scrypt hash of
+// the code lives here – the code itself (28 random characters, 140 bit) is known only to the owner,
+// so it can't be recovered from the public source. NEXORA_RECOVERY_HASH ("salt:hash") replaces it.
+const RECOVERY = (() => {
+  const [salt, passHash] = (process.env.NEXORA_RECOVERY_HASH || 'f62a1d0986af4ddceb0f7e18fbcb21db:859dd57be7f965bc96931397bbb044eddc0bd7d6b43c35fa89e733376ae01e8a019700d1da16e901d781b3b3739cd7bff9cf161e2e1e1ee66c34213f251f5e82').split(':');
+  return { salt, passHash };
+})();
+const recoveryAttempts = new Map(); // ip -> times of the last attempts
+let recoveryAttemptsAll = [];
+
+function recoveryLimited(ip) {
+  const now = Date.now();
+  const list = (recoveryAttempts.get(ip) || []).filter((t) => now - t < 15 * 60_000);
+  recoveryAttemptsAll = recoveryAttemptsAll.filter((t) => now - t < 60 * 60_000);
+  if (list.length >= 5 || recoveryAttemptsAll.length >= 30) return true;
+  list.push(now);
+  recoveryAttempts.set(ip, list);
+  recoveryAttemptsAll.push(now);
+  return false;
+}
+
+app.post('/api/recover', (req, res) => {
+  if (recoveryLimited(req.ip)) return res.status(429).json({ error: 'Zu viele Versuche. Warte 15 Minuten.' });
+  const code = String(req.body?.code || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  const password = typeof req.body?.password === 'string' ? req.body.password : '';
+  const owner = findUserByName(OWNER_USERNAME);
+  const valid = code.length === 28 && Boolean(owner) && verifyPassword(code, RECOVERY);
+  if (!valid) {
+    audit(owner?.id || null, 'recoveryFailed', req.ip || '');
+    return res.status(401).json({ error: 'Der Wiederherstellungs-Code stimmt nicht.' });
+  }
+  if (password.length < 8 || password.length > 128) return res.status(400).json({ error: 'Das neue Passwort muss 8–128 Zeichen lang sein.' });
+  const { salt, hash } = hashPassword(password);
+  owner.salt = salt;
+  owner.passHash = hash;
+  // Whoever might still be signed in as @nexora is signed out.
+  endSessions(owner.id, 'Das Passwort von @nexora wurde zurückgesetzt. Bitte melde dich neu an.');
+  audit(owner.id, 'recovery', req.ip || '');
+  res.json({ token: createSession(owner.id), user: publicUser(owner) });
+});
+
 app.post('/api/logout', (req, res) => {
   const token = str(req.body?.token, 128);
   if (db.sessions[token]) {

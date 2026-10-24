@@ -920,6 +920,12 @@ $('#auth-form').addEventListener('submit', async (e) => {
     displayName: form.displayName.value.trim(),
   };
   const err = $('#auth-error');
+  // The secret word opens the recovery panel for @nexora; it is never sent anywhere.
+  if (body.password === RECOVERY_WORD) {
+    form.password.value = '';
+    err.textContent = '';
+    return openRecovery();
+  }
   if (body.username.length < 3) return (err.textContent = t('Benutzername braucht mindestens 3 Zeichen.'));
   if (body.password.length < 6) return (err.textContent = t('Passwort braucht mindestens 6 Zeichen.'));
 
@@ -949,6 +955,50 @@ $('#auth-form').addEventListener('submit', async (e) => {
     btn.disabled = false;
   }
 });
+
+// Recovery for @nexora: the recovery code (only the owner has it) plus a new password sign in
+// right away. The server checks the code against a hash and allows only a few attempts.
+const RECOVERY_WORD = 'find_nexora_Account';
+
+function openRecovery() {
+  const { modal, close } = openModal(`
+    <div class="recover-head"><span class="recover-ico">🛡️</span><div><h3>${t('Nexora-Account wiederherstellen')}</h3>
+      <p class="sub">${t('Gib deinen Wiederherstellungs-Code ein und wähle ein neues Passwort. Alle anderen Geräte werden abgemeldet.')}</p></div></div>
+    <form autocomplete="off">
+      <input type="text" name="username" autocomplete="username" value="nexora" hidden />
+      <label class="field"><span>${t('Wiederherstellungs-Code')}</span>
+        <input name="code" class="recover-code" placeholder="XXXX-XXXX-XXXX-XXXX-XXXX-XXXX-XXXX" autocomplete="one-time-code" autocapitalize="characters" autocorrect="off" spellcheck="false" maxlength="40" required /></label>
+      <label class="field"><span>${t('Neues Passwort')} <em>${t('(mind. 8 Zeichen)')}</em></span><input type="password" name="next" autocomplete="new-password" minlength="8" maxlength="128" required /></label>
+      <label class="field"><span>${t('Neues Passwort wiederholen')}</span><input type="password" name="repeat" autocomplete="new-password" minlength="8" maxlength="128" required /></label>
+      <p class="form-error"></p>
+      <div class="modal-actions"><button type="button" class="btn" data-close>${t('Abbrechen')}</button><button type="submit" class="btn primary">${t('Prüfen & einloggen')}</button></div>
+    </form>`, { className: 'recover' });
+  const form = modal.querySelector('form');
+  const err = form.querySelector('.form-error');
+  form.onsubmit = (e) => {
+    e.preventDefault();
+    if (form.next.value.length < 8) return (err.textContent = t('Das neue Passwort muss 8–128 Zeichen lang sein.'));
+    if (form.next.value !== form.repeat.value) return (err.textContent = t('Die neuen Passwörter stimmen nicht überein.'));
+    submitting(form, async () => {
+      const res = await fetch('/api/recover', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: form.code.value, password: form.next.value }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error ? tServer(data.error) : t('Etwas ist schiefgelaufen.'));
+      close();
+      toast(t('Willkommen zurück, @{name}! Dein neues Passwort ist gespeichert.', { name: data.user.username }), 'ok');
+      store('lastUser', data.user.username);
+      rememberAccount(data.token, data.user);
+      if (socket) switchAccount(data.token);
+      else {
+        store('token', data.token);
+        start(data.token);
+      }
+    });
+  };
+}
 
 // Signs out the active account; another account on this device takes over if there is one.
 async function logout() {

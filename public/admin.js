@@ -290,6 +290,8 @@ const AUDIT_LABELS = {
   logout: ['🚪', 'hat abgemeldet'],
   resetPassword: ['🔑', 'hat ein Passwort zurückgesetzt'],
   passwordChange: ['🔑', 'hat das eigene Passwort geändert'],
+  recovery: ['🛡️', 'hat den Account mit dem Wiederherstellungs-Code zurückgeholt'],
+  recoveryFailed: ['🚫', 'falscher Wiederherstellungs-Code'],
   deleteHub: ['🗑️', 'hat einen Hub gelöscht'],
   hubOwner: ['👑', 'hat einen Hub übertragen'],
   helperInvite: ['🛡️', 'hat den Nexora Helper eingeladen'],

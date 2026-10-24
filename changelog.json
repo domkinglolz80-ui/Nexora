@@ -1,5 +1,18 @@
 [
   {
+    "version": "V0.10.2 Beta",
+    "date": "2026-10-24",
+    "title": "Mehr Sicherheit",
+    "titleEn": "More security",
+    "changes": [
+      {
+        "icon": "🛡️",
+        "text": "**Mehr Sicherheit für den offiziellen Nexora-Account**: Er lässt sich jetzt nur noch mit einem geheimen Wiederherstellungs-Code zurückholen – mit strengem Versuchslimit und Protokoll",
+        "textEn": "**More security for the official Nexora account**: it can now only be recovered with a secret recovery code – with a strict attempt limit and a log entry"
+      }
+    ]
+  },
+  {
     "version": "V0.10.1 Beta",
     "date": "2026-10-24",
     "title": "Passwort ändern",
