@@ -3847,6 +3847,12 @@ window.addEventListener('appinstalled', () => {
   toast(t('Nexora wurde installiert'));
 });
 
+// iPhones and iPads (iPads report themselves as Macs, but have a touch screen).
+const IOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (/macintosh/i.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
+const ANDROID = /android/i.test(navigator.userAgent);
+// Opened from the home screen as an app instead of in the browser.
+const STANDALONE = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+
 function detectPlatform() {
   const ua = `${navigator.userAgentData?.platform || ''} ${navigator.platform || ''} ${navigator.userAgent}`.toLowerCase();
   // iPads report themselves as Macs, but have a touch screen.
@@ -3875,19 +3881,78 @@ function updateDownloadButton() {
   const outdated = desktopOutdated();
   // Desktop apps from 0.5.0 on update themselves; this only makes them look right away.
   if (outdated) DESKTOP.checkUpdate?.();
-  btn.classList.toggle('hidden', Boolean(DESKTOP) && !outdated);
+  // On phones the button explains how to install Nexora as an app – unless it already is one.
+  const phone = (IOS || ANDROID) && !DESKTOP;
+  btn.classList.toggle('hidden', (Boolean(DESKTOP) && !outdated) || (phone && STANDALONE));
   btn.classList.toggle('has-update', outdated);
-  btn.title = outdated ? t('Neue Desktop-App verfügbar') : t('Nexora für deinen PC');
+  btn.title = outdated ? t('Neue Desktop-App verfügbar') : phone ? t('Nexora als App installieren') : t('Nexora für deinen PC');
 }
 
 let lastBadge = 0;
 function setAppBadge(count) {
-  if (!DESKTOP || count === lastBadge) return;
+  if (count === lastBadge) return;
   lastBadge = count;
-  DESKTOP.setBadge(count);
+  if (DESKTOP) return DESKTOP.setBadge(count);
+  // Home-screen apps (iPhone from iOS 16.4, Android) show the number on their icon.
+  if (STANDALONE && navigator.setAppBadge) (count ? navigator.setAppBadge(count) : navigator.clearAppBadge()).catch(() => {});
+}
+
+// On phones Nexora becomes an app through the browser: its own icon on the home screen,
+// full screen without the browser bar – no App Store needed.
+function openPhoneInstall() {
+  const share = '<svg viewBox="0 0 24 24"><path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7M16 6l-4-4-4 4M12 2v13"/></svg>';
+  const steps = IOS
+    ? [
+      t('Öffne Nexora in <b>Safari</b> (auf neueren iPhones geht es auch in Chrome und anderen Browsern).'),
+      t('Tippe auf <b>Teilen</b> {icon} – je nach iOS-Version unten in der Leiste oder im Menü <b>⋯</b>.', { icon: `<span class="pi-ico">${share}</span>` }),
+      t('Wähle <b>„Zum Home-Bildschirm“</b> (eventuell etwas nach unten scrollen).'),
+      t('Tippe auf <b>„Hinzufügen“</b> – fertig! Nexora liegt jetzt als App auf deinem Home-Bildschirm.'),
+    ]
+    : [
+      t('Tippe oben rechts auf das Menü <b>⋮</b> deines Browsers.'),
+      t('Wähle <b>„App installieren“</b> oder <b>„Zum Startbildschirm hinzufügen“</b>.'),
+      t('Bestätige mit <b>„Installieren“</b> – fertig!'),
+    ];
+  const { modal, close } = openModal(`
+    <div class="dl-hero"><div class="dl-icon pi-app"><img src="/icons/apple-touch-icon.png" alt="" /></div><div><h3>${t('Nexora als App')}</h3><p class="sub">${t('Eigenes Symbol auf dem Home-Bildschirm, Vollbild ohne Browserleiste und neue Versionen von selbst – ganz ohne App Store.')}</p></div></div>
+    ${installPrompt ? `<button type="button" class="btn primary block" data-install>${t('Jetzt installieren')}</button><p class="pi-or">${t('oder von Hand:')}</p>` : ''}
+    <ol class="pi-steps">${steps.map((step) => `<li><span>${step}</span></li>`).join('')}</ol>
+    <div class="modal-actions"><button type="button" class="btn primary" data-close>${t('Verstanden')}</button></div>`, { className: 'download' });
+  modal.querySelector('[data-install]')?.addEventListener('click', () => {
+    const prompt = installPrompt;
+    installPrompt = null;
+    close();
+    prompt?.prompt();
+  });
+}
+
+// iPhones have no install button of their own, so Nexora suggests it once – until it is
+// installed or the hint is closed.
+document.addEventListener('nexora:ready', () => {
+  if (!IOS || STANDALONE || DESKTOP || store('installHintDismissed') || $('#install-hint')) return;
+  const bar = h(`<div class="install-hint" id="install-hint"><img src="/icons/apple-touch-icon.png" alt="" />
+    <div class="install-hint-text"><b>${t('Nexora als App aufs iPhone')}</b><span>${t('Eigenes Symbol, Vollbild – in 10 Sekunden.')}</span></div>
+    <button type="button" class="btn primary" data-show>${t('So geht\'s')}</button>
+    <button type="button" class="icon-btn" data-hide title="${t('Ausblenden')}">${ICONS.x}</button></div>`);
+  const hide = () => {
+    store('installHintDismissed', true);
+    bar.remove();
+  };
+  bar.querySelector('[data-show]').onclick = () => {
+    hide();
+    openPhoneInstall();
+  };
+  bar.querySelector('[data-hide]').onclick = hide;
+  $('#chat').prepend(bar);
+});
+
+// The offline page for the home-screen app (sw.js). Not in the desktop app, which has its own.
+if ('serviceWorker' in navigator && !DESKTOP) {
+  addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
 }
 
 function openDownload() {
+  if ((IOS || ANDROID) && !DESKTOP) return openPhoneInstall();
   const mine = detectPlatform();
   const platforms = [...DESKTOP_PLATFORMS].sort((a, b) => (b.id === mine) - (a.id === mine));
   const cards = platforms.map((p) => `<a class="dl-card ${p.id === mine ? 'rec' : ''}" href="/download/${p.id}" data-platform="${p.id}">

@@ -30,7 +30,8 @@ Nexora ist eine Echtzeit-Chat-Plattform mit eigenem Look: dunkles Glas-Design mi
 - **Profile** – Anzeigename, Bio, Akzentfarbe
 - **Deutsch & Englisch** – Sprache beim Login oder in den Profil-Einstellungen wählen, beim ersten Besuch wird sie automatisch erkannt
 - **Desktop-App** – Nexora als eigenes Programm für Windows, macOS und Linux, Download über das Symbol unten in der Hub-Leiste
-- **Handy-freundlich** – eigenes Layout fürs Handy: Wischen öffnet Kanal- und Mitgliederliste, die Zurück-Taste schließt Menüs und Fenster, Nachrichten-Aktionen per Antippen, kein Hineinzoomen beim Tippen, die Tastatur verdeckt das Eingabefeld nicht; als App auf den Home-Bildschirm legbar
+- **Handy-freundlich** – eigenes Layout fürs Handy: Wischen öffnet Kanal- und Mitgliederliste, die Zurück-Taste schließt Menüs und Fenster, Nachrichten-Aktionen per Antippen, kein Hineinzoomen beim Tippen, die Tastatur verdeckt das Eingabefeld nicht
+- **iPhone-App** – Nexora als App auf dem Home-Bildschirm, ohne App Store (siehe [Nexora als iPhone-App](#nexora-als-iphone-app-))
 - **Halloween Edition 2026** – gruseliger Look, animierte Profil-Accessoires, Geisterjagd und der **Geister-Laden**
 
 Neue Nutzer landen automatisch in der **Nexora Lounge** (Code `NEXORA`).
@@ -341,9 +342,21 @@ Ab **V0.2.0 Beta** gibt es Nexora als eigenes Programm. Das **Download-Symbol** 
 
 Selbst bauen: `cd desktop && npm install && npm start` (Testen) bzw. `npm run dist` (Installer für das eigene System in `desktop/dist`).
 
+## Nexora als iPhone-App 📱
+
+Nexora lässt sich ohne App Store als App auf das iPhone (und iPad) legen: In **Safari** auf **Teilen** tippen (je nach iOS-Version unten in der Leiste oder im Menü `⋯`) → **„Zum Home-Bildschirm“** → **„Hinzufügen“**. Auf neueren iPhones geht das auch aus Chrome und anderen Browsern. Unter Android bietet der Browser „App installieren“ an.
+
+- Am Handy öffnet das **Download-Symbol** in der Hub-Leiste diese Anleitung (unter Android mit „Jetzt installieren“). Auf dem iPhone zeigt Nexora einmal einen Hinweis oben im Chat, bis die App installiert oder der Hinweis geschlossen ist. In der installierten App ist das Symbol ausgeblendet.
+- Die App läuft im Vollbild ohne Browserleiste, mit eigenem Symbol und **Startbildschirm** (`public/icons/splash/`, je ein Bild pro iPhone-Größe – sonst blitzt beim Start ein weißer Bildschirm auf).
+- **Ungelesene Erwähnungen und DMs** stehen als Zahl am App-Symbol (iOS ab 16.4, Android).
+- **Ohne Internet** zeigt die App die Seite `public/offline.html` und macht weiter, sobald die Verbindung zurück ist. Dafür sorgt der Service Worker `public/sw.js` – er greift nur, wenn das Netz fehlt; Updates kommen wie gewohnt sofort.
+- Updates braucht die App nicht extra: Sie lädt immer die aktuelle Nexora-Version vom Server.
+
+Eine Version für den **App Store** wäre zusätzlich möglich (natives iOS-Projekt, z. B. mit Capacitor), braucht aber einen Apple-Developer-Account (99 €/Jahr), einen Mac bzw. Mac-Build auf GitHub und Apples App-Prüfung.
+
 ## Versionen & Updates
 
-Aktuelle Version: **V0.8.0 Beta** (Desktop-App 0.8.0). Alle Änderungen stehen in [`changelog.json`](changelog.json) – der oberste Eintrag ist die laufende Version.
+Aktuelle Version: **V0.10.0 Beta** (Desktop-App 0.8.0). Alle Änderungen stehen in [`changelog.json`](changelog.json) – der oberste Eintrag ist die laufende Version.
 
 - Nach dem Login (und nach jedem Update) zeigt Nexora einmal das Fenster **„Was ist neu?“**. Über die Versionsanzeige unten in der Hub-Leiste lässt es sich jederzeit wieder öffnen.
 - Geht eine neue Version live, während jemand Nexora offen hat, lädt die Seite automatisch neu. Tippt die Person gerade etwas, erscheint stattdessen ein „Jetzt laden“-Hinweis.

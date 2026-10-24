@@ -1,5 +1,28 @@
 [
   {
+    "version": "V0.10.0 Beta",
+    "date": "2026-10-24",
+    "title": "Nexora als App fürs iPhone",
+    "titleEn": "Nexora as an iPhone app",
+    "changes": [
+      {
+        "icon": "📱",
+        "text": "**Nexora als App fürs iPhone** – ganz ohne App Store: in Safari auf Teilen → **„Zum Home-Bildschirm“**. Dann hat Nexora ein eigenes Symbol, läuft im Vollbild ohne Browserleiste und bekommt neue Versionen von selbst",
+        "textEn": "**Nexora as an iPhone app** – no App Store needed: in Safari tap Share → **“Add to Home Screen”**. Nexora then gets its own icon, runs full screen without the browser bar and gets new versions by itself"
+      },
+      {
+        "icon": "🧭",
+        "text": "Am Handy zeigt das Download-Symbol in der Hub-Leiste jetzt eine **Schritt-für-Schritt-Anleitung** (iPhone und Android, unter Android mit Ein-Klick-Installation). Auf dem iPhone weist Nexora einmal darauf hin",
+        "textEn": "On phones the download icon in the hub bar now shows a **step-by-step guide** (iPhone and Android, one-tap install on Android). On iPhones Nexora points it out once"
+      },
+      {
+        "icon": "🌅",
+        "text": "Die App startet mit einem **Nexora-Startbildschirm** statt weiß, zeigt **ungelesene Erwähnungen und DMs am App-Symbol** (ab iOS 16.4) und hat ohne Internet eine eigene **Offline-Seite**, die von selbst weitermacht",
+        "textEn": "The app starts with a **Nexora start screen** instead of white, shows **unread mentions and DMs on the app icon** (from iOS 16.4) and has its own **offline page** without internet that continues by itself"
+      }
+    ]
+  },
+  {
     "version": "V0.9.0 Beta",
     "date": "2026-10-24",
     "title": "Rollen, Threads & Freunde",

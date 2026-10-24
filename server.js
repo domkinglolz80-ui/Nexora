@@ -73,10 +73,10 @@ const SEARCH_RESULTS = 25;
 // Done once when this version starts for the first time (db.release remembers it):
 // end the maintenance and put up the announcement for the release.
 const RELEASE = {
-  version: 'V0.9.0 Beta',
-  endMaintenance: true,
-  announcement: '🎉 **V0.9.0 Beta ist da!** Rollen & Rechte für Hubs, angepinnte Nachrichten, Suche, Threads und Freunde. Und am 31. Oktober: das 🎃 **Halloween-Finale**!',
-};
+  version: 'V0.10.0 Beta',
+  endMaintenance: false,
+  announcement: '📱 **Nexora gibt es jetzt als App fürs iPhone!** Tippe in Safari auf Teilen → „Zum Home-Bildschirm“ – oder auf das Download-Symbol in der Hub-Leiste für die Anleitung.',
+}
 const STARTED_AT = Date.now();
 // The newest changelog entry is the running version; clients compare it to reload on updates.
 const CHANGELOG = require('./changelog.json');
