@@ -534,6 +534,7 @@ const STATUS_LABEL = { online: t('Online'), idle: t('Abwesend'), dnd: t('Nicht s
 const state = {
   token: null,
   me: null,
+  email: '', // own e-mail address, only known to this account
   hubs: new Map(),
   dms: new Map(),
   users: new Map(),
@@ -916,6 +917,7 @@ $('#auth-form').addEventListener('submit', async (e) => {
   const mode = $('#auth').dataset.mode;
   const body = {
     username: form.username.value.trim(),
+    email: form.email.value.trim(),
     password: form.password.value,
     displayName: form.displayName.value.trim(),
   };
@@ -927,6 +929,9 @@ $('#auth-form').addEventListener('submit', async (e) => {
     return openRecovery();
   }
   if (body.username.length < 3) return (err.textContent = t('Benutzername braucht mindestens 3 Zeichen.'));
+  // New accounts need an e-mail address; at login only accounts from before V0.11.0 may leave it out.
+  if (mode === 'register' && !EMAIL_RE.test(body.email)) return (err.textContent = t('Bitte gib eine gültige E-Mail-Adresse ein.'));
+  if (body.email && !EMAIL_RE.test(body.email)) return (err.textContent = t('Bitte gib eine gültige E-Mail-Adresse ein.'));
   if (body.password.length < 6) return (err.textContent = t('Passwort braucht mindestens 6 Zeichen.'));
 
   const btn = $('#auth-submit');
@@ -955,6 +960,8 @@ $('#auth-form').addEventListener('submit', async (e) => {
     btn.disabled = false;
   }
 });
+
+const EMAIL_RE = /^[^\s@"'<>()[\],;:\\]+@[^\s@"'<>()[\],;:\\]+\.[a-z]{2,}$/i;
 
 // Recovery for @nexora: the recovery code (only the owner has it) plus a new password sign in
 // right away. The server checks the code against a hash and allows only a few attempts.
@@ -1255,6 +1262,7 @@ function start(token) {
 
 function applyBootstrap(data) {
   state.me = data.me;
+  state.email = data.email || '';
   rememberAccount(state.token, data.me);
   adoptDeviceKeys();
   state.drafts = accountStore('drafts') || {};
@@ -3134,6 +3142,7 @@ function openSettings() {
       ${ghostStats(me)}
       <label class="check-row"><input type="checkbox" name="notify" /><span>${t('Desktop-Benachrichtigungen bei Erwähnungen und DMs')} <em>${t('(auf diesem Gerät)')}</em></span></label>
       <label class="check-row"><input type="checkbox" name="spooky" /><span>${t('Gruseleffekte: Fledermäuse, Nebel und Geister zum Fangen 👻')} <em>${t('(auf diesem Gerät)')}</em></span></label>
+      <button type="button" class="btn block" data-act="email">✉️ ${state.email ? t('E-Mail-Adresse ändern') : t('E-Mail-Adresse hinzufügen')}</button>
       <button type="button" class="btn block" data-act="password">🔑 ${t('Passwort ändern')}</button>
       <p class="form-error"></p>
       <div class="modal-actions sticky">
@@ -3177,6 +3186,7 @@ function openSettings() {
   });
   modal.querySelector('[data-act=logout]').onclick = logout;
   modal.querySelector('[data-act=password]').onclick = openPasswordChange;
+  modal.querySelector('[data-act=email]').onclick = () => openEmailChange(modal.querySelector('[data-act=email]'));
   const notifyBox = form.notify;
   notifyBox.checked = Boolean(store('notify')) && 'Notification' in window && Notification.permission === 'granted';
   notifyBox.addEventListener('change', async () => {
@@ -3230,6 +3240,37 @@ function openPasswordChange() {
       await req('account:password', { current: form.current.value, next: form.next.value });
       close();
       toast(t('Passwort geändert'), 'ok');
+    });
+  };
+}
+
+// Since V0.11.0 new accounts need an e-mail address. Older accounts can add one here;
+// from then on it is asked for at every login.
+function openEmailChange(button) {
+  const { modal, close } = openModal(`
+    <h3>✉️ ${state.email ? t('E-Mail-Adresse ändern') : t('E-Mail-Adresse hinzufügen')}</h3>
+    <p class="sub">${state.email ? t('Aktuell: {email}', { email: esc(state.email) }) : t('Für deinen Account ist sie freiwillig. Sobald sie gespeichert ist, brauchst du sie bei jedem Login.')}</p>
+    <form>
+      <input type="text" name="username" autocomplete="username" value="${esc(state.me.username)}" hidden />
+      <label class="field"><span>${t('E-Mail-Adresse')}</span><input type="email" name="email" autocomplete="email" inputmode="email" autocapitalize="off" spellcheck="false" maxlength="254" required placeholder="${t('du@beispiel.de')}" /></label>
+      <label class="field"><span>${t('Aktuelles Passwort')}</span><input type="password" name="current" autocomplete="current-password" maxlength="128" required /></label>
+      <p class="form-error"></p>
+      <div class="modal-actions"><button type="button" class="btn" data-close>${t('Abbrechen')}</button><button type="submit" class="btn primary">${t('Speichern')}</button></div>
+    </form>`);
+  const form = modal.querySelector('form');
+  form.email.value = state.email;
+  form.onsubmit = (e) => {
+    e.preventDefault();
+    if (!EMAIL_RE.test(form.email.value.trim())) {
+      form.querySelector('.form-error').textContent = t('Bitte gib eine gültige E-Mail-Adresse ein.');
+      return;
+    }
+    submitting(form, async () => {
+      const { email } = await req('account:email', { current: form.current.value, email: form.email.value.trim() });
+      state.email = email;
+      if (button?.isConnected) button.textContent = `✉️ ${t('E-Mail-Adresse ändern')}`;
+      close();
+      toast(t('E-Mail-Adresse gespeichert'), 'ok');
     });
   };
 }

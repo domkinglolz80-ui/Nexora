@@ -73,9 +73,9 @@ const SEARCH_RESULTS = 25;
 // Done once when this version starts for the first time (db.release remembers it):
 // end the maintenance and put up the announcement for the release.
 const RELEASE = {
-  version: 'V0.10.0 Beta',
+  version: 'V0.11.0 Beta',
   endMaintenance: false,
-  announcement: '📱 **Nexora gibt es jetzt als App fürs iPhone!** Tippe in Safari auf Teilen → „Zum Home-Bildschirm“ – oder auf das Download-Symbol in der Hub-Leiste für die Anleitung.',
+  announcement: '🔐 **Sicherheits-Update V0.11.0:** Neue Accounts brauchen jetzt eine E-Mail-Adresse – auch beim Login. Schon vorhandene Accounts können sie freiwillig in den Profil-Einstellungen unter „✉️ E-Mail-Adresse hinzufügen“ hinterlegen.',
 }
 const STARTED_AT = Date.now();
 // The newest changelog entry is the running version; clients compare it to reload on updates.
@@ -839,6 +839,15 @@ app.get('/download/:platform', (req, res) => {
 });
 
 const USERNAME_RE = /^[a-zA-Z0-9_.]{3,20}$/;
+// Since V0.11.0 every new account needs an e-mail address, and it is asked for at every login.
+// Accounts from before keep working without one and can add it in the profile settings.
+const EMAIL_RE = /^[^\s@"'<>()[\],;:\\]+@[^\s@"'<>()[\],;:\\]+\.[a-z]{2,}$/i;
+const normEmail = (v) => (typeof v === 'string' ? v.trim().toLowerCase().slice(0, 255) : '');
+const validEmail = (email) => email.length <= 254 && EMAIL_RE.test(email);
+
+function findUserByEmail(email) {
+  return email ? Object.values(db.users).find((u) => u.email === email) : undefined;
+}
 const authAttempts = new Map();
 
 function authRateLimited(ip) {
@@ -900,10 +909,12 @@ app.post('/api/register', (req, res) => {
   const username = str(req.body?.username, 32);
   const password = typeof req.body?.password === 'string' ? req.body.password : '';
   const displayName = str(req.body?.displayName, 32) || username;
+  const email = normEmail(req.body?.email);
 
   if (!USERNAME_RE.test(username)) {
     return res.status(400).json({ error: 'Benutzername: 3–20 Zeichen, nur Buchstaben, Zahlen, _ und .' });
   }
+  if (!validEmail(email)) return res.status(400).json({ error: 'Bitte gib eine gültige E-Mail-Adresse ein.' });
   if (password.length < 6 || password.length > 128) {
     return res.status(400).json({ error: 'Passwort muss 6–128 Zeichen lang sein.' });
   }
@@ -911,11 +922,13 @@ app.post('/api/register', (req, res) => {
     return res.status(400).json({ error: 'Namen mit „Nexora“ sind für offizielle Accounts reserviert.' });
   }
   if (findUserByName(username)) return res.status(409).json({ error: 'Benutzername ist schon vergeben.' });
+  if (findUserByEmail(email)) return res.status(409).json({ error: 'Diese E-Mail-Adresse wird schon verwendet.' });
 
   const { salt, hash } = hashPassword(password);
   const user = {
     id: id(),
     username,
+    email,
     displayName,
     passHash: hash,
     salt,
@@ -940,10 +953,12 @@ app.post('/api/login', (req, res) => {
   if (authRateLimited(req.ip)) return res.status(429).json({ error: 'Zu viele Versuche. Warte kurz.' });
   const username = str(req.body?.username, 32);
   const password = typeof req.body?.password === 'string' ? req.body.password : '';
+  const email = normEmail(req.body?.email);
   const user = findUserByName(username);
-  // Bot accounts have no password and can never log in.
-  if (!user || user.bot || !verifyPassword(password, user)) {
-    return res.status(401).json({ error: 'Benutzername oder Passwort falsch.' });
+  // Bot accounts have no password and can never log in. An account with an e-mail address
+  // (every account since V0.11.0) also needs it; the answer never tells which part was wrong.
+  if (!user || user.bot || !verifyPassword(password, user) || (user.email && user.email !== email)) {
+    return res.status(401).json({ error: 'Benutzername, E-Mail oder Passwort falsch.' });
   }
   if (user.banned) return res.status(403).json({ error: banMessage(user) });
   if (db.maintenance && !isOfficial(user)) return res.status(503).json({ error: maintenanceMessage() });
@@ -2714,6 +2729,7 @@ io.on('connection', (socket) => {
       ghostEvent: ghostEvent(),
       shop: shopView(),
       me: publicUser(me()),
+      email: me().email || '', // only for the account itself, never in publicUser
       hubs: Object.values(db.hubs).filter((h) => h.members.includes(userId)).map(hubView),
       dms: Object.values(db.dms).filter((d) => dmVisible(d, userId)).map(dmView),
       users,
@@ -3069,6 +3085,24 @@ io.on('connection', (socket) => {
     });
     audit(userId, 'passwordChange', `@${user.username}`);
     return {};
+  });
+
+  // Adding or changing the e-mail address needs the current password. Accounts from before
+  // V0.11.0 may stay without one; once set it is asked for at every login and can't be removed.
+  on('account:email', ({ current, email }) => {
+    if (authRateLimited(socket.handshake.address)) return { error: 'Zu viele Versuche. Warte kurz.' };
+    const user = me();
+    if (typeof current !== 'string' || !verifyPassword(current, user)) return { error: 'Das aktuelle Passwort stimmt nicht.' };
+    const next = normEmail(email);
+    if (!validEmail(next)) return { error: 'Bitte gib eine gültige E-Mail-Adresse ein.' };
+    if (next === user.email) return { email: next };
+    const taken = findUserByEmail(next);
+    if (taken && taken.id !== userId) return { error: 'Diese E-Mail-Adresse wird schon verwendet.' };
+    const had = Boolean(user.email);
+    user.email = next;
+    save();
+    audit(userId, had ? 'emailChange' : 'emailAdd', `@${user.username}`);
+    return { email: next };
   });
 
   on('profile:update', ({ displayName, status, color, bio, accessory }) => {

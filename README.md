@@ -6,7 +6,7 @@ Nexora ist eine Echtzeit-Chat-Plattform mit eigenem Look: dunkles Glas-Design mi
 
 ## Features
 
-- **Accounts** – Registrieren und Einloggen (Passwörter werden mit scrypt gehasht); bis zu 10 Accounts pro Gerät, Wechsel per Klick ohne Passwort
+- **Accounts** – Registrieren und Einloggen mit Benutzername, E-Mail-Adresse und Passwort (Passwörter werden mit scrypt gehasht); bis zu 10 Accounts pro Gerät, Wechsel per Klick ohne Passwort
 - **Hubs** – eigene Hubs erstellen, per Einladungscode oder -link beitreten, verlassen, umbenennen, löschen
 - **Kanäle** – Textkanäle mit Thema erstellen, bearbeiten, löschen; 🐢 **Langsam-Modus** pro Kanal (5 Sekunden bis 10 Minuten)
 - **Rollen & Rechte** – eigene Rollen pro Hub mit Farbe, Rangfolge und Rechten (Admin, Hub verwalten, Kanäle, Rollen, Nachrichten, Rauswerfen, Sperren); Rollen können in der Mitgliederliste eine eigene Gruppe bekommen. Man kann nur Rollen und Mitglieder unter der eigenen höchsten Rolle bearbeiten
@@ -342,6 +342,14 @@ Ab **V0.2.0 Beta** gibt es Nexora als eigenes Programm. Das **Download-Symbol** 
 
 Selbst bauen: `cd desktop && npm install && npm start` (Testen) bzw. `npm run dist` (Installer für das eigene System in `desktop/dist`).
 
+## E-Mail-Adresse ✉️
+
+Ab **V0.11.0 Beta** braucht jeder **neue Account eine E-Mail-Adresse** – bei der Registrierung und bei **jedem Login** (zusammen mit Benutzername und Passwort). Stimmt einer der drei Teile nicht, meldet Nexora nur „Benutzername, E-Mail oder Passwort falsch.“, ohne zu verraten, welcher.
+
+- **Accounts von vor V0.11.0** loggen sich weiter ohne E-Mail ein. Sie können in den Profil-Einstellungen unter „✉️ E-Mail-Adresse hinzufügen“ freiwillig eine hinterlegen (mit dem aktuellen Passwort) – ab dann wird sie auch bei ihnen beim Login abgefragt.
+- Jede E-Mail-Adresse gehört zu genau einem Account; sie wird klein geschrieben gespeichert, ist nur für den Account selbst sichtbar und steht nie im öffentlichen Profil. Hinzufügen und Ändern stehen im Protokoll.
+- Die Wiederherstellung von `@nexora` (unten) braucht keine E-Mail-Adresse.
+
 ## Passwort ändern & Notfall-Zugang 🔑
 
 **Passwort ändern** (ab V0.10.1 Beta): In den Profil-Einstellungen unter „🔑 Passwort ändern“ – mit dem aktuellen Passwort. Das Gerät bleibt angemeldet, alle anderen werden abgemeldet.
@@ -364,7 +372,7 @@ Eine Version für den **App Store** wäre zusätzlich möglich (natives iOS-Proj
 
 ## Versionen & Updates
 
-Aktuelle Version: **V0.10.2 Beta** (Desktop-App 0.8.0). Alle Änderungen stehen in [`changelog.json`](changelog.json) – der oberste Eintrag ist die laufende Version.
+Aktuelle Version: **V0.11.0 Beta** (Desktop-App 0.11.0). Alle Änderungen stehen in [`changelog.json`](changelog.json) – der oberste Eintrag ist die laufende Version.
 
 - Nach dem Login (und nach jedem Update) zeigt Nexora einmal das Fenster **„Was ist neu?“**. Über die Versionsanzeige unten in der Hub-Leiste lässt es sich jederzeit wieder öffnen.
 - Geht eine neue Version live, während jemand Nexora offen hat, lädt die Seite automatisch neu. Tippt die Person gerade etwas, erscheint stattdessen ein „Jetzt laden“-Hinweis.

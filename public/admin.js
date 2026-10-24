@@ -290,6 +290,8 @@ const AUDIT_LABELS = {
   logout: ['🚪', 'hat abgemeldet'],
   resetPassword: ['🔑', 'hat ein Passwort zurückgesetzt'],
   passwordChange: ['🔑', 'hat das eigene Passwort geändert'],
+  emailAdd: ['✉️', 'hat eine E-Mail-Adresse hinzugefügt'],
+  emailChange: ['✉️', 'hat die E-Mail-Adresse geändert'],
   recovery: ['🛡️', 'hat den Account mit dem Wiederherstellungs-Code zurückgeholt'],
   recoveryFailed: ['🚫', 'falscher Wiederherstellungs-Code'],
   deleteHub: ['🗑️', 'hat einen Hub gelöscht'],

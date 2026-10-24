@@ -180,6 +180,7 @@ kbd {
 .auth-tab-indicator { position: absolute; top: 4px; left: 4px; bottom: 4px; width: calc(50% - 4px); border-radius: 10px; background: var(--grad); transition: transform 0.3s cubic-bezier(.2,.8,.2,1); box-shadow: 0 6px 20px -6px rgba(255, 106, 0, 0.8); }
 .auth[data-mode="register"] .auth-tab-indicator { transform: translateX(100%); }
 .auth:not([data-mode="register"]) .register-only { display: none; }
+.auth[data-mode="register"] .login-only { display: none; }
 .auth-back { margin-top: 10px; }
 .auth:not(.adding) .auth-back { display: none; }
 .auth-accounts { margin-top: 22px; display: grid; gap: 4px; max-height: 300px; overflow-y: auto; }

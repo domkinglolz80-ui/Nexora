@@ -1,5 +1,28 @@
 [
   {
+    "version": "V0.11.0 Beta",
+    "date": "2026-10-24",
+    "title": "Sicherheits-Update: E-Mail-Adresse",
+    "titleEn": "Security update: e-mail address",
+    "changes": [
+      {
+        "icon": "✉️",
+        "text": "**Neue Accounts brauchen jetzt eine E-Mail-Adresse** – bei der Registrierung und bei jedem Login, zusammen mit Benutzername und Passwort",
+        "textEn": "**New accounts now need an e-mail address** – when signing up and at every login, together with username and password"
+      },
+      {
+        "icon": "🔐",
+        "text": "**Schon vorhandene Accounts** loggen sich weiter ohne E-Mail ein und können sie freiwillig in den Profil-Einstellungen hinzufügen – danach wird sie auch bei ihnen abgefragt",
+        "textEn": "**Existing accounts** keep signing in without an e-mail and can add one in the profile settings if they like – after that it is asked for at login too"
+      },
+      {
+        "icon": "💻",
+        "text": "**Desktop-App 0.11.0** für Windows, macOS und Linux – aktualisiert sich von selbst",
+        "textEn": "**Desktop app 0.11.0** for Windows, macOS and Linux – updates itself"
+      }
+    ]
+  },
+  {
     "version": "V0.10.2 Beta",
     "date": "2026-10-24",
     "title": "Mehr Sicherheit",
