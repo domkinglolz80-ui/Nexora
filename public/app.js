@@ -3084,6 +3084,7 @@ function openSettings() {
       ${ghostStats(me)}
       <label class="check-row"><input type="checkbox" name="notify" /><span>${t('Desktop-Benachrichtigungen bei Erwähnungen und DMs')} <em>${t('(auf diesem Gerät)')}</em></span></label>
       <label class="check-row"><input type="checkbox" name="spooky" /><span>${t('Gruseleffekte: Fledermäuse, Nebel und Geister zum Fangen 👻')} <em>${t('(auf diesem Gerät)')}</em></span></label>
+      <button type="button" class="btn block" data-act="password">🔑 ${t('Passwort ändern')}</button>
       <p class="form-error"></p>
       <div class="modal-actions sticky">
         <button type="button" class="btn danger" data-act="logout" title="${t('Abmelden')}">${ICONS.logout}<span class="btn-label">${t('Abmelden')}</span></button><span class="spacer"></span>
@@ -3125,6 +3126,7 @@ function openSettings() {
     if (b) setLanguage(b.dataset.lang);
   });
   modal.querySelector('[data-act=logout]').onclick = logout;
+  modal.querySelector('[data-act=password]').onclick = openPasswordChange;
   const notifyBox = form.notify;
   notifyBox.checked = Boolean(store('notify')) && 'Notification' in window && Notification.permission === 'granted';
   notifyBox.addEventListener('change', async () => {
@@ -3150,6 +3152,34 @@ function openSettings() {
       renderMe();
       close();
       toast(t('Profil gespeichert'));
+    });
+  };
+}
+
+// The current password is needed; afterwards all other devices are signed out.
+function openPasswordChange() {
+  const { modal, close } = openModal(`
+    <h3>🔑 ${t('Passwort ändern')}</h3>
+    <p class="sub">${t('Alle anderen Geräte werden danach abgemeldet – dieses bleibt angemeldet.')}</p>
+    <form>
+      <input type="text" name="username" autocomplete="username" value="${esc(state.me.username)}" hidden />
+      <label class="field"><span>${t('Aktuelles Passwort')}</span><input type="password" name="current" autocomplete="current-password" maxlength="128" required /></label>
+      <label class="field"><span>${t('Neues Passwort')} <em>${t('(mind. 8 Zeichen)')}</em></span><input type="password" name="next" autocomplete="new-password" minlength="8" maxlength="128" required /></label>
+      <label class="field"><span>${t('Neues Passwort wiederholen')}</span><input type="password" name="repeat" autocomplete="new-password" minlength="8" maxlength="128" required /></label>
+      <p class="form-error"></p>
+      <div class="modal-actions"><button type="button" class="btn" data-close>${t('Abbrechen')}</button><button type="submit" class="btn primary">${t('Passwort ändern')}</button></div>
+    </form>`);
+  const form = modal.querySelector('form');
+  form.onsubmit = (e) => {
+    e.preventDefault();
+    if (form.next.value !== form.repeat.value) {
+      form.querySelector('.form-error').textContent = t('Die neuen Passwörter stimmen nicht überein.');
+      return;
+    }
+    submitting(form, async () => {
+      await req('account:password', { current: form.current.value, next: form.next.value });
+      close();
+      toast(t('Passwort geändert'), 'ok');
     });
   };
 }

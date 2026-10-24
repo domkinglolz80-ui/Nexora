@@ -118,7 +118,7 @@ function mongoHint(err) {
 }
 
 function emptyDb() {
-  return { users: {}, sessions: {}, hubs: {}, dms: {}, messages: {}, bots: {}, announcement: null, team: [], audit: [], maintenance: null, retention: null, ghostEvent: null, release: null, season: null, halloweenFinal: null, reminders: [] };
+  return { users: {}, sessions: {}, hubs: {}, dms: {}, messages: {}, bots: {}, announcement: null, team: [], audit: [], maintenance: null, retention: null, ghostEvent: null, release: null, season: null, halloweenFinal: null, reminders: [], ownerReset: null };
 }
 
 const db = emptyDb();
@@ -190,8 +190,8 @@ const mongoStore = {
   },
 
   async write() {
-    const { users, sessions, hubs, dms, bots, announcement, team, audit, maintenance, retention, ghostEvent, release, season, halloweenFinal, reminders } = db;
-    const docs = new Map([['meta', { data: { users, sessions, hubs, dms, bots, announcement, team, audit, maintenance, retention, ghostEvent, release, season, halloweenFinal, reminders } }]]);
+    const { users, sessions, hubs, dms, bots, announcement, team, audit, maintenance, retention, ghostEvent, release, season, halloweenFinal, reminders, ownerReset } = db;
+    const docs = new Map([['meta', { data: { users, sessions, hubs, dms, bots, announcement, team, audit, maintenance, retention, ghostEvent, release, season, halloweenFinal, reminders, ownerReset } }]]);
     for (const [channelId, list] of Object.entries(db.messages)) docs.set('ch:' + channelId, { list });
 
     const ops = [];
@@ -847,6 +847,33 @@ function authRateLimited(ip) {
   list.push(now);
   authAttempts.set(ip, list);
   return list.length > 20;
+}
+
+// Emergency access for @nexora: set NEXORA_OWNER_RESET on the server (on Render under
+// "Environment") to a new password. At the next start it becomes the password of @nexora and
+// every device is signed out. It happens once per value (db.ownerReset keeps a salted hash of
+// it), so a later password change survives restarts. Remove the variable afterwards.
+// The password itself never shows up in the code, the data or the logs.
+function applyOwnerReset() {
+  const password = process.env.NEXORA_OWNER_RESET || '';
+  if (!password) return;
+  const owner = findUserByName(OWNER_USERNAME);
+  if (!owner) return console.warn('[nexora] NEXORA_OWNER_RESET: Es gibt keinen Account @nexora.');
+  if (password.length < 12 || password.length > 128) {
+    return console.warn('[nexora] NEXORA_OWNER_RESET ignoriert: Das Passwort muss 12–128 Zeichen lang sein.');
+  }
+  if (db.ownerReset && verifyPassword(password, db.ownerReset)) {
+    return console.warn('[nexora] NEXORA_OWNER_RESET wurde schon angewendet – lösche die Variable jetzt.');
+  }
+  const { salt, hash } = hashPassword(password);
+  owner.salt = salt;
+  owner.passHash = hash;
+  // Its own salt, so the stored fingerprint never equals the account's hash.
+  const marker = hashPassword(password);
+  db.ownerReset = { salt: marker.salt, passHash: marker.hash };
+  endSessions(owner.id, 'Das Passwort von @nexora wurde zurückgesetzt. Bitte melde dich neu an.');
+  audit(owner.id, 'resetPassword', '@nexora (NEXORA_OWNER_RESET)');
+  console.log('[nexora] Das Passwort von @nexora wurde über NEXORA_OWNER_RESET gesetzt. Lösche die Variable jetzt wieder.');
 }
 
 function maintenanceMessage() {
@@ -2976,6 +3003,32 @@ io.on('connection', (socket) => {
     return { users };
   });
 
+  // A new password needs the current one. This device stays signed in, all others are signed out.
+  on('account:password', ({ current, next }) => {
+    if (authRateLimited(socket.handshake.address)) return { error: 'Zu viele Versuche. Warte kurz.' };
+    const user = me();
+    if (typeof current !== 'string' || !verifyPassword(current, user)) return { error: 'Das aktuelle Passwort stimmt nicht.' };
+    if (typeof next !== 'string' || next.length < 8 || next.length > 128) return { error: 'Das neue Passwort muss 8–128 Zeichen lang sein.' };
+    if (next === current) return { error: 'Das neue Passwort ist dasselbe wie das alte.' };
+    const { salt, hash } = hashPassword(next);
+    user.salt = salt;
+    user.passHash = hash;
+    const own = socket.handshake.auth?.token;
+    for (const [token, session] of Object.entries(db.sessions)) {
+      if (session.userId === userId && token !== own) delete db.sessions[token];
+    }
+    save();
+    io.in(`user:${userId}`).fetchSockets().then((sockets) => {
+      for (const s of sockets) {
+        if (s.handshake.auth?.token === own) continue;
+        s.emit('account:ended', { message: 'Dein Passwort wurde geändert. Melde dich mit dem neuen Passwort an.' });
+        s.disconnect(true);
+      }
+    });
+    audit(userId, 'passwordChange', `@${user.username}`);
+    return {};
+  });
+
   on('profile:update', ({ displayName, status, color, bio, accessory }) => {
     const user = me();
     if (displayName !== undefined) {
@@ -3813,6 +3866,7 @@ async function main() {
   ensureHelper();
   grantExclusives();
   applyRelease();
+  applyOwnerReset();
   finishHalloween();
   setInterval(finishHalloween, 30_000);
   setInterval(deliverReminders, 15_000);

@@ -342,6 +342,12 @@ Ab **V0.2.0 Beta** gibt es Nexora als eigenes Programm. Das **Download-Symbol** 
 
 Selbst bauen: `cd desktop && npm install && npm start` (Testen) bzw. `npm run dist` (Installer für das eigene System in `desktop/dist`).
 
+## Passwort ändern & Notfall-Zugang 🔑
+
+**Passwort ändern** (ab V0.10.1 Beta): In den Profil-Einstellungen unter „🔑 Passwort ändern“ – mit dem aktuellen Passwort. Das Gerät bleibt angemeldet, alle anderen werden abgemeldet.
+
+**Passwort von @nexora vergessen?** Auf dem Server die Umgebungsvariable `NEXORA_OWNER_RESET` auf das neue Passwort setzen (12–128 Zeichen; bei Render: Dashboard → Dienst *nexora* → *Environment* → *Add Environment Variable*, dann *Save* – Render startet neu). Beim Start wird es das Passwort von `@nexora`, alle Geräte werden abgemeldet, und das Protokoll vermerkt es. Danach mit dem neuen Passwort anmelden und **die Variable wieder löschen**. Das passiert pro Wert nur einmal – ein später geändertes Passwort wird bei Neustarts nicht überschrieben. Das Passwort steht nie im Code, in den Daten oder in den Logs.
+
 ## Nexora als iPhone-App 📱
 
 Nexora lässt sich ohne App Store als App auf das iPhone (und iPad) legen: In **Safari** auf **Teilen** tippen (je nach iOS-Version unten in der Leiste oder im Menü `⋯`) → **„Zum Home-Bildschirm“** → **„Hinzufügen“**. Auf neueren iPhones geht das auch aus Chrome und anderen Browsern. Unter Android bietet der Browser „App installieren“ an.
@@ -356,7 +362,7 @@ Eine Version für den **App Store** wäre zusätzlich möglich (natives iOS-Proj
 
 ## Versionen & Updates
 
-Aktuelle Version: **V0.10.0 Beta** (Desktop-App 0.8.0). Alle Änderungen stehen in [`changelog.json`](changelog.json) – der oberste Eintrag ist die laufende Version.
+Aktuelle Version: **V0.10.1 Beta** (Desktop-App 0.8.0). Alle Änderungen stehen in [`changelog.json`](changelog.json) – der oberste Eintrag ist die laufende Version.
 
 - Nach dem Login (und nach jedem Update) zeigt Nexora einmal das Fenster **„Was ist neu?“**. Über die Versionsanzeige unten in der Hub-Leiste lässt es sich jederzeit wieder öffnen.
 - Geht eine neue Version live, während jemand Nexora offen hat, lädt die Seite automatisch neu. Tippt die Person gerade etwas, erscheint stattdessen ein „Jetzt laden“-Hinweis.

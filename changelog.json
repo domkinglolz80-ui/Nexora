@@ -1,5 +1,18 @@
 [
   {
+    "version": "V0.10.1 Beta",
+    "date": "2026-10-24",
+    "title": "Passwort ändern",
+    "titleEn": "Change your password",
+    "changes": [
+      {
+        "icon": "🔑",
+        "text": "**Passwort ändern** in den Profil-Einstellungen – mit deinem aktuellen Passwort. Dieses Gerät bleibt angemeldet, alle anderen werden zur Sicherheit abgemeldet",
+        "textEn": "**Change your password** in the profile settings – with your current password. This device stays signed in, all others are signed out for safety"
+      }
+    ]
+  },
+  {
     "version": "V0.10.0 Beta",
     "date": "2026-10-24",
     "title": "Nexora als App fürs iPhone",
