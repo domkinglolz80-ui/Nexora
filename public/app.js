@@ -38,6 +38,10 @@ const ICONS = {
   play: '<svg viewBox="0 0 24 24"><path d="M6 4l14 8-14 8z"/></svg>',
   megaphone: '<svg viewBox="0 0 24 24"><path d="M3 11v2a1 1 0 0 0 1 1h3l6 5V5L7 10H4a1 1 0 0 0-1 1zM17 8a5 5 0 0 1 0 8"/></svg>',
   phone: '<svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>',
+  pin: '<svg viewBox="0 0 24 24"><path d="M12 17v5M9 3h6l-1 6 4 4v2H6v-2l4-4z"/></svg>',
+  thread: '<svg viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/><path d="M8 10h8M8 14h5"/></svg>',
+  friends: '<svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>',
+  roles: '<svg viewBox="0 0 24 24"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><path d="M7.5 7.5h.01"/></svg>',
   hangup: '<svg viewBox="0 0 24 24"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"/><path d="m22 2-20 20"/></svg>',
 };
 
@@ -47,7 +51,9 @@ const EMOJIS = ('🎃 👻 🦇 🕷️ 🕸️ 💀 ☠️ 🧛 🧟 🧙 🍬 
   '🫡 🙃 😴 🤤 🤡 👽 🤖 😈 🎮 🎧 🎵 🍕 🍔 🌮 ' +
   '☕ 🍿 🐱 🐶 🦊 🐼 🦄 🌈 ☀️ 🌙 ⭐ ✨ 💎 🏆 ✅ ❌').split(' ');
 const HUB_ICONS = ['', '🎃', '👻', '🦇', '💀', '🔥', '⚡', '🚀', '🎮', '🎧', '🎨', '💻', '📚', '⚽', '🍕', '🌙', '🦊', '👾', '💎', '🏆'];
-const QUICK_REACTIONS = ['🎃', '👻', '😂'];
+// The look the server picked for this page: 'halloween' or (after Halloween) 'normal'.
+const SEASON = document.querySelector('meta[name="nexora-season"]')?.content || 'halloween';
+const QUICK_REACTIONS = SEASON === 'halloween' ? ['🎃', '👻', '😂'] : ['👍', '❤️', '😂'];
 const ACCENTS = ['#ff7a18', '#ff9f1c', '#ff5e3a', '#ffb347', '#ff6b00', '#f9a03f', '#ff8c42', '#e85d04', '#ffd166', '#ef476f', '#9b5de5', '#7bdc3a', '#c1121f'];
 
 // Animated avatar accessories. The server only stores the id.
@@ -370,6 +376,12 @@ function ghostRank(n) {
   return [...GHOST_RANKS].reverse().find((r) => n >= r.at) || null;
 }
 
+// The top three of the ghost hunt 2026 keep their trophy for good.
+function trophyBadge(user) {
+  if (!user.trophy) return '';
+  return `<div class="trophy-badge">${['🥇', '🥈', '🥉'][user.trophy - 1]} ${t('Platz {n} der Geisterjagd 2026', { n: user.trophy })}</div>`;
+}
+
 function ghostBadge(user) {
   const n = user.ghostsCaught || 0;
   if (!n || user.bot) return '';
@@ -395,9 +407,9 @@ function ghostStats(user) {
 async function loadLeaderboard(box) {
   box.innerHTML = `<h4>🏆 ${t('Geister-Bestenliste')}</h4><p class="sub">${t('Lädt…')}</p>`;
   try {
-    const { top, rank } = await req('shop:leaderboard');
+    const { top, rank, final } = await req('shop:leaderboard');
     const medals = ['🥇', '🥈', '🥉'];
-    box.innerHTML = `<h4>🏆 ${t('Geister-Bestenliste')}</h4>${top.length ? `<ol class="board-list">${top.map((e, i) => `
+    box.innerHTML = `<h4>🏆 ${final ? t('Endstand der Geisterjagd 2026') : t('Geister-Bestenliste')}</h4>${final ? `<p class="sub">${t('Eingefroren am {date} · {n} Geisterjäger:innen haben 👻 {total} Geister gefangen.', { date: esc(fullFmt.format(final.at)), n: numberFmt.format(final.hunters), total: numberFmt.format(final.total) })}</p>` : ''}${top.length ? `<ol class="board-list">${top.map((e, i) => `
       <li class="${e.user.id === state.me.id ? 'me' : ''}"><span class="board-place">${medals[i] || i + 1}</span>
         ${avatar(e.user, { size: 32 })}<span class="board-name">${esc(e.user.displayName)}<small>@${esc(e.user.username)}</small></span>
         <b class="board-count">👻 ${numberFmt.format(e.caught)}</b></li>`).join('')}</ol>`
@@ -539,6 +551,8 @@ const state = {
   uploads: [], // attachments waiting in the composer
   drafts: {}, // channelId -> unsent text
   missed: 0, // new messages that arrived while scrolled up
+  friends: { friends: [], incoming: [], outgoing: [] },
+  thread: null, // the open thread: { channelId, rootId, root, list }
 };
 
 let socket = null;
@@ -614,6 +628,27 @@ function statusOf(id) {
 function isAdmin(hub, userId) {
   return hub.ownerId === userId || Boolean(hub.admins?.includes(userId));
 }
+
+// Hub rights (V0.9.0): owner and admins may do everything, roles add single rights.
+// The server checks every action again.
+function canIn(hub, perm, userId = state.me?.id) {
+  if (!hub || !userId) return false;
+  if (isAdmin(hub, userId)) return true;
+  const ids = hub.memberRoles?.[userId] || [];
+  return (hub.roles || []).some((r) => ids.includes(r.id) && (r.perms.includes('admin') || r.perms.includes(perm)));
+}
+
+// Lower is higher; owner and admins stand above every role.
+function hubRankOf(hub, userId) {
+  if (isAdmin(hub, userId)) return -1;
+  const ids = hub.memberRoles?.[userId] || [];
+  const index = (hub.roles || []).findIndex((r) => ids.includes(r.id));
+  return index < 0 ? Infinity : index;
+}
+
+const outranksIn = (hub, targetId) => hub.ownerId !== targetId && hubRankOf(hub, state.me.id) < hubRankOf(hub, targetId);
+const rolesOf = (hub, userId) => (hub?.roles || []).filter((r) => (hub.memberRoles?.[userId] || []).includes(r.id));
+const roleColorIn = (hub, userId) => rolesOf(hub, userId).find((r) => r.color)?.color || null;
 
 function verified(user) {
   const check = user.official ? `<span class="verified" title="${user.bot ? t('Offizieller Nexora-Bot') : t('Offizieller Nexora-Account')}">✓</span>` : '';
@@ -985,6 +1020,7 @@ function start(token) {
 
   socket.on('hub:update', (hub) => {
     state.hubs.set(hub.id, hub);
+    document.dispatchEvent(new CustomEvent('nexora:hub', { detail: hub }));
     if (state.view.type === 'hub' && state.view.hubId === hub.id && !hub.channels.some((c) => c.id === state.view.channelId)) {
       openHub(hub.id);
       return;
@@ -1079,6 +1115,7 @@ function start(token) {
   socket.on('message:new', onMessageNew);
 
   socket.on('message:update', (msg) => {
+    threadUpdate(msg);
     const ch = state.channels.get(msg.channelId);
     if (!ch) return;
     const i = ch.list.findIndex((m) => m.id === msg.id);
@@ -1096,6 +1133,7 @@ function start(token) {
   });
 
   socket.on('message:remove', ({ channelId, messageId }) => {
+    threadRemove(channelId, messageId);
     const ch = state.channels.get(channelId);
     if (!ch) return;
     ch.list = ch.list.filter((m) => m.id !== messageId);
@@ -1115,6 +1153,32 @@ function start(token) {
   });
 
   socket.on('owner:broadcast', showBroadcast);
+
+  // V0.9.0: the look changes (Halloween is over or @nexora used /saison).
+  socket.on('season', ({ season }) => checkSeason(season));
+
+  // Notes from the Nexora Helper only this person sees, e.g. a reminder from /erinnern.
+  socket.on('helper:notice', ({ channelId, command, text }) => {
+    const helper = [...state.users.values()].find((u) => u.system);
+    const content = tServer(text);
+    if (channelId && helper) addEphemeral(channelId, helper.id, command, content);
+    toast(content.replace(/\*\*/g, ''), 'spooky');
+    if (state.me.status !== 'dnd') ping();
+  });
+
+  socket.on('friends:update', (friends) => {
+    state.friends = friends;
+    renderRail();
+    if (state.view.type === 'home') {
+      renderSidebar();
+      if (!state.view.channelId) renderMessagesShell();
+    }
+  });
+  socket.on('friend:incoming', ({ userId }) => {
+    toast(t('👋 {name} möchte mit dir befreundet sein', { name: userOf(userId).displayName }));
+    if (state.me.status !== 'dnd') ping();
+  });
+  socket.on('friend:accepted', ({ userId }) => toast(t('🤝 {name} ist jetzt mit dir befreundet', { name: userOf(userId).displayName })));
 
   socket.on('voice:state', onVoiceState);
   socket.on('voice:signal', (msg) => handleSignal(msg).catch((err) => console.warn('[voice] signal', err)));
@@ -1154,6 +1218,8 @@ function applyBootstrap(data) {
   state.helperCommands = data.helperCommands || [];
   state.shop = data.shop || null;
   state.ghostEvent = data.ghostEvent || null;
+  state.friends = data.friends || { friends: [], incoming: [], outgoing: [] };
+  state.halloweenOver = Boolean(data.halloweenOver);
   // After a reconnect the cache may be stale — drop it and refetch lazily.
   state.channels.clear();
   state.lastChannel = accountStore('lastChannel') || {};
@@ -1164,6 +1230,7 @@ function applyBootstrap(data) {
   renderMe();
   renderAnnouncement();
   checkVersion(data.version);
+  checkSeason(data.season);
   document.dispatchEvent(new CustomEvent('nexora:ready'));
 
   const params = new URLSearchParams(location.search);
@@ -1186,7 +1253,10 @@ function applyBootstrap(data) {
    ========================================================================= */
 
 function setView(view) {
-  if (view.channelId !== state.view.channelId) clearUploads();
+  if (view.channelId !== state.view.channelId) {
+    clearUploads();
+    closeThread();
+  }
   state.view = view;
   state.replyTo = null;
   state.editingId = null;
@@ -1316,7 +1386,8 @@ function renderRail() {
   }
   const home = $('#home-btn');
   home.classList.toggle('active', state.view.type === 'home');
-  const dmUnread = [...state.dms.keys()].reduce((n, id) => n + (state.unread.get(id)?.count || 0), 0);
+  // Friend requests count like unread DMs.
+  const dmUnread = [...state.dms.keys()].reduce((n, id) => n + (state.unread.get(id)?.count || 0), 0) + state.friends.incoming.length;
   home.querySelector('.badge')?.remove();
   if (dmUnread) home.append(h(`<span class="badge">${dmUnread > 99 ? '99+' : dmUnread}</span>`));
   setAppBadge(mentions + dmUnread);
@@ -1329,7 +1400,7 @@ function renderSidebar() {
   const hub = currentHub();
 
   if (hub) {
-    const isOwner = isAdmin(hub, state.me.id);
+    const isOwner = canIn(hub, 'manageChannels');
     head.className = 'sidebar-head hub-banner';
     head.style.setProperty('--hub-color', hub.color);
     head.innerHTML = `
@@ -1351,6 +1422,7 @@ function renderSidebar() {
       const active = c.id === state.view.channelId;
       const item = h(`<button class="nav-item ${active ? 'active' : ''} ${u ? 'unread' : ''}">
         <span class="hash">#</span><span class="label">${esc(c.name)}</span>
+        ${c.slowmode ? `<span class="slow-tag" title="${t('Langsam-Modus: {n} s', { n: c.slowmode })}">🐢</span>` : ''}
         ${u?.mention ? `<span class="badge">${u.count}</span>` : ''}
         ${isOwner ? `<span class="row-actions"><span class="icon-btn" data-act="edit" title="${t('Kanal bearbeiten')}">${ICONS.gear}</span></span>` : ''}
       </button>`);
@@ -1401,8 +1473,12 @@ function renderSidebar() {
       <button class="search-pill" style="width:100%" data-act="find">${ICONS.search}<span>${t('Unterhaltung finden')}</span></button>`;
     head.querySelector('[data-act=find]').onclick = openPalette;
 
-    body.innerHTML = `<div class="section-label"><span>${t('Direktnachrichten')}</span><button class="icon-btn" data-act="new" title="${t('Neue Nachricht')}">${ICONS.plus}</button></div>`;
+    const requests = state.friends.incoming.length;
+    body.innerHTML = `<button class="nav-item friends-item ${state.view.channelId ? '' : 'active'}" data-act="friends">
+        <span class="hash">${ICONS.friends}</span><span class="label">${t('Freunde')}</span>${requests ? `<span class="badge">${requests}</span>` : ''}</button>
+      <div class="section-label"><span>${t('Direktnachrichten')}</span><button class="icon-btn" data-act="new" title="${t('Neue Nachricht')}">${ICONS.plus}</button></div>`;
     body.querySelector('[data-act=new]').onclick = openNewDm;
+    body.querySelector('[data-act=friends]').onclick = openHome;
     const dms = sortedDms();
     if (!dms.length) {
       body.append(h(`<div class="empty-hint">${t('Noch keine Unterhaltungen.<br>Klick auf ein Mitglied oder auf <b>+</b>, um loszulegen.')}</div>`));
@@ -1452,17 +1528,20 @@ function renderChatHeader() {
     title.innerHTML = `<div class="hash-big voice">${ICONS.speaker}</div><h1>${esc(channel.name)}</h1><div class="topic">${n ? t('{n} im Kanal', { n }) : t('Sprachkanal')}</div>`;
   } else if (channel) {
     title.innerHTML = `<div class="hash-big">#</div><h1>${esc(channel.name)}</h1>${channel.topic ? `<div class="topic">${esc(channel.topic)}</div>` : ''}`;
-    composer.placeholder = t('Nachricht an #{name}', { name: channel.name });
+    composer.placeholder = t('Nachricht an #{name}', { name: channel.name }) + (channel.slowmode && !canIn(currentHub(), 'manageMessages') ? ` · 🐢 ${t('{n} s Langsam-Modus', { n: channel.slowmode })}` : '');
   } else if (dm) {
     const p = dmPartner(dm);
     title.innerHTML = `${avatar(p, { dot: true })}<h1>${esc(p.displayName)}${verified(p)}</h1><div class="topic">@${esc(p.username)}</div>`;
     title.querySelector('.avatar').onclick = (e) => showProfile(p.id, e.currentTarget);
     composer.placeholder = t('Nachricht an @{name}', { name: p.displayName });
   } else {
-    title.innerHTML = `<div class="hash-big">✦</div><h1>${t('Zentrale')}</h1>`;
+    title.innerHTML = `<div class="hash-big">${ICONS.friends}</div><h1>${t('Freunde')}</h1>`;
     composer.placeholder = t('Wähle eine Unterhaltung');
   }
   const hasTarget = Boolean(channel || dm);
+  const textTarget = Boolean(dm || (channel && channel.kind !== 'voice'));
+  $('#pins-btn').classList.toggle('hidden', !textTarget);
+  $('#search-btn').classList.toggle('hidden', !textTarget);
   renderCallUi();
   $('.composer-wrap').classList.toggle('hidden', !hasTarget || channel?.kind === 'voice');
   membersBtn.classList.toggle('active', state.showMembers);
@@ -1494,6 +1573,9 @@ function renderMembers() {
   members.sort((a, b) => (rank[statusOf(a.id)] - rank[statusOf(b.id)]) || a.displayName.localeCompare(b.displayName));
   const onlineList = members.filter((m) => statusOf(m.id) !== 'offline');
   const offlineList = members.filter((m) => statusOf(m.id) === 'offline');
+  // Online members with a role shown on its own ("Separat anzeigen") are listed under it.
+  const hoisted = (hub.roles || []).filter((r) => r.hoist);
+  const groupOf = (m) => hoisted.find((r) => (hub.memberRoles?.[m.id] || []).includes(r.id));
 
   panel.innerHTML = '';
   const section = (label, list) => {
@@ -1502,7 +1584,7 @@ function renderMembers() {
     for (const m of list) {
       const st = statusOf(m.id);
       const sub = m.system ? t('Offizieller Bot') : m.bot ? (m.disabled ? t('Gesperrt') : plural(m.commands?.length || 0, 'Befehl', 'Befehle')) : m.bio || STATUS_LABEL[st];
-      const row = h(`<button class="member ${st === 'offline' ? 'offline' : ''}${exClass(m)}" style="--c:${esc(m.color)}">
+      const row = h(`<button class="member ${st === 'offline' ? 'offline' : ''}${exClass(m)}" style="--c:${esc(roleColorIn(hub, m.id) || m.color)}">
         ${avatar(m, { dot: true })}
         <div class="info"><div class="name">${esc(m.displayName)}${verified(m)}${m.id === hub.ownerId ? `<span class="crown" title="${t('Besitzer')}">👑</span>` : ''}</div>
         <div class="bio">${esc(sub)}</div></div>
@@ -1511,7 +1593,8 @@ function renderMembers() {
       panel.append(row);
     }
   };
-  section(t('Online'), onlineList);
+  for (const role of hoisted) section(esc(role.name), onlineList.filter((m) => groupOf(m) === role));
+  section(t('Online'), onlineList.filter((m) => !groupOf(m)));
   section(t('Offline'), offlineList);
   section(t('Bots'), botList);
 }
@@ -1558,6 +1641,7 @@ function renderMessagesShell() {
   const box = $('#messages');
   box.innerHTML = '';
   if (!state.view.channelId) {
+    if (state.me) return renderFriendsPage(box);
     const hasDms = state.dms.size > 0;
     box.append(h(`<div class="channel-intro">
       <div class="hash-huge">✦</div>
@@ -1701,7 +1785,11 @@ function messageNode(m, prev) {
   const hub = currentHub();
   const cont = isContinuation(m, prev);
   const mine = m.authorId === state.me.id;
-  const canDelete = mine || (hub && isAdmin(hub, state.me.id));
+  const canDelete = mine || canIn(hub, 'manageMessages');
+  // Pins and threads belong to the channel itself; in a thread both are left out.
+  const inChannel = !m.threadId;
+  const canPin = inChannel && (!hub || canIn(hub, 'manageMessages'));
+  const nameColor = (hub && roleColorIn(hub, author.id)) || author.color;
   const ch = state.channels.get(m.channelId);
   const ref = m.replyTo && ch?.list.find((x) => x.id === m.replyTo);
 
@@ -1728,17 +1816,20 @@ function messageNode(m, prev) {
     <div class="msg-main">
       ${used}
       ${m.replyTo ? `<div class="msg-reply" data-ref="${esc(m.replyTo)}">${ref ? `<b>${esc(userOf(ref.authorId).displayName)}</b><span>${esc(previewText(ref))}</span>` : `<span><i>${t('Ursprüngliche Nachricht nicht geladen oder gelöscht')}</i></span>`}</div>` : ''}
-      ${cont ? '' : `<div class="msg-head"><span class="msg-author${exClass(author)}" style="--c:${esc(author.color)}">${esc(author.displayName)}</span>${verified(author)}${hub && hub.ownerId === author.id ? '<span class="owner-tag">OWNER</span>' : ''}<span class="msg-time" title="${esc(fullFmt.format(m.createdAt))}">${esc(stamp(m.createdAt))}</span></div>`}
+      ${cont ? '' : `<div class="msg-head"><span class="msg-author${exClass(author)}" style="--c:${esc(nameColor)}">${esc(author.displayName)}</span>${verified(author)}${hub && hub.ownerId === author.id ? '<span class="owner-tag">OWNER</span>' : ''}<span class="msg-time" title="${esc(fullFmt.format(m.createdAt))}">${esc(stamp(m.createdAt))}</span>${m.pinned ? `<span class="pin-tag" title="${t('Angepinnt')}">📌</span>` : ''}</div>`}
       ${m.content ? `<div class="msg-body ${isJumbo(m.content) ? 'jumbo' : ''}">${formatMessage(m.content)}${edited}</div>` : ''}
       ${pollHtml(m, canDelete)}
       ${attachmentsHtml(m)}
       ${!m.content && edited ? `<div class="msg-body">${edited}</div>` : ''}
       ${reactions ? `<div class="reactions">${reactions}</div>` : ''}
+      ${m.thread && inChannel ? `<button class="thread-chip" data-act="thread">${ICONS.thread}<b>${m.thread.count === 1 ? t('1 Antwort') : t('{n} Antworten', { n: numberFmt.format(m.thread.count) })}</b><span>${esc(stamp(m.thread.lastAt))}</span></button>` : ''}
     </div>
     <div class="msg-tools">
       ${QUICK_REACTIONS.map((e) => `<button class="icon-btn quick" data-act="react" data-emoji="${e}" title="${t('Mit {emoji} reagieren', { emoji: e })}">${e}</button>`).join('')}
       <button class="icon-btn" data-act="pick" title="${t('Reaktion hinzufügen')}">${ICONS.smile}</button>
       <button class="icon-btn" data-act="reply" title="${t('Antworten')}">${ICONS.reply}</button>
+      ${inChannel ? `<button class="icon-btn" data-act="thread" title="${t('Thread öffnen')}">${ICONS.thread}</button>` : ''}
+      ${canPin ? `<button class="icon-btn ${m.pinned ? 'active' : ''}" data-act="pin" title="${m.pinned ? t('Nicht mehr anpinnen') : t('Anpinnen')}">${ICONS.pin}</button>` : ''}
       ${m.content ? `<button class="icon-btn" data-act="copy" title="${t('Text kopieren')}">${ICONS.copy}</button>` : ''}
       ${mine && m.content ? `<button class="icon-btn" data-act="edit" title="${t('Bearbeiten')}">${ICONS.edit}</button>` : ''}
       ${canDelete ? `<button class="icon-btn danger" data-act="delete" title="${t('Löschen')}">${ICONS.trash}</button>` : ''}
@@ -1748,7 +1839,8 @@ function messageNode(m, prev) {
   return node;
 }
 
-$('#messages').addEventListener('click', (e) => {
+// Clicks inside a message list: the channel and an open thread work the same way.
+function onMessagesClick(e) {
   const msgEl = e.target.closest('.msg');
   const spoiler = e.target.closest('.spoiler');
   if (spoiler) return spoiler.classList.toggle('shown');
@@ -1788,8 +1880,11 @@ $('#messages').addEventListener('click', (e) => {
     case 'vote': return votePoll(id, act.dataset.option);
     case 'close-poll': return closePoll(id);
     case 'dismiss': return dismissEphemeral(id);
+    case 'pin': return togglePin(findMsg(id));
+    case 'thread': return openThread(state.view.channelId, id);
   }
-});
+}
+$('#messages').addEventListener('click', onMessagesClick);
 
 $('#messages').addEventListener('scroll', () => {
   const box = $('#messages');
@@ -1816,7 +1911,8 @@ $('#jump-btn').addEventListener('click', () => {
 });
 
 function findMsg(id) {
-  return state.channels.get(state.view.channelId)?.list.find((m) => m.id === id);
+  const thread = state.thread?.channelId === state.view.channelId ? [state.thread.root, ...state.thread.list] : [];
+  return state.channels.get(state.view.channelId)?.list.find((m) => m.id === id) || thread.find((m) => m?.id === id);
 }
 
 function jumpTo(id) {
@@ -1829,6 +1925,16 @@ function jumpTo(id) {
 }
 
 function onMessageNew(msg) {
+  // Replies in a thread go to the thread; only a mention there makes some noise.
+  if (msg.threadId) {
+    threadAdd(msg);
+    const watching = state.thread?.rootId === msg.threadId && !document.hidden;
+    if (msg.authorId !== state.me.id && !watching && mentionsMe(msg.content) && state.me.status !== 'dnd') {
+      ping();
+      notify(msg);
+    }
+    return;
+  }
   const ch = state.channels.get(msg.channelId);
   if (ch && !ch.list.some((m) => m.id === msg.id)) ch.list.push(msg);
 
@@ -2139,7 +2245,7 @@ function matchCommand(text) {
   if (!m) return null;
   const name = m[1].toLowerCase();
   const list = availableCommands().filter((c) => c.name === name);
-  const command = list.find((c) => c.bot.id === slash.botId) || list[0];
+  const command = list.find((c) => c.bot.id === slash.botId) || list.find((c) => !c.bot.system) || list[0];
   return command ? { command, text: (m[2] || '').trim() } : null;
 }
 
@@ -2434,6 +2540,7 @@ function showProfile(userId, anchor) {
   const isMe = u.id === state.me.id;
   if (u.bot) return showBotProfile(u, anchor);
   const ex = exclusiveOf(u);
+  const hub = currentHub()?.members.includes(u.id) ? currentHub() : null;
   const pop = h(`<div class="popover${exClass(u)}" style="--c:${esc(u.color)}">
     <div class="profile-banner">${ex ? ex.scene : ''}</div>
     <div class="profile-body">
@@ -2441,13 +2548,19 @@ function showProfile(userId, anchor) {
       <h4>${esc(u.displayName)}${verified(u)}</h4>
       <div class="handle">@${esc(u.username)} · ${STATUS_LABEL[st]}</div>
       ${ex ? `<div class="ex-badge">${esc(ex.badge)} · ${tierLabel(ex)}</div>` : ''}
+      ${trophyBadge(u)}
       ${ghostBadge(u)}
+      ${hub && rolesOf(hub, u.id).length ? `<div class="role-chips">${rolesOf(hub, u.id).map(roleChip).join('')}</div>` : ''}
       ${u.bio ? `<div class="bio">${esc(u.bio)}</div>` : '<div style="height:12px"></div>'}
       <div class="meta">${t('Dabei seit {date}', { date: u.createdAt ? esc(dateFmt.format(u.createdAt)) : '–' })}</div>
-      ${isMe ? `<button class="btn block" data-act="edit">${ICONS.edit} ${t('Profil bearbeiten')}</button>` : `<button class="btn primary block" data-act="dm">${ICONS.chat} ${t('Nachricht senden')}</button>`}
+      ${isMe ? `<button class="btn block" data-act="edit">${ICONS.edit} ${t('Profil bearbeiten')}</button>` : `<div class="profile-actions"><button class="btn primary" data-act="dm">${ICONS.chat} ${t('Nachricht senden')}</button>${friendButton(u.id)}</div>`}
+      ${!isMe && hub ? memberToolsHtml(hub, u.id) : ''}
     </div>
   </div>`);
-  pop.querySelector('[data-act]').onclick = () => (isMe ? (closePopover(), openSettings()) : openDmWith(u.id));
+  pop.querySelector('[data-act=edit]')?.addEventListener('click', () => { closePopover(); openSettings(); });
+  pop.querySelector('[data-act=dm]')?.addEventListener('click', () => openDmWith(u.id));
+  bindFriendButton(pop, u.id);
+  if (hub) bindMemberTools(pop, hub, u.id);
   placePopover(pop, anchor);
 }
 
@@ -2633,14 +2746,19 @@ function openInvite(hubId) {
 function openHubSettings(hubId) {
   const hub = state.hubs.get(hubId);
   if (!hub) return;
-  const isOwner = isAdmin(hub, state.me.id);
+  const isOwner = canIn(hub, 'manageHub');
   if (!isOwner) {
+    const extra = [canIn(hub, 'manageRoles') && `<button class="btn" data-act="roles">${ICONS.roles} ${t('Rollen')}</button>`, canIn(hub, 'ban') && `<button class="btn" data-act="bans">🚫 ${t('Gesperrte')}</button>`].filter(Boolean).join('');
     const { modal, close } = openModal(`
       <h3>${hub.icon ? esc(hub.icon) + ' ' : ''}${esc(hub.name)}</h3>
       <p class="sub">${plural(hub.members.length, 'Mitglied', 'Mitglieder')} · ${t('Besitzer: {name}', { name: hub.ownerId ? esc(userOf(hub.ownerId).displayName) : 'Nexora' })}</p>
       <div class="invite-box"><code>${esc(hub.inviteCode)}</code><button class="btn primary" data-act="copy">${ICONS.copy} ${t('Kopieren')}</button></div>
+      ${rolesOf(hub, state.me.id).length ? `<div class="field"><span>${t('Deine Rollen')}</span></div><div class="role-chips">${rolesOf(hub, state.me.id).map(roleChip).join('')}</div>` : ''}
+      ${extra ? `<div class="modal-actions" style="justify-content:flex-start">${extra}</div><hr />` : ''}
       <div class="modal-actions"><button class="btn danger" data-act="leave">${ICONS.logout} ${t('Hub verlassen')}</button><span class="spacer"></span><button class="btn" data-close>${t('Schließen')}</button></div>`);
     modal.querySelector('[data-act=copy]').onclick = () => copyText(inviteLink(hub));
+    modal.querySelector('[data-act=roles]')?.addEventListener('click', () => { close(); openRoleManager(hubId); });
+    modal.querySelector('[data-act=bans]')?.addEventListener('click', () => { close(); openBanList(hubId); });
     modal.querySelector('[data-act=leave]').onclick = async () => {
       close();
       if (!(await confirmDialog(t('Hub verlassen?'), t('Du verlässt „{name}“. Du kannst jederzeit per Einladung zurückkommen.', { name: hub.name }), t('Verlassen')))) return;
@@ -2651,7 +2769,7 @@ function openHubSettings(hubId) {
 
   const { modal, close } = openModal(`
     <h3>${t('Hub-Einstellungen')}</h3>
-    <p class="sub">${hub.isLounge ? t('Nur offizielle Accounts sehen diese Optionen.') : t('Nur du als Besitzer siehst diese Optionen.')}</p>
+    <p class="sub">${hub.isLounge ? t('Nur offizielle Accounts sehen diese Optionen.') : isAdmin(hub, state.me.id) ? t('Nur du als Besitzer siehst diese Optionen.') : t('Du siehst diese Optionen dank deiner Rolle.')}</p>
     <form>
       <label class="field"><span>${t('Name')}</span><input name="name" maxlength="40" required /></label>
       <div class="field"><span>${t('Symbol')}</span></div>
@@ -2673,7 +2791,13 @@ function openHubSettings(hubId) {
     </form>
     <div class="my-bot-chips"></div>
     <hr />
-    <div class="modal-actions">${hub.isLounge ? '' : `<button class="btn danger" data-act="delete">${ICONS.trash} ${t('Hub löschen')}</button>`}<span class="spacer"></span><button class="btn" data-close>${t('Schließen')}</button></div>`);
+    <div class="field"><span>${t('Rollen & Mitglieder')}</span></div>
+    <div class="modal-actions" style="justify-content:flex-start;margin-top:0">
+      ${canIn(hub, 'manageRoles') ? `<button class="btn" data-act="roles">${ICONS.roles} ${t('Rollen verwalten')}</button>` : ''}
+      ${canIn(hub, 'ban') ? `<button class="btn" data-act="bans">🚫 ${t('Gesperrte')}</button>` : ''}
+    </div>
+    <hr />
+    <div class="modal-actions">${hub.isLounge || hub.ownerId !== state.me.id ? '' : `<button class="btn danger" data-act="delete">${ICONS.trash} ${t('Hub löschen')}</button>`}<span class="spacer"></span><button class="btn" data-close>${t('Schließen')}</button></div>`);
   const form = modal.querySelector('form');
   form.name.value = hub.name;
   const getIcon = bindIconPicker(modal);
@@ -2694,6 +2818,8 @@ function openHubSettings(hubId) {
       toast(ex.message, 'error');
     }
   };
+  modal.querySelector('[data-act=roles]')?.addEventListener('click', () => { close(); openRoleManager(hubId); });
+  modal.querySelector('[data-act=bans]')?.addEventListener('click', () => { close(); openBanList(hubId); });
   renderHubBots(modal, hubId);
   const addForm = modal.querySelector('.bot-add-row');
   addForm.onsubmit = async (e) => {
@@ -2784,6 +2910,7 @@ function openChannelEditor(hubId, channelId, initialKind = 'text') {
       </div>`}
       <label class="field"><span>${t('Name')}</span><input name="name" maxlength="32" required placeholder="${t('neuer-kanal')}" /></label>
       <label class="field topic-field"><span>${t('Thema')} <em>${t('(optional)')}</em></span><input name="topic" maxlength="120" placeholder="${t("Worum geht's hier?")}" /></label>
+      ${channel && channel.kind !== 'voice' ? `<label class="field"><span>${t('Langsam-Modus')}</span><select name="slowmode">${[0, 5, 10, 30, 60, 120, 300, 600].map((n) => `<option value="${n}" ${(channel.slowmode || 0) === n ? 'selected' : ''}>${n ? (n < 60 ? t('{n} Sekunden', { n }) : t('{n} Min.', { n: n / 60 })) : t('Aus')}</option>`).join('')}</select></label>` : ''}
       <p class="form-error"></p>
       <div class="modal-actions">
         ${channel ? `<button type="button" class="btn danger" data-act="delete">${ICONS.trash} ${t('Löschen')}</button><span class="spacer"></span>` : ''}
@@ -2818,7 +2945,7 @@ function openChannelEditor(hubId, channelId, initialKind = 'text') {
     e.preventDefault();
     submitting(form, async () => {
       if (channel) {
-        await req('channel:update', { channelId, name: form.name.value, topic: form.topic.value });
+        await req('channel:update', { channelId, name: form.name.value, topic: form.topic.value, slowmode: form.slowmode ? Number(form.slowmode.value) : undefined });
       } else {
         const res = await req('channel:create', { hubId, name: form.name.value, topic: kind === 'voice' ? '' : form.topic.value, kind });
         const fresh = state.hubs.get(hubId);
@@ -3043,7 +3170,9 @@ function openPalette() {
 
   const all = () => {
     const out = [{ label: t('Meine Bots'), kind: t('Bots & Slash-Befehle'), ico: '🤖', go: () => openBotManager() },
-      { label: t('Geister-Laden'), kind: t('Halloween-Dekoration für Geister'), ico: '👻', go: () => openShop() }];
+      { label: t('Geister-Laden'), kind: SEASON === 'halloween' ? t('Halloween-Dekoration für Geister') : t('Endstand der Geisterjagd 2026'), ico: '👻', go: () => openShop() },
+      { label: t('Freunde'), kind: t('Freunde & Anfragen'), ico: '👥', go: () => openHome() },
+      { label: t('Nachrichten suchen'), kind: t('Suche im aktuellen Hub oder Chat'), ico: '🔎', go: () => openSearch() }];
     if (state.me.official) out.push({ label: t('Admin-Panel'), kind: t('Nexora verwalten'), ico: '🛡️', go: () => openAdminPanel() });
     for (const hub of state.hubs.values()) {
       out.push({ label: hub.name, kind: 'Hub', ico: hub.icon || initials(hub.name), go: () => openHub(hub.id) });
@@ -3820,6 +3949,16 @@ async function checkVersion(serverVersion) {
   if (store('seenVersion') !== state.version && !$('.modal')) openChangelog();
 }
 
+// The server switched the look (Halloween is over, or @nexora used /saison): reload into it.
+function checkSeason(serverSeason) {
+  if (!serverSeason || serverSeason === SEASON) return;
+  if (!input.value.trim() && !state.uploads.length && !$('.modal') && !state.editingId) return location.reload();
+  if ($('.update-banner')) return;
+  const banner = h(`<div class="update-banner"><span>${serverSeason === 'halloween' ? '🎃' : '✨'} ${t('Nexora hat einen neuen Look!')}</span><button class="btn primary">${t('Jetzt laden')}</button></div>`);
+  banner.querySelector('button').onclick = () => location.reload();
+  document.body.append(banner);
+}
+
 /* =========================================================================
    Global wiring
    ========================================================================= */
@@ -3831,6 +3970,9 @@ $('#palette-btn').onclick = openPalette;
 $('#version-btn').onclick = openChangelog;
 $('#download-btn').onclick = openDownload;
 $('#shop-btn').onclick = openShop;
+$('#shop-btn').classList.toggle('hidden', SEASON !== 'halloween');
+$('#search-btn').onclick = () => openSearch();
+$('#pins-btn').onclick = (e) => openPins(e.currentTarget);
 $('#admin-btn').onclick = () => openAdminPanel();
 $('#auth-version').onclick = openChangelog;
 $('#toggle-members').onclick = () => {

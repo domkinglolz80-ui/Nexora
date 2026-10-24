@@ -168,7 +168,8 @@
 
   function spawnGhost() {
     const app = $('#app');
-    if (!spooky() || !state.me) return;
+    // After the Halloween-Finale the hunt is over, even if the look stays on.
+    if (!spooky() || !state.me || state.halloweenOver) return;
     if (!app || app.classList.contains('hidden') || $('.hw-ghost')) return;
     const golden = Math.random() < goldenChance();
     const label = golden ? t('Goldenen Geist fangen') : t('Geist fangen');
@@ -182,7 +183,7 @@
     document.body.append(ghost);
   }
 
-  /* ---------- Goldene Geisternacht ---------- */
+  /* ---------- Goldene Geisternacht & Halloween-Finale ---------- */
 
   // A bar on top of the chat while the event runs, with the time left. It can be hidden
   // per event; it comes back when @nexora starts a new one or extends it.
@@ -211,7 +212,7 @@
     const bar = h(`<div class="hw-event-bar" id="hw-event-bar" role="status">
       <span class="hw-event-ghost" aria-hidden="true">${GHOST_SVG}</span>
       <div class="hw-event-text"><b>✨ ${esc(t(event.name))}</b>
-        <span>${esc(t('Goldene Geister erscheinen viel öfter – jeder zählt dreifach!'))}</span>
+        <span>${esc(event.name === 'Halloween-Finale' ? t('Letzte Nacht der Geisterjagd: jeder zweite Geist ist golden! Um Mitternacht wird die Bestenliste eingefroren.') : t('Goldene Geister erscheinen viel öfter – jeder zählt dreifach!'))}</span>
         <em>${esc(timeLeft(event.end - now))}</em></div>
       <button class="icon-btn" title="${esc(t('Ausblenden'))}" aria-label="${esc(t('Ausblenden'))}">${ICONS.x}</button></div>`);
     bar.querySelector('button').onclick = () => {

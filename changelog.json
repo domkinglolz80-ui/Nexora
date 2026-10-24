@@ -1,5 +1,48 @@
 [
   {
+    "version": "V0.9.0 Beta",
+    "date": "2026-10-24",
+    "title": "Rollen, Threads & Freunde",
+    "titleEn": "Roles, threads & friends",
+    "changes": [
+      {
+        "icon": "🎭",
+        "text": "**Rollen & Rechte für Hubs**: eigene Rollen mit Farbe und Rechten (Hub verwalten, Kanäle, Rollen, Nachrichten, Rauswerfen, Sperren oder gleich Admin). Die Rollenfarbe färbt den Namen, und Rollen können in der Mitgliederliste eine eigene Gruppe bekommen",
+        "textEn": "**Roles & permissions for hubs**: your own roles with a color and permissions (manage hub, channels, roles, messages, kick, ban or simply admin). The role color colors the name, and roles can get their own group in the member list"
+      },
+      {
+        "icon": "🛡️",
+        "text": "**Moderation im Profil**: Wer die Rechte hat, gibt Rollen, Auszeiten, wirft raus oder sperrt – direkt auf der Profilkarte im Hub. Gesperrte kommen nicht wieder rein, bis die Sperre aufgehoben ist. Neu für Kanäle: der 🐢 **Langsam-Modus**",
+        "textEn": "**Moderation on the profile card**: with the right permissions you give roles and timeouts, kick or ban right from the profile card in a hub. Banned members can't rejoin until the ban is lifted. New for channels: 🐢 **slow mode**"
+      },
+      {
+        "icon": "📌",
+        "text": "**Angepinnte Nachrichten**: Pin-Knopf an jeder Nachricht und eine Liste aller Pins oben im Kanal",
+        "textEn": "**Pinned messages**: a pin button on every message and a list of all pins at the top of the channel"
+      },
+      {
+        "icon": "💬",
+        "text": "**Threads**: Antworten zu einer Nachricht in einem eigenen Strang, ohne den Kanal vollzuschreiben",
+        "textEn": "**Threads**: replies to a message in their own thread, without flooding the channel"
+      },
+      {
+        "icon": "🔎",
+        "text": "**Nachrichtensuche** im ganzen Hub oder Chat – mit Filtern wie `von:@name`, `in:#kanal`, `hat:bild` oder `angepinnt`",
+        "textEn": "**Message search** across the whole hub or chat – with filters like `von:@name`, `in:#kanal`, `hat:bild` or `angepinnt`"
+      },
+      {
+        "icon": "👥",
+        "text": "**Freunde**: Anfragen schicken und annehmen, sehen, wer online ist – auf der neuen Freunde-Seite und im Profil",
+        "textEn": "**Friends**: send and accept requests and see who's online – on the new friends page and in profiles"
+      },
+      {
+        "icon": "🎃",
+        "text": "**Halloween-Finale am 31. Oktober**: den ganzen Tag ist jeder zweite Geist golden. Um Mitternacht wird die Bestenliste eingefroren, die ersten drei bekommen einen Pokal fürs Profil – und Nexora wechselt von selbst zum normalen Look",
+        "textEn": "**Halloween Finale on October 31st**: all day long every second ghost is golden. At midnight the leaderboard is frozen, the top three get a trophy for their profile – and Nexora switches to its normal look by itself"
+      }
+    ]
+  },
+  {
     "version": "V0.8.0 Beta",
     "date": "2026-10-23",
     "title": "Die Geister-Bestenliste",

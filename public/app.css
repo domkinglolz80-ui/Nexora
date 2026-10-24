@@ -2404,3 +2404,123 @@ button, a, input, textarea, select, label, .nav-item, .msg { touch-action: manip
 .board-name small { color: var(--muted); font-weight: 400; font-size: 12px; overflow: hidden; text-overflow: ellipsis; }
 .board-count { font: 600 13px var(--mono); color: #d7bcff; white-space: nowrap; }
 .board-rank { margin: 10px 0 0; color: var(--text-2); font-size: 13px; text-align: center; }
+
+/* =========================================================================
+   V0.9.0 — roles, pins, threads, search, friends
+   ========================================================================= */
+.slow-tag { font-size: 12px; opacity: 0.7; }
+.pin-tag { font-size: 12px; margin-left: 2px; }
+.msg-tools .icon-btn.active { color: var(--orange-2); }
+
+.thread-chip {
+  display: inline-flex; align-items: center; gap: 8px; margin-top: 6px;
+  padding: 5px 12px 5px 8px; border-radius: 10px;
+  background: rgba(255, 122, 24, 0.1); border: 1px solid var(--line-strong);
+  color: var(--text-2); font-size: 13px; transition: background 0.15s;
+}
+.thread-chip:hover { background: rgba(255, 122, 24, 0.2); color: var(--text); }
+.thread-chip svg { width: 16px; height: 16px; color: var(--orange-2); }
+.thread-chip b { color: var(--orange-2); font-weight: 600; }
+.thread-chip span { color: var(--muted); font-size: 12px; }
+
+.role-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 2px; }
+.role-chip {
+  display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border-radius: 999px;
+  background: color-mix(in srgb, var(--rc) 16%, transparent); border: 1px solid color-mix(in srgb, var(--rc) 45%, transparent);
+  font: 600 12px var(--font); color: var(--text);
+}
+.role-chip i, .role-pick i, .role-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--rc); flex-shrink: 0; }
+.trophy-badge { display: inline-flex; align-items: center; gap: 6px; margin-top: 8px; margin-right: 6px; padding: 4px 10px; border-radius: 999px; background: rgba(255, 209, 102, 0.14); border: 1px solid rgba(255, 209, 102, 0.45); color: #ffe7a6; font: 600 12px var(--font); }
+.profile-actions { display: flex; gap: 8px; }
+.profile-actions .btn { white-space: nowrap; padding: 0 12px; }
+.profile-actions .btn.primary { flex: 1; min-width: 0; }
+.friend-btn { white-space: nowrap; }
+.friend-btn.friends { color: var(--success); }
+.friend-btn.incoming { border-color: var(--orange); color: var(--orange-2); }
+.friend-btn svg { width: 16px; height: 16px; }
+.member-tools { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
+
+/* pinned messages */
+.pins-pop { width: 360px; padding: 10px; }
+.pins-list { max-height: 420px; overflow-y: auto; }
+.pin-row { display: flex; gap: 10px; padding: 10px 6px; border-bottom: 1px solid var(--line); }
+.pin-row:last-child { border-bottom: 0; }
+.pin-main { min-width: 0; flex: 1; }
+.pin-head { display: flex; gap: 8px; align-items: baseline; font-size: 13px; }
+.pin-head span { color: var(--muted); font-size: 11px; }
+.pin-text { font-size: 13px; color: var(--text-2); word-break: break-word; max-height: 4.5em; overflow: hidden; }
+.pin-acts { display: flex; gap: 6px; margin-top: 6px; }
+.pin-acts .btn.small { height: 28px; font-size: 12px; }
+
+/* search */
+.modal.search-modal { width: min(620px, 100%); }
+.search-input { margin-bottom: 10px; border: 1px solid var(--line-strong); border-radius: 14px; }
+.search-filters { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.search-results { max-height: min(460px, 55vh); overflow-y: auto; }
+.search-results code { font: 12px var(--mono); color: var(--orange-2); }
+.search-hit { width: 100%; display: flex; gap: 10px; padding: 10px; border-radius: 12px; text-align: left; transition: background 0.15s; }
+.search-hit:hover { background: rgba(255, 255, 255, 0.05); }
+.hit-main { min-width: 0; flex: 1; display: grid; gap: 2px; }
+.hit-head { display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline; font-size: 13px; }
+.hit-head span { color: var(--muted); font-size: 11px; }
+.hit-text { font-size: 13px; color: var(--text-2); word-break: break-word; max-height: 4.5em; overflow: hidden; }
+
+/* threads */
+.modal.thread-modal { width: min(640px, 100%); height: min(720px, calc(100dvh - 40px)); display: flex; flex-direction: column; padding: 20px 0 0; overflow: hidden; }
+.thread-head { display: flex; align-items: center; gap: 12px; padding: 0 20px 12px; border-bottom: 1px solid var(--line); }
+.thread-head > div { flex: 1; min-width: 0; }
+.thread-head h3 { font-size: 20px; margin: 0; }
+.thread-head .sub { margin: 0; font-size: 13px; }
+.thread-ico { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 11px; background: var(--grad); color: #1a0b02; }
+.thread-list { flex: 1; min-height: 0; }
+.thread-root { background: rgba(255, 122, 24, 0.06); }
+.thread-composer { margin: 0 14px 14px; }
+.thread-composer textarea { padding-left: 10px; }
+
+/* friends page */
+.friends-item { margin-bottom: 6px; }
+.friends-item .hash svg { width: 18px; height: 18px; }
+.friends-page { padding: 18px 24px 30px; max-width: 760px; }
+.friends-hero h2 { margin: 6px 0 4px; font: 700 26px var(--display); }
+.friends-hero p { margin: 0 0 18px; color: var(--text-2); }
+.friend-row { display: flex; align-items: center; gap: 12px; padding: 10px 10px; border-radius: 14px; border-top: 1px solid var(--line); }
+.friend-row:hover { background: rgba(255, 255, 255, 0.04); }
+.friend-row .avatar { cursor: pointer; }
+.friend-row .info { flex: 1; min-width: 0; }
+.friend-row .name { font-weight: 600; display: flex; align-items: center; gap: 6px; }
+.friend-row .bio { color: var(--muted); font-size: 12px; }
+.friend-acts { display: flex; gap: 6px; }
+.friend-add .bot-add-row { display: flex; gap: 8px; }
+.friend-add .input { flex: 1; }
+
+/* roles */
+.modal.roles-modal { width: min(560px, 100%); }
+.role-row { display: flex; align-items: center; gap: 10px; padding: 10px 8px; border-radius: 12px; border-top: 1px solid var(--line); }
+.role-row .info { flex: 1; min-width: 0; }
+.role-row .name { font-weight: 600; color: var(--rc); }
+.role-row .name em { font-style: normal; font-size: 11px; color: var(--muted); font-weight: 500; }
+.role-row .bio { color: var(--muted); font-size: 12px; }
+.role-row .icon-btn { width: 30px; height: 30px; font-size: 11px; }
+.role-row .icon-btn:disabled { opacity: 0.3; pointer-events: none; }
+.role-row .icon-btn.danger:hover { color: #ff8a9a; background: rgba(255, 61, 87, 0.14); }
+.role-lock { opacity: 0.5; padding: 0 8px; }
+.perm-list { display: grid; gap: 6px; margin-bottom: 12px; }
+.perm { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); background: rgba(0, 0, 0, 0.25); cursor: pointer; margin-bottom: 6px; }
+.perm input { margin-top: 3px; accent-color: var(--orange); }
+.perm b { display: block; font-size: 14px; }
+.perm small { display: block; color: var(--muted); font-size: 12px; }
+.perm.locked { opacity: 0.45; cursor: not-allowed; }
+.swatch.none { display: grid; place-items: center; color: var(--muted); border: 1px dashed var(--line-strong); }
+.role-picks { display: grid; gap: 6px; margin-bottom: 8px; }
+.role-pick { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); cursor: pointer; }
+.role-pick input { accent-color: var(--orange); }
+.role-pick span { font-weight: 600; color: var(--rc); }
+.role-pick.locked { opacity: 0.45; cursor: not-allowed; }
+.timeout-opts { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 8px; }
+
+@media (max-width: 760px) {
+  .friends-page { padding: 14px 16px 24px; }
+  .friend-row { flex-wrap: wrap; }
+  .pins-pop { width: calc(100vw - 24px); }
+  .modal.thread-modal { height: calc(100dvh - 24px); }
+}

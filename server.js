@@ -45,21 +45,37 @@ const shopView = () => ({
 // (V0.7.0, all of October 23rd in Germany) it is every second one. @nexora can start,
 // extend or end the event with the helper's /event; that overrides this window.
 const GOLDEN_CHANCE = 1 / 8;
+// Since V0.9.0 the golden event is the Halloween-Finale: all of October 31st (German time).
 const GOLDEN_EVENT = {
-  name: 'Goldene Geisternacht',
-  start: Date.parse('2026-10-23T00:00:00+02:00'),
-  end: Date.parse('2026-10-24T00:00:00+02:00'),
+  name: 'Halloween-Finale',
+  start: Date.parse('2026-10-31T00:00:00+01:00'),
+  end: Date.parse('2026-11-01T00:00:00+01:00'),
   chance: 1 / 2,
 };
 const MAX_EVENT_HOURS = 72;
 const MAX_GIFT_GHOSTS = 1000;
 const LEADERBOARD_SIZE = 10;
+// The Halloween Edition 2026 ends with the night of October 31st: the ghost hunt stops, the
+// leaderboard is frozen, the top three keep a trophy for good and Nexora wears its normal look.
+const HALLOWEEN_END = Date.parse('2026-11-01T00:00:00+01:00');
+const SEASONS = ['halloween', 'normal'];
+// Hub roles (V0.9.0): what members with a role may do. "admin" includes everything.
+const PERMS = ['admin', 'manageHub', 'manageChannels', 'manageRoles', 'manageMessages', 'kick', 'ban'];
+const MAX_ROLES = 20;
+const MAX_PINS = 50;
+const MAX_THREAD_FETCH = 200;
+const MAX_FRIENDS = 200;
+const MAX_FRIEND_REQUESTS = 50;
+const MAX_REMINDERS = 25;
+const MAX_REMINDER_DAYS = 30;
+const SLOWMODE_STEPS = [0, 5, 10, 30, 60, 120, 300, 600]; // seconds
+const SEARCH_RESULTS = 25;
 // Done once when this version starts for the first time (db.release remembers it):
 // end the maintenance and put up the announcement for the release.
 const RELEASE = {
-  version: 'V0.8.0 Beta',
+  version: 'V0.9.0 Beta',
   endMaintenance: true,
-  announcement: '🎉 **V0.8.0 Beta ist da!** Die Wartung ist vorbei – neu: die 🏆 **Geister-Bestenliste** im Geister-Laden. Viel Spaß beim Jagen! 👻',
+  announcement: '🎉 **V0.9.0 Beta ist da!** Rollen & Rechte für Hubs, angepinnte Nachrichten, Suche, Threads und Freunde. Und am 31. Oktober: das 🎃 **Halloween-Finale**!',
 };
 const STARTED_AT = Date.now();
 // The newest changelog entry is the running version; clients compare it to reload on updates.
@@ -102,7 +118,7 @@ function mongoHint(err) {
 }
 
 function emptyDb() {
-  return { users: {}, sessions: {}, hubs: {}, dms: {}, messages: {}, bots: {}, announcement: null, team: [], audit: [], maintenance: null, retention: null, ghostEvent: null, release: null };
+  return { users: {}, sessions: {}, hubs: {}, dms: {}, messages: {}, bots: {}, announcement: null, team: [], audit: [], maintenance: null, retention: null, ghostEvent: null, release: null, season: null, halloweenFinal: null, reminders: [] };
 }
 
 const db = emptyDb();
@@ -174,8 +190,8 @@ const mongoStore = {
   },
 
   async write() {
-    const { users, sessions, hubs, dms, bots, announcement, team, audit, maintenance, retention, ghostEvent, release } = db;
-    const docs = new Map([['meta', { data: { users, sessions, hubs, dms, bots, announcement, team, audit, maintenance, retention, ghostEvent, release } }]]);
+    const { users, sessions, hubs, dms, bots, announcement, team, audit, maintenance, retention, ghostEvent, release, season, halloweenFinal, reminders } = db;
+    const docs = new Map([['meta', { data: { users, sessions, hubs, dms, bots, announcement, team, audit, maintenance, retention, ghostEvent, release, season, halloweenFinal, reminders } }]]);
     for (const [channelId, list] of Object.entries(db.messages)) docs.set('ch:' + channelId, { list });
 
     const ops = [];
@@ -281,6 +297,14 @@ function pruneMessages() {
       discardFiles(list.splice(0, cut));
       removed += cut;
     }
+    // Thread replies whose first message is gone can't be reached any more.
+    const ids = new Set(list.map((m) => m.id));
+    const orphans = list.filter((m) => m.threadId && !ids.has(m.threadId));
+    if (orphans.length) {
+      discardFiles(orphans);
+      list.splice(0, list.length, ...list.filter((m) => !orphans.includes(m)));
+      removed += orphans.length;
+    }
     if (!list.length) delete db.messages[channelId];
   }
   if (removed) {
@@ -368,6 +392,61 @@ function canManage(hub, userId) {
   return hub.ownerId === userId || (hub.isLounge && isOfficial(user)) || isOwner(user);
 }
 
+// ---------------------------------------------------------------------------
+// Hub roles: hub.roles is ordered from the highest role to the lowest,
+// hub.memberRoles maps a member to the ids of their roles.
+// ---------------------------------------------------------------------------
+
+const hubRoles = (hub) => (Array.isArray(hub.roles) ? hub.roles : []);
+const memberRoleIds = (hub, userId) => (hub.memberRoles && Object.hasOwn(hub.memberRoles, userId) ? hub.memberRoles[userId] : []);
+
+// Position in the hub, lower is higher: whoever manages the hub stands above every role.
+function hubRank(hub, userId) {
+  if (canManage(hub, userId)) return -1;
+  const ids = memberRoleIds(hub, userId);
+  const index = hubRoles(hub).findIndex((r) => ids.includes(r.id));
+  return index < 0 ? Infinity : index;
+}
+
+function can(hub, userId, perm) {
+  if (canManage(hub, userId)) return true;
+  if (!db.users[userId] || db.users[userId].bot) return false;
+  const ids = memberRoleIds(hub, userId);
+  return hubRoles(hub).some((r) => ids.includes(r.id) && (r.perms.includes('admin') || r.perms.includes(perm)));
+}
+
+// Members can only act on people below them; nobody acts on the hub owner.
+const outranks = (hub, actorId, targetId) => hub.ownerId !== targetId && hubRank(hub, actorId) < hubRank(hub, targetId);
+
+// The highest role with a color names someone's color in the hub.
+function roleColor(hub, userId) {
+  const ids = memberRoleIds(hub, userId);
+  return hubRoles(hub).find((r) => ids.includes(r.id) && r.color)?.color || null;
+}
+
+// A hub timeout (/auszeit): the member can't write in this hub until it is over.
+function hubTimeoutError(hub, userId) {
+  const until = hub.timeouts?.[userId];
+  if (!until) return null;
+  if (until <= Date.now()) {
+    delete hub.timeouts[userId];
+    return null;
+  }
+  return `Du hast in diesem Hub eine Auszeit bis ${stampFmt.format(until)}.`;
+}
+
+// ---------------------------------------------------------------------------
+// Seasons: the Halloween look until HALLOWEEN_END, then the normal one.
+// @nexora can force either with the helper's /saison.
+// ---------------------------------------------------------------------------
+
+function season() {
+  if (SEASONS.includes(db.season)) return db.season;
+  return Date.now() < HALLOWEEN_END ? 'halloween' : 'normal';
+}
+
+const halloweenOver = () => Boolean(db.halloweenFinal) || Date.now() >= HALLOWEEN_END;
+
 // What happened on Nexora and who did it; the owner reads it in the admin panel.
 const MAX_AUDIT = 500;
 function audit(byId, action, detail = '') {
@@ -450,6 +529,7 @@ function publicUser(u) {
     ghosts: u.ghosts || 0,
     ghostsCaught: u.ghostsCaught || 0,
     owned: Array.isArray(u.owned) ? u.owned.filter((item) => Object.hasOwn(SHOP, item)) : [],
+    trophy: u.trophy2026 || undefined, // 1–3: place in the ghost hunt 2026
     createdAt: u.createdAt,
     banned: u.banned ? true : undefined,
   };
@@ -581,6 +661,7 @@ function channelAccess(userId, channelId) {
 }
 
 function hubView(hub) {
+  const members = hub.members.filter((m) => !db.users[m]?.banned);
   return {
     id: hub.id,
     name: hub.name,
@@ -590,10 +671,15 @@ function hubView(hub) {
     admins: hub.members.filter((m) => canManage(hub, m) && !db.users[m]?.banned),
     inviteCode: hub.inviteCode,
     isLounge: !!hub.isLounge,
-    members: hub.members.filter((m) => !db.users[m]?.banned),
+    members,
     channels: hub.channels,
+    roles: hubRoles(hub),
+    memberRoles: Object.fromEntries(members.filter((m) => memberRoleIds(hub, m).length).map((m) => [m, memberRoleIds(hub, m)])),
+    createdAt: hub.createdAt,
   };
 }
+
+const emitHub = (hub) => io.to(`hub:${hub.id}`).emit('hub:update', hubView(hub));
 
 function dmView(dm) {
   const msgs = db.messages[dm.id] || [];
@@ -616,7 +702,65 @@ function visibleUserIds(userId) {
   for (const dm of Object.values(db.dms)) {
     if (dm.members.includes(userId)) dm.members.forEach(add);
   }
+  const me = db.users[userId];
+  if (me) for (const key of FRIEND_KEYS) for (const f of friendIds(me, key)) if (db.users[f]) add(f);
   return ids;
+}
+
+// ---------------------------------------------------------------------------
+// Friends: user.friends (both said yes), user.friendIn (asked me), user.friendOut (I asked).
+// ---------------------------------------------------------------------------
+
+const FRIEND_KEYS = ['friends', 'friendIn', 'friendOut'];
+const friendIds = (u, key) => (Array.isArray(u[key]) ? u[key] : []);
+
+function friendsView(userId) {
+  const u = db.users[userId];
+  const list = (key) => friendIds(u, key).filter((f) => db.users[f] && !hiddenFrom(db.users[f], userId));
+  return { friends: list('friends'), incoming: list('friendIn'), outgoing: list('friendOut') };
+}
+
+const emitFriends = (...userIds) => userIds.forEach((uid) => io.to(`user:${uid}`).emit('friends:update', friendsView(uid)));
+
+function unlinkFriends(a, b) {
+  for (const [x, y] of [[a, b], [b, a]]) for (const key of FRIEND_KEYS) x[key] = friendIds(x, key).filter((f) => f !== y.id);
+}
+
+// Two people who weren't aware of each other get each other's profile and status.
+function introduce(a, b) {
+  for (const [x, y] of [[a, b], [b, a]]) {
+    io.to(`user:${x.id}`).emit('user:update', publicUser(y));
+    io.to(`user:${x.id}`).emit('presence', { userId: y.id, status: presenceOf(y) });
+  }
+}
+
+// Sends a request; if the other person already asked, it is accepted instead.
+function requestFriend(me, target) {
+  if (!target || target.bot || target.id === me.id || hiddenFrom(target, me.id)) return { error: 'Benutzer nicht gefunden.' };
+  if (friendIds(me, 'friends').includes(target.id)) return { error: `Ihr seid schon befreundet.` };
+  if (friendIds(me, 'friendIn').includes(target.id)) return acceptFriend(me, target);
+  if (friendIds(me, 'friendOut').includes(target.id)) return { error: 'Die Anfrage ist schon unterwegs.' };
+  if (friendIds(me, 'friends').length >= MAX_FRIENDS) return { error: `Maximal ${MAX_FRIENDS} Freunde.` };
+  if (friendIds(me, 'friendOut').length >= MAX_FRIEND_REQUESTS) return { error: `Maximal ${MAX_FRIEND_REQUESTS} offene Anfragen.` };
+  me.friendOut = [...friendIds(me, 'friendOut'), target.id];
+  target.friendIn = [...friendIds(target, 'friendIn'), me.id];
+  save();
+  introduce(me, target);
+  emitFriends(me.id, target.id);
+  io.to(`user:${target.id}`).emit('friend:incoming', { userId: me.id });
+  return { status: 'sent', user: publicUser(target) };
+}
+
+function acceptFriend(me, other) {
+  if (!other || !friendIds(me, 'friendIn').includes(other.id)) return { error: 'Keine Anfrage von dieser Person.' };
+  if (friendIds(me, 'friends').length >= MAX_FRIENDS) return { error: `Maximal ${MAX_FRIENDS} Freunde.` };
+  unlinkFriends(me, other);
+  me.friends = [...friendIds(me, 'friends'), other.id];
+  other.friends = [...friendIds(other, 'friends'), me.id];
+  save();
+  emitFriends(me.id, other.id);
+  io.to(`user:${other.id}`).emit('friend:accepted', { userId: me.id });
+  return { status: 'friends', user: publicUser(other) };
 }
 
 // A DM is gone for someone when the other person is banned.
@@ -654,13 +798,27 @@ app.use(express.json({ limit: '32kb' }));
 // version in their URL. A device can then never run an old app.js under a new page
 // (e.g. while Render briefly runs the old and the new server side by side), and the
 // client compares exactly the code it runs with the server.
-const INDEX_HTML = fs
+const INDEX_SOURCE = fs
   .readFileSync(path.join(__dirname, 'public', 'index.html'), 'utf8')
-  .replace('<head>', `<head>\n  <meta name="nexora-version" content="${VERSION}" />`)
-  .replace(/(src|href)="\/(i18n|app|bots|admin|halloween)\.(js|css)"/g, `$1="/$2.$3?v=${encodeURIComponent(VERSION)}"`);
+  .replace(/(src|href)="\/(i18n|app|social|bots|admin|halloween)\.(js|css)"/g, `$1="/$2.$3?v=${encodeURIComponent(VERSION)}"`);
+// The page also names its season. Outside Halloween the spooky files and decorations are left out.
+const INDEX_HTML = {
+  halloween: INDEX_SOURCE,
+  normal: INDEX_SOURCE
+    .replace(/^.*halloween\.(css|js).*\n/gm, '')
+    .replace(/^.*class="hw-(moon|web|fog|bat|badge|countdown)[^"]*".*\n/gm, '')
+    .replace(/<div class="hw-logo-wrap">(<div class="logo-mark big"><span>N<\/span><\/div>)<span id="hw-hero-pumpkin"><\/span><\/div>/, '$1')
+    .replace(/<link rel="icon" href="data:[^"]*" \/>/, '<link rel="icon" href="/icons/nexora.svg" />')
+    .replace('<title>Nexora · Halloween Edition 2026</title>', '<title>Nexora</title>')
+    .replace('Deine Crew. Deine Hubs. Jetzt mit Gänsehaut.', 'Deine Crew. Deine Hubs. Dein Ort.')
+    .replace('<li><span>🎃</span> Gruselige Accessoires für dein Profil</li>', '<li><span>✨</span> Animierte Accessoires für dein Profil</li>'),
+};
+for (const key of SEASONS) {
+  INDEX_HTML[key] = INDEX_HTML[key].replace('<head>', `<head>\n  <meta name="nexora-version" content="${VERSION}" />\n  <meta name="nexora-season" content="${key}" />`);
+}
 app.get(['/', '/index.html'], (_req, res) => {
   res.setHeader('Cache-Control', 'no-cache');
-  res.type('html').send(INDEX_HTML);
+  res.type('html').send(INDEX_HTML[season()]);
 });
 
 // "no-cache" makes browsers revalidate on every visit, so everyone gets the latest patch.
@@ -670,7 +828,7 @@ app.use(express.static(path.join(__dirname, 'public'), {
 
 app.get('/api/version', (_req, res) => {
   res.setHeader('Cache-Control', 'no-store');
-  res.json({ version: VERSION, desktop: { version: DESKTOP_VERSION }, changelog: CHANGELOG, ghostEvent: ghostEvent() });
+  res.json({ version: VERSION, season: season(), desktop: { version: DESKTOP_VERSION }, changelog: CHANGELOG, ghostEvent: ghostEvent() });
 });
 
 // /download/windows, /download/mac, /download/linux → the newest installer on GitHub.
@@ -892,7 +1050,7 @@ app.get('/files/:fileId/:name?', async (req, res) => {
 app.use((err, _req, res, next) => {
   if (res.headersSent) return next(err);
   const tooLarge = err.type === 'entity.too.large';
-  res.status(err.status || 500).json({ error: tooLarge ? `Die Datei ist zu groß (max. ${limit(req.userId, MAX_FILE) / 1024 / 1024} MB).` : 'Anfrage fehlgeschlagen.' });
+  res.status(err.status || 500).json({ error: tooLarge ? `Die Datei ist zu groß (max. ${limit(_req.userId, MAX_FILE) / 1024 / 1024} MB).` : 'Anfrage fehlgeschlagen.' });
 });
 
 // ---------------------------------------------------------------------------
@@ -903,6 +1061,7 @@ const server = http.createServer(app);
 const io = new Server(server, { maxHttpBufferSize: 64 * 1024 });
 
 const online = new Map(); // userId -> number of open sockets
+const slowTimes = new Map(); // "channelId:userId" -> last message, for the Langsam-Modus
 
 function presenceOf(user) {
   // The Nexora Helper shows the status @nexora gives it with /status.
@@ -1012,6 +1171,34 @@ function postMessage(access, channelId, authorId, fields) {
   return message;
 }
 
+// Deletes messages of a channel for everyone. A thread's first message takes its replies
+// along; a deleted reply makes its thread one shorter.
+function removeMessages(access, channelId, doomed) {
+  const list = db.messages[channelId] || [];
+  const gone = new Set(doomed.map((m) => m.id));
+  for (const m of list) if (m.threadId && gone.has(m.threadId)) gone.add(m.id);
+  const removed = list.filter((m) => gone.has(m.id));
+  db.messages[channelId] = list.filter((m) => !gone.has(m.id));
+  const roots = new Set(removed.filter((m) => m.threadId && !gone.has(m.threadId)).map((m) => m.threadId));
+  for (const rootId of roots) {
+    const root = db.messages[channelId].find((m) => m.id === rootId);
+    if (root) refreshThread(access, channelId, root, false);
+  }
+  discardFiles(removed);
+  save();
+  for (const m of removed) emitToChannel(access, 'message:remove', { channelId, messageId: m.id, threadId: m.threadId || undefined });
+  return removed;
+}
+
+// Recounts a thread after a reply came or went and tells everyone.
+function refreshThread(access, channelId, root, persist = true) {
+  const replies = (db.messages[channelId] || []).filter((m) => m.threadId === root.id);
+  root.thread = replies.length ? { count: replies.length, lastAt: replies[replies.length - 1].createdAt } : undefined;
+  if (!root.thread) delete root.thread;
+  emitToChannel(access, 'message:update', root);
+  if (persist) save();
+}
+
 function deleteHub(hub) {
   voiceKickHub(hub);
   io.to(`hub:${hub.id}`).emit('hub:removed', { hubId: hub.id });
@@ -1027,6 +1214,7 @@ function deleteHub(hub) {
 function removeFromHub(hub, memberId) {
   voiceKickHub(hub, memberId);
   hub.members = hub.members.filter((m) => m !== memberId);
+  if (hub.memberRoles) delete hub.memberRoles[memberId];
   save();
   io.in(`user:${memberId}`).socketsLeave(`hub:${hub.id}`);
   io.to(`user:${memberId}`).emit('hub:removed', { hubId: hub.id });
@@ -1093,7 +1281,9 @@ function setAnnouncement(text) {
 // The golden ghost event that is running or still to come; null once it is over.
 // Clients start and end it themselves from start/end, so nothing has to be sent at the edges.
 function ghostEvent() {
-  const event = { ...GOLDEN_EVENT, ...(db.ghostEvent || {}) };
+  // /event only changes the event it was used for, so a new event isn't hidden by an old change.
+  const changed = db.ghostEvent?.for === GOLDEN_EVENT.name ? { start: db.ghostEvent.start, end: db.ghostEvent.end } : {};
+  const event = { ...GOLDEN_EVENT, ...changed };
   return event.end > Date.now() && event.end > event.start ? event : null;
 }
 
@@ -1103,21 +1293,63 @@ const ghostEventActive = () => {
 };
 
 function setGhostEvent(start, end) {
-  db.ghostEvent = { start, end };
+  db.ghostEvent = { for: GOLDEN_EVENT.name, start, end };
   save();
   io.emit('ghostEvent', ghostEvent());
 }
 
+const huntersRanked = (filter = () => true) => Object.values(db.users)
+  .filter((u) => !u.bot && (u.ghostsCaught || 0) > 0 && filter(u))
+  .sort((a, b) => (b.ghostsCaught || 0) - (a.ghostsCaught || 0) || a.createdAt - b.createdAt);
+
 // The best ghost hunters: every ghost ever caught counts, also the ones spent in the shop.
+// After the Halloween-Finale the board is frozen: it shows the final standings.
 function ghostLeaderboard(viewerId) {
-  const hunters = Object.values(db.users)
-    .filter((u) => !u.bot && (u.ghostsCaught || 0) > 0 && !hiddenFrom(u, viewerId))
-    .sort((a, b) => (b.ghostsCaught || 0) - (a.ghostsCaught || 0) || a.createdAt - b.createdAt);
+  const hunters = huntersRanked((u) => !hiddenFrom(u, viewerId));
   const rank = hunters.findIndex((u) => u.id === viewerId);
-  return {
-    top: hunters.slice(0, LEADERBOARD_SIZE).map((u) => ({ user: publicUser(u), caught: u.ghostsCaught || 0 })),
-    rank: rank < 0 ? null : rank + 1,
+  const final = db.halloweenFinal;
+  const top = final
+    ? final.top.filter((e) => db.users[e.userId] && !hiddenFrom(db.users[e.userId], viewerId)).map((e) => ({ user: publicUser(db.users[e.userId]), caught: e.caught }))
+    : hunters.slice(0, LEADERBOARD_SIZE).map((u) => ({ user: publicUser(u), caught: u.ghostsCaught || 0 }));
+  return { top, rank: rank < 0 ? null : rank + 1, final: final ? { at: final.at, hunters: final.hunters, total: final.total } : null };
+}
+
+const MEDALS = ['🥇', '🥈', '🥉'];
+
+// Runs once, as soon as HALLOWEEN_END has passed: freezes the leaderboard, hands out the
+// trophies, announces the winners and switches everyone to the normal look.
+function finishHalloween() {
+  if (db.halloweenFinal || Date.now() < HALLOWEEN_END) return;
+  const hunters = huntersRanked((u) => !u.banned);
+  db.halloweenFinal = {
+    at: Date.now(),
+    top: hunters.slice(0, LEADERBOARD_SIZE).map((u) => ({ userId: u.id, caught: u.ghostsCaught || 0 })),
+    hunters: hunters.length,
+    total: hunters.reduce((sum, u) => sum + (u.ghostsCaught || 0), 0),
   };
+  hunters.slice(0, 3).forEach((u, i) => {
+    u.trophy2026 = i + 1;
+    broadcastToVisible(u.id, 'user:update', publicUser(u));
+  });
+  const podium = hunters.slice(0, 3).map((u, i) => `${MEDALS[i]} @${u.username}`).join(' · ');
+  setAnnouncement(`🏆 **Die Geisterjagd 2026 ist vorbei!** ${podium ? `${podium} – ` : ''}danke fürs Mitgruseln! Deine Halloween-Dekoration bleibt dir für immer. 🎃`);
+  // The full top 10 goes to #halloween in the Lounge (or its first text channel).
+  const lounge = Object.values(db.hubs).find((h) => h.isLounge);
+  const channel = lounge && (lounge.channels.find((c) => c.name === 'halloween') || lounge.channels.find((c) => c.kind !== 'voice'));
+  if (channel) {
+    const rows = db.halloweenFinal.top.map((e, i) => `${MEDALS[i] || `${i + 1}.`} **${db.users[e.userId].displayName}** @${db.users[e.userId].username} · 👻 ${numberFmt.format(e.caught)}`);
+    postMessage({ type: 'hub', hub: lounge }, channel.id, HELPER_ID, {
+      content: [
+        '🎃 **Das war die Halloween Edition 2026!**',
+        `${numberFmt.format(db.halloweenFinal.hunters)} Geisterjäger:innen haben 👻 ${numberFmt.format(db.halloweenFinal.total)} Geister gefangen. Der Endstand:`,
+        ...(rows.length ? rows : ['Niemand hat einen Geist gefangen – vielleicht nächstes Jahr! 👻']),
+        'Die ersten drei tragen ab jetzt ihren Pokal im Profil. Bis nächstes Jahr! 🦇',
+      ].join('\n'),
+    });
+  }
+  audit(null, 'halloweenFinal', podium || 'ohne Gewinner');
+  console.log('[nexora] Halloween-Finale: Bestenliste eingefroren');
+  io.emit('season', { season: season() });
 }
 
 // Runs once per release, at the first start of RELEASE.version (see RELEASE).
@@ -1417,14 +1649,14 @@ const canModerate = (name) => !moderatable(userByMention(name)).error;
 const validPurge = (value) => Number.isInteger(Number(value)) && Number(value) >= 1 && Number(value) <= MAX_PURGE;
 const isOff = (text) => /^(aus|off|ende|stop)$/i.test(String(text || '').trim());
 
-const HELPER_GROUPS = ['Moderation', 'Kanal', 'Nexora', 'Halloween', 'Helper'];
+const HELPER_GROUPS = ['Moderation', 'Hub', 'Kanal', 'Nexora', 'Werkzeuge', 'Spaß', 'Halloween', 'Helper'];
 
 // "2 Std. 5 Min.": the time left until a timestamp.
 const leftText = (until) => uptimeText(Math.max(0, (until - Date.now()) / 1000));
 const chanceText = (chance) => `1 von ${Math.round(1 / chance)}`;
 
 // Typos like "/hilfe stauts": the closest helper command, if it is only one or two letters off.
-function closestHelperCommand(name) {
+function closestHelperCommand(name, commands = HELPER_COMMANDS) {
   const distance = (a, b) => {
     let row = Array.from({ length: b.length + 1 }, (_, i) => i);
     for (let i = 1; i <= a.length; i++) {
@@ -1435,12 +1667,159 @@ function closestHelperCommand(name) {
     return row[b.length];
   };
   let best = null;
-  for (const c of HELPER_COMMANDS) {
+  for (const c of commands) {
     const d = distance(name, c.name);
     if (d <= 2 && (!best || d < best.d)) best = { d, command: c };
   }
   return best?.command || null;
 }
+
+// ---------------------------------------------------------------------------
+// Hub moderation, shared by the hub menus and the helper's hub commands.
+// ---------------------------------------------------------------------------
+
+// A member someone may moderate in a hub: a person below them (see outranks).
+function hubTarget(hub, actorId, target, { member = true } = {}) {
+  if (!target || target.bot || hiddenFrom(target, actorId)) return { error: 'Benutzer nicht gefunden.' };
+  if (member && !hub.members.includes(target.id)) return { error: `@${target.username} ist nicht in diesem Hub.` };
+  if (target.id === actorId) return { error: 'Das geht nicht bei dir selbst.' };
+  if (!outranks(hub, actorId, target.id)) return { error: 'Du kannst nur Mitglieder moderieren, die unter dir stehen.' };
+  return { target };
+}
+
+function hubBan(hub, target, byId, reason) {
+  hub.bans ||= {};
+  hub.bans[target.id] = { reason: str(reason, 200), at: Date.now(), by: byId };
+  if (hub.timeouts) delete hub.timeouts[target.id];
+  if (hub.members.includes(target.id)) removeFromHub(hub, target.id);
+  save();
+}
+
+function hubTimeout(hub, target, minutes) {
+  hub.timeouts ||= {};
+  if (minutes) hub.timeouts[target.id] = Date.now() + minutes * 60_000;
+  else delete hub.timeouts[target.id];
+  save();
+}
+
+// Gives or takes a role. Only roles below one's own can be handed out.
+function setMemberRole(hub, actorId, target, role, on) {
+  const index = hubRoles(hub).indexOf(role);
+  if (index < 0) return { error: 'Rolle nicht gefunden.' };
+  if (index <= hubRank(hub, actorId)) return { error: 'Du kannst nur Rollen vergeben, die unter deiner höchsten Rolle stehen.' };
+  if (!target || target.bot || !hub.members.includes(target.id)) return { error: 'Benutzer nicht gefunden.' };
+  if (target.id !== actorId && hubRank(hub, target.id) <= hubRank(hub, actorId)) return { error: 'Du kannst nur Mitglieder unter dir ändern.' };
+  hub.memberRoles ||= {};
+  const ids = new Set(memberRoleIds(hub, target.id));
+  if (on) ids.add(role.id);
+  else ids.delete(role.id);
+  if (ids.size) hub.memberRoles[target.id] = hubRoles(hub).filter((r) => ids.has(r.id)).map((r) => r.id);
+  else delete hub.memberRoles[target.id];
+  save();
+  emitHub(hub);
+  return {};
+}
+
+const roleByName = (hub, name) => {
+  const wanted = String(name || '').trim().replace(/^@/, '').toLowerCase();
+  return hubRoles(hub).find((r) => r.name.toLowerCase() === wanted) || null;
+};
+
+// One line describing a message, also when it has no text (poll, files).
+function previewOf(m, max = 80) {
+  const text = m.content || (m.poll ? `📊 ${m.poll.question}` : m.attachments?.length ? `📎 ${m.attachments.map((a) => a.name).join(', ')}` : '');
+  const line = text.replace(/\s+/g, ' ');
+  return line.length > max ? `${line.slice(0, max - 1)}…` : line;
+}
+
+// Makes someone official (team) or takes it away; accounts from NEXORA_OFFICIAL stay.
+function setOfficialFor(target, official, byId) {
+  if (!target || target.bot) return { error: 'Benutzer nicht gefunden.' };
+  const name = target.username.toLowerCase();
+  if (OFFICIAL.has(name)) return { error: 'Dieser Account ist fest offiziell (NEXORA_OFFICIAL).' };
+  if (official && target.banned) return { error: 'Gesperrte Accounts können nicht ins Team.' };
+  if (!Array.isArray(db.team)) db.team = [];
+  db.team = db.team.filter((n) => n !== name);
+  if (official) db.team.push(name);
+  audit(byId, official ? 'teamAdd' : 'teamRemove', `@${target.username}`);
+  broadcastToVisible(target.id, 'user:update', publicUser(target));
+  io.to(`user:${target.id}`).emit('user:update', publicUser(target));
+  return { user: publicUser(target) };
+}
+
+function setSeason(value, byId) {
+  db.season = SEASONS.includes(value) ? value : null;
+  save();
+  audit(byId, 'season', db.season || 'auto');
+  io.emit('season', { season: season() });
+}
+
+// ---------------------------------------------------------------------------
+// Reminders (/erinnern, for @nexora): kept in db.reminders, delivered by the helper as a
+// note only @nexora sees – right away when online, otherwise on the next visit.
+// ---------------------------------------------------------------------------
+
+const berlinClock = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: 'Europe/Berlin' });
+
+// "10m", "2h", "1d", "90" (minutes) or a time like "18:30" (the next time it is 18:30 in Germany).
+function parseWhen(text) {
+  const value = String(text || '').trim().toLowerCase();
+  const clock = /^(\d{1,2})[:.](\d{2})(?:uhr)?$/.exec(value);
+  if (clock) {
+    const [hour, minute] = clock.slice(1).map(Number);
+    if (hour > 23 || minute > 59) return null;
+    const [nowHour, nowMinute] = berlinClock.format(Date.now()).split(':').map(Number);
+    let minutes = hour * 60 + minute - (nowHour * 60 + nowMinute);
+    if (minutes <= 0) minutes += 1440;
+    const now = new Date();
+    return now.getTime() - now.getSeconds() * 1000 - now.getMilliseconds() + minutes * 60_000;
+  }
+  const m = /^(\d{1,5})\s*(m|min|h|std|d|t)?$/.exec(value);
+  if (!m) return null;
+  const minutes = Number(m[1]) * ({ h: 60, std: 60, d: 1440, t: 1440 }[m[2] || ''] || 1);
+  return minutes >= 1 && minutes <= MAX_REMINDER_DAYS * 1440 ? Date.now() + minutes * 60_000 : null;
+}
+
+const remindersOf = (userId) => (db.reminders || []).filter((r) => r.userId === userId).sort((a, b) => a.at - b.at);
+
+// Hands out the reminders that are due; those of people who are offline wait for them.
+function deliverReminders(onlyUserId = null) {
+  if (!Array.isArray(db.reminders) || !db.reminders.length) return;
+  const now = Date.now();
+  const keep = [];
+  for (const r of db.reminders) {
+    const user = db.users[r.userId];
+    if (!user || user.banned) continue;
+    if (r.at > now || !online.get(r.userId) || (onlyUserId && r.userId !== onlyUserId)) {
+      keep.push(r);
+      continue;
+    }
+    const reachable = Boolean(channelAccess(r.userId, r.channelId));
+    io.to(`user:${r.userId}`).emit('helper:notice', {
+      channelId: reachable ? r.channelId : null,
+      command: 'erinnern',
+      text: `⏰ **Erinnerung:** ${r.text}`,
+      reminder: true,
+    });
+  }
+  if (keep.length !== db.reminders.length) {
+    db.reminders = keep;
+    save();
+  }
+}
+
+// "2d6", "w20", "20", "" -> { count, sides }; null when out of range.
+function parseDice(text) {
+  const m = /^(?:(\d{1,2})?\s*[dw])?\s*(\d{1,4})?$/i.exec(String(text || '').trim());
+  if (!m) return null;
+  const count = Number(m[1] || 1);
+  const sides = Number(m[2] || 6);
+  return count >= 1 && count <= 20 && sides >= 2 && sides <= 1000 ? { count, sides } : null;
+}
+
+const ORACLE = ['Ja, ganz sicher. ✨', 'Sieht gut aus. 👍', 'Frag später nochmal. 🌫️', 'Die Geister schweigen. 👻', 'Eher nicht. 🤔', 'Auf keinen Fall. ❌', 'Ohne Zweifel! 🔮', 'Die Zeichen stehen auf Ja. 🌕', 'Konzentrier dich und frag nochmal. 🕯️', 'Meine Quellen sagen nein. 🦇'];
+
+const PERM_LABEL = { admin: 'Admin', manageHub: 'Hub verwalten', manageChannels: 'Kanäle', manageRoles: 'Rollen', manageMessages: 'Nachrichten', kick: 'Rauswerfen', ban: 'Sperren' };
 
 // Each run gets { invoker, access, channelId, options } and returns
 // { public: [texts posted by the helper], ephemeral: [texts only the invoker sees] }.
@@ -1492,7 +1871,7 @@ const HELPER_COMMANDS = [
       const access = channelAccess(invoker.id, pending.channelId);
       if (!access) return { ephemeral: ['Der Kanal ist nicht mehr erreichbar – abgebrochen.'] };
       const command = HELPER_COMMANDS.find((c) => c.name === pending.name);
-      const result = command.run({ invoker, access, channelId: pending.channelId, options: pending.options });
+      const result = command.run({ invoker, access, channelId: pending.channelId, options: pending.options, origin: pending.origin });
       return { ...result, access, channelId: pending.channelId, ran: command.name };
     },
   },
@@ -1632,8 +2011,13 @@ const HELPER_COMMANDS = [
     run: ({ invoker, options }) => {
       const { target, error } = moderatable(userByMention(options.nutzer));
       if (error) return { ephemeral: [error] };
+      target.warnings = [...(Array.isArray(target.warnings) ? target.warnings : []), { at: Date.now(), reason: str(options.grund, 200) }].slice(-20);
+      save();
       audit(invoker.id, 'warn', `@${target.username} – ${options.grund}`);
-      return { public: [`⚠️ @${target.username}, das ist eine Verwarnung vom Nexora-Team: ${options.grund}`] };
+      return {
+        public: [`⚠️ @${target.username}, das ist eine Verwarnung vom Nexora-Team: ${options.grund}`],
+        ephemeral: [`Das ist Verwarnung Nr. ${target.warnings.length} für @${target.username}.`],
+      };
     },
   },
   {
@@ -1685,10 +2069,9 @@ const HELPER_COMMANDS = [
     options: [option('anzahl', `Wie viele (1–${MAX_PURGE})`, true)],
     run: ({ invoker, access, channelId, options }) => {
       if (!validPurge(options.anzahl)) return { ephemeral: [`Bitte eine Zahl von 1 bis ${MAX_PURGE}.`] };
-      const removed = (db.messages[channelId] || []).splice(-Number(options.anzahl));
-      discardFiles(removed);
-      save();
-      for (const m of removed) emitToChannel(access, 'message:remove', { channelId, messageId: m.id });
+      // The latest messages of the channel itself; their threads go with them.
+      const main = (db.messages[channelId] || []).filter((m) => !m.threadId);
+      const removed = removeMessages(access, channelId, main.slice(-Number(options.anzahl)));
       audit(invoker.id, 'purge', `${removed.length} Nachrichten`);
       return { ephemeral: [`🧹 ${removed.length} Nachricht${removed.length === 1 ? '' : 'en'} gelöscht.`] };
     },
@@ -1740,7 +2123,8 @@ const HELPER_COMMANDS = [
           `${numberFmt.format(hubs)} Hubs · ${numberFmt.format(messages)} Nachrichten · ${numberFmt.format(bots)} Bots`,
           u.banned ? `🔨 Gesperrt seit ${dateFmt.format(u.banned.at)}${u.banned.reason ? ` – ${u.banned.reason}` : ''}` : 'Nicht gesperrt',
           muteError(u) ? `🔇 Stumm bis ${stampFmt.format(u.mutedUntil)}${u.muteReason ? ` – ${u.muteReason}` : ''}` : 'Nicht stumm',
-          `👻 ${numberFmt.format(u.ghosts || 0)} Geister (${numberFmt.format(u.ghostsCaught || 0)} insgesamt gefangen) · Accessoire: ${u.accessory || 'keins'}`,
+          `👻 ${numberFmt.format(u.ghosts || 0)} Geister (${numberFmt.format(u.ghostsCaught || 0)} insgesamt gefangen) · Accessoire: ${u.accessory || 'keins'}${u.trophy2026 ? ` · ${MEDALS[u.trophy2026 - 1]} Platz ${u.trophy2026} der Geisterjagd 2026` : ''}`,
+          `👥 ${numberFmt.format(friendIds(u, 'friends').length)} Freunde · ⚠️ ${numberFmt.format(Array.isArray(u.warnings) ? u.warnings.length : 0)} Verwarnungen${Array.isArray(u.warnings) && u.warnings.length ? ` (zuletzt ${dateFmt.format(u.warnings.at(-1).at)}: ${u.warnings.at(-1).reason})` : ''}`,
         ].join('\n')],
       };
     },
@@ -1896,6 +2280,306 @@ const HELPER_COMMANDS = [
       return { ephemeral: [[`📜 **Protokoll** · die letzten ${entries.length}`, ...rows].join('\n')] };
     },
   },
+  // ----- V0.9.0: hub tools (in the hub where you type them) -----
+  {
+    name: 'hubinfo',
+    group: 'Hub',
+    description: 'Zeigt alles über diesen Hub',
+    options: [],
+    run: ({ access }) => {
+      if (access.type !== 'hub') return { ephemeral: ['/hubinfo funktioniert nur in Hubs.'] };
+      const { hub } = access;
+      const people = hub.members.filter((m) => !isBotMember(m) && db.users[m]);
+      const text = hub.channels.filter((c) => c.kind !== 'voice');
+      const pins = text.reduce((n, c) => n + (db.messages[c.id] || []).filter((m) => m.pinned).length, 0);
+      const messages = text.reduce((n, c) => n + (db.messages[c.id] || []).length, 0);
+      return {
+        ephemeral: [[
+          `🏠 **${hub.name}**${hub.isLounge ? ' · offizielle Lounge' : ''} · Code \`${hub.inviteCode}\``,
+          `Besitzer: ${hub.ownerId && db.users[hub.ownerId] ? `@${db.users[hub.ownerId].username}` : 'Nexora'} · erstellt ${hub.createdAt ? dateFmt.format(hub.createdAt) : '–'}`,
+          `Mitglieder: ${numberFmt.format(people.length)} (${numberFmt.format(people.filter((m) => online.get(m)).length)} online) · Bots: ${numberFmt.format(hub.members.filter(isBotMember).length)}`,
+          `Kanäle: ${numberFmt.format(text.length)} Text, ${numberFmt.format(hub.channels.length - text.length)} Sprache · Nachrichten: ${numberFmt.format(messages)} · angepinnt: ${numberFmt.format(pins)}`,
+          `Rollen: ${hubRoles(hub).length ? hubRoles(hub).map((r) => r.name).join(', ') : 'keine'} · Gesperrt: ${numberFmt.format(Object.keys(hub.bans || {}).length)}`,
+        ].join('\n')],
+      };
+    },
+  },
+  {
+    name: 'rollen',
+    group: 'Hub',
+    description: 'Listet die Rollen dieses Hubs mit Rechten und Mitgliedern',
+    options: [],
+    run: ({ access }) => {
+      if (access.type !== 'hub') return { ephemeral: ['/rollen funktioniert nur in Hubs.'] };
+      const roles = hubRoles(access.hub);
+      if (!roles.length) return { ephemeral: ['Dieser Hub hat noch keine Rollen. Anlegen in den Hub-Einstellungen unter „Rollen“.'] };
+      const rows = roles.map((r, i) => {
+        const count = access.hub.members.filter((m) => memberRoleIds(access.hub, m).includes(r.id)).length;
+        return `${i + 1}. **${r.name}** · ${numberFmt.format(count)} Mitglieder · ${r.perms.length ? r.perms.map((p) => PERM_LABEL[p]).join(', ') : 'keine Rechte'}`;
+      });
+      return { ephemeral: [[`🎭 **Rollen in ${access.hub.name}** (von oben nach unten)`, ...rows].join('\n')] };
+    },
+  },
+  {
+    name: 'rolle',
+    group: 'Hub',
+    description: 'Gibt jemandem eine Rolle dieses Hubs oder nimmt sie weg',
+    options: [option('aktion', 'geben oder nehmen', true), option('nutzer', 'Wer', true), option('rolle', 'Name der Rolle', true)],
+    run: ({ invoker, access, options }) => {
+      if (access.type !== 'hub') return { ephemeral: ['/rolle funktioniert nur in Hubs.'] };
+      const on = /^(geben|give|add|\+)$/i.test(options.aktion);
+      if (!on && !/^(nehmen|take|remove|-)$/i.test(options.aktion)) return { ephemeral: ['Aktion: `geben` oder `nehmen`, z. B. `/rolle geben @lena Moderator`.'] };
+      const role = roleByName(access.hub, options.rolle);
+      if (!role) return { ephemeral: [`Die Rolle „${options.rolle}“ gibt es hier nicht. Alle Rollen: \`/rollen\``] };
+      const target = userByMention(options.nutzer);
+      const res = setMemberRole(access.hub, invoker.id, target, role, on);
+      if (res.error) return { ephemeral: [res.error] };
+      return { ephemeral: [on ? `🎭 @${target.username} hat jetzt die Rolle **${role.name}**.` : `🎭 @${target.username} hat die Rolle **${role.name}** nicht mehr.`] };
+    },
+  },
+  {
+    name: 'auszeit',
+    group: 'Hub',
+    description: 'Lässt jemanden in diesem Hub eine Weile nicht schreiben (max. 7 Tage)',
+    options: [option('nutzer', 'Wer', true), option('dauer', 'z. B. 10m, 2h, 1d – oder „aus“', true), option('grund', 'Wird im Kanal angezeigt')],
+    run: ({ invoker, access, options }) => {
+      if (access.type !== 'hub') return { ephemeral: ['/auszeit funktioniert nur in Hubs.'] };
+      const { target, error } = hubTarget(access.hub, invoker.id, userByMention(options.nutzer));
+      if (error) return { ephemeral: [error] };
+      if (isOff(options.dauer)) {
+        if (!hubTimeoutError(access.hub, target.id)) return { ephemeral: [`@${target.username} hat hier keine Auszeit.`] };
+        hubTimeout(access.hub, target, 0);
+        return { ephemeral: [`✅ Die Auszeit von @${target.username} ist vorbei.`] };
+      }
+      const minutes = parseMinutes(options.dauer);
+      if (!minutes) return { ephemeral: ['Dauer ungültig: 1 Minute bis 7 Tage, z. B. `10m`, `2h` oder `1d`.'] };
+      hubTimeout(access.hub, target, minutes);
+      return { public: [`⏳ **@${target.username}** hat in diesem Hub ${durationText(minutes)} Auszeit.${options.grund ? ` Grund: ${options.grund}` : ''}`] };
+    },
+  },
+  {
+    name: 'hubsperre',
+    group: 'Hub',
+    description: 'Wirft jemanden aus diesem Hub und sperrt den Wiedereintritt',
+    confirm: (options, { access, invoker }) => access.type === 'hub' && !hubTarget(access.hub, invoker.id, userByMention(options.nutzer), { member: false }).error,
+    options: [option('nutzer', 'Wer gesperrt wird', true), option('grund', 'Wird im Kanal angezeigt')],
+    run: ({ invoker, access, options }) => {
+      if (access.type !== 'hub') return { ephemeral: ['/hubsperre funktioniert nur in Hubs.'] };
+      const { target, error } = hubTarget(access.hub, invoker.id, userByMention(options.nutzer), { member: false });
+      if (error) return { ephemeral: [error] };
+      if (access.hub.bans?.[target.id]) return { ephemeral: [`@${target.username} ist hier schon gesperrt.`] };
+      hubBan(access.hub, target, invoker.id, options.grund);
+      return { public: [`🚫 **@${target.username}** ist aus diesem Hub gesperrt.${options.grund ? ` Grund: ${options.grund}` : ''}`] };
+    },
+  },
+  {
+    name: 'hubentsperren',
+    group: 'Hub',
+    description: 'Hebt eine Hub-Sperre wieder auf',
+    options: [option('nutzer', 'Wer wieder beitreten darf', true)],
+    run: ({ access, options }) => {
+      if (access.type !== 'hub') return { ephemeral: ['/hubentsperren funktioniert nur in Hubs.'] };
+      const target = userByMention(options.nutzer);
+      if (!target || !access.hub.bans?.[target.id]) return { ephemeral: [`${options.nutzer} ist hier nicht gesperrt.`] };
+      delete access.hub.bans[target.id];
+      save();
+      return { ephemeral: [`✅ @${target.username} kann „${access.hub.name}“ wieder beitreten.`] };
+    },
+  },
+  {
+    name: 'slowmode',
+    group: 'Kanal',
+    description: 'Langsam-Modus: wie lange jeder zwischen zwei Nachrichten warten muss',
+    options: [option('sekunden', `${SLOWMODE_STEPS.filter(Boolean).join(', ')} – oder „aus“`, true)],
+    run: ({ access, channelId, options }) => {
+      if (access.type !== 'hub') return { ephemeral: ['/slowmode funktioniert nur in Hubs.'] };
+      const seconds = isOff(options.sekunden) ? 0 : Number(String(options.sekunden).replace(/s$/i, ''));
+      if (!SLOWMODE_STEPS.includes(seconds)) return { ephemeral: [`Möglich: ${SLOWMODE_STEPS.filter(Boolean).join(', ')} Sekunden oder \`aus\`.`] };
+      const channel = access.hub.channels.find((c) => c.id === channelId);
+      channel.slowmode = seconds || undefined;
+      if (!seconds) delete channel.slowmode;
+      save();
+      emitHub(access.hub);
+      return { public: [seconds ? `🐢 Langsam-Modus an: Hier kann jeder alle ${seconds} Sekunden eine Nachricht schreiben.` : '🐇 Langsam-Modus aus.'] };
+    },
+  },
+  {
+    name: 'thema',
+    group: 'Kanal',
+    description: 'Setzt das Thema dieses Kanals – ohne Text wird es entfernt',
+    options: [option('text', 'Das neue Thema')],
+    run: ({ access, channelId, options }) => {
+      if (access.type !== 'hub') return { ephemeral: ['/thema funktioniert nur in Hubs.'] };
+      const channel = access.hub.channels.find((c) => c.id === channelId);
+      channel.topic = str(options.text || '', 120);
+      save();
+      emitHub(access.hub);
+      return { ephemeral: [channel.topic ? `📝 Neues Thema für #${channel.name}: ${channel.topic}` : `📝 Das Thema von #${channel.name} ist entfernt.`] };
+    },
+  },
+  {
+    name: 'pins',
+    group: 'Kanal',
+    description: 'Zeigt die angepinnten Nachrichten dieses Kanals',
+    options: [],
+    run: ({ channelId }) => {
+      const pinned = (db.messages[channelId] || []).filter((m) => m.pinned).sort((a, b) => b.pinned.at - a.pinned.at);
+      if (!pinned.length) return { ephemeral: ['📌 Hier ist noch nichts angepinnt.'] };
+      const rows = pinned.slice(0, 10).map((m) => `• **${db.users[m.authorId]?.displayName || '?'}** (${dateFmt.format(m.createdAt)}): ${previewOf(m)}`);
+      return { ephemeral: [[`📌 **${numberFmt.format(pinned.length)} angepinnt**${pinned.length > 10 ? ' (die neuesten 10)' : ''}`, ...rows].join('\n')] };
+    },
+  },
+  {
+    name: 'einladung',
+    group: 'Hub',
+    description: 'Zeigt den Einladungslink dieses Hubs',
+    options: [],
+    run: ({ access, origin }) => {
+      if (access.type !== 'hub') return { ephemeral: ['/einladung funktioniert nur in Hubs.'] };
+      return { ephemeral: [`🔗 Einladung in „${access.hub.name}“: ${origin}/?invite=${access.hub.inviteCode} · Code \`${access.hub.inviteCode}\``] };
+    },
+  },
+  // ----- V0.9.0: Nexora -----
+  {
+    name: 'rundruf',
+    group: 'Nexora',
+    description: 'Ein Fenster, das jetzt bei allen aufgeht, die online sind',
+    confirm: (options) => Boolean(str(options.text, 300)),
+    options: [option('text', 'Was alle sehen', true)],
+    run: ({ invoker, options }) => {
+      const content = str(options.text, 300);
+      io.emit('owner:broadcast', { text: content, from: publicUser(invoker), at: Date.now() });
+      audit(invoker.id, 'broadcast', content);
+      return { ephemeral: [`📢 Rundruf an ${numberFmt.format(online.size)} Personen online verschickt.`] };
+    },
+  },
+  {
+    name: 'team',
+    group: 'Nexora',
+    description: 'Zeigt das Nexora-Team – oder nimmt jemanden auf (an) bzw. raus (aus)',
+    options: [option('nutzer', 'Wer – ohne: das ganze Team'), option('aktion', 'an oder aus')],
+    run: ({ invoker, options }) => {
+      if (!options.nutzer) {
+        const team = Object.values(db.users).filter((u) => !u.bot && isOfficial(u));
+        return { ephemeral: [[`✓ **Nexora-Team** · ${numberFmt.format(team.length)}`, ...team.map((u) => `• **${u.displayName}** @${u.username}${OFFICIAL.has(u.username.toLowerCase()) ? ' · fest' : ''}${online.get(u.id) ? ' 🟢' : ''}`)].join('\n')] };
+      }
+      const on = /^(an|on|rein|add|\+)$/i.test(options.aktion || '');
+      if (!on && !isOff(options.aktion) && !/^(raus|remove|-)$/i.test(options.aktion || '')) return { ephemeral: ['So geht\'s: `/team @name an` oder `/team @name aus`.'] };
+      const target = userByMention(options.nutzer);
+      const res = setOfficialFor(target, on, invoker.id);
+      if (res.error) return { ephemeral: [res.error] };
+      return { ephemeral: [on ? `✓ @${target.username} ist jetzt im Nexora-Team.` : `@${target.username} ist nicht mehr im Nexora-Team.`] };
+    },
+  },
+  {
+    name: 'saison',
+    group: 'Nexora',
+    description: 'Zeigt oder wechselt den Look: halloween, normal oder auto',
+    options: [option('modus', 'halloween, normal oder auto – ohne: Status')],
+    run: ({ invoker, options }) => {
+      const mode = String(options.modus || '').toLowerCase();
+      const now = season() === 'halloween' ? '🎃 Halloween' : '✨ normal';
+      if (!mode) {
+        return {
+          ephemeral: [[
+            `🗓️ Gerade: **${now}** (${SEASONS.includes(db.season) ? 'fest eingestellt' : 'automatisch'})`,
+            halloweenOver() ? `Das Halloween-Finale war am ${stampFmt.format(db.halloweenFinal?.at || HALLOWEEN_END)} – die Bestenliste ist eingefroren.` : `Das Halloween-Finale endet ${stampFmt.format(HALLOWEEN_END)} (noch ${leftText(HALLOWEEN_END)}); danach wechselt Nexora von selbst zum normalen Look.`,
+            'Wechseln mit `/saison halloween`, `/saison normal` oder zurück mit `/saison auto`.',
+          ].join('\n')],
+        };
+      }
+      if (!['halloween', 'normal', 'auto'].includes(mode)) return { ephemeral: ['Möglich: `halloween`, `normal` oder `auto`.'] };
+      setSeason(mode === 'auto' ? null : mode, invoker.id);
+      return { ephemeral: [`🗓️ Look ist jetzt **${season() === 'halloween' ? '🎃 Halloween' : '✨ normal'}**${mode === 'auto' ? ' (automatisch)' : ''}. Alle Geräte laden gleich neu.`] };
+    },
+  },
+  // ----- V0.9.0: tools -----
+  {
+    name: 'erinnern',
+    group: 'Werkzeuge',
+    description: `Der Helper erinnert dich später an etwas (max. ${MAX_REMINDER_DAYS} Tage)`,
+    options: [option('wann', 'z. B. 10m, 2h, 1d oder 18:30', true), option('text', 'Woran', true)],
+    run: ({ invoker, channelId, options }) => {
+      const at = parseWhen(options.wann);
+      if (!at) return { ephemeral: [`Zeit ungültig: z. B. \`10m\`, \`2h\`, \`1d\` oder \`18:30\` (höchstens ${MAX_REMINDER_DAYS} Tage).`] };
+      if (remindersOf(invoker.id).length >= MAX_REMINDERS) return { ephemeral: [`Du hast schon ${MAX_REMINDERS} Erinnerungen. Lösch eine mit \`/erinnerungen <nummer>\`.`] };
+      if (!Array.isArray(db.reminders)) db.reminders = [];
+      db.reminders.push({ id: id(), userId: invoker.id, channelId, text: str(options.text, 500), at, createdAt: Date.now() });
+      save();
+      return { ephemeral: [`⏰ Alles klar – ich erinnere dich ${stampFmt.format(at)} (in ${leftText(at + 30_000)}).`] };
+    },
+  },
+  {
+    name: 'erinnerungen',
+    group: 'Werkzeuge',
+    description: 'Zeigt deine Erinnerungen – mit Nummer wird eine gelöscht',
+    options: [option('nummer', 'Welche gelöscht wird – ohne: alle zeigen')],
+    run: ({ invoker, options }) => {
+      const list = remindersOf(invoker.id);
+      if (options.nummer) {
+        const index = Number(options.nummer) - 1;
+        const r = list[index];
+        if (!r) return { ephemeral: [`Es gibt keine Erinnerung Nr. ${options.nummer}.`] };
+        db.reminders = db.reminders.filter((x) => x.id !== r.id);
+        save();
+        return { ephemeral: [`🗑️ Erinnerung gelöscht: ${r.text}`] };
+      }
+      if (!list.length) return { ephemeral: ['Du hast keine Erinnerungen. Neue mit `/erinnern 10m Pizza holen`.'] };
+      return { ephemeral: [[`⏰ **Deine Erinnerungen** · ${list.length}`, ...list.map((r, i) => `${i + 1}. ${stampFmt.format(r.at)} – ${r.text}`)].join('\n')] };
+    },
+  },
+  // ----- V0.9.0: fun (posted for everyone in the channel) -----
+  {
+    name: 'wuerfel',
+    group: 'Spaß',
+    description: 'Würfelt für alle sichtbar – z. B. 20 oder 2d6',
+    options: [option('wurf', 'Seiten oder z. B. 2d6, Standard 6')],
+    run: ({ invoker, options }) => {
+      const dice = parseDice(options.wurf);
+      if (!dice) return { ephemeral: ['So geht\'s: `/wuerfel`, `/wuerfel 20` oder `/wuerfel 2d6` (1–20 Würfel, 2–1000 Seiten).'] };
+      const rolls = Array.from({ length: dice.count }, () => crypto.randomInt(1, dice.sides + 1));
+      const sum = rolls.reduce((a, b) => a + b, 0);
+      return { public: [`🎲 **@${invoker.username}** würfelt ${dice.count > 1 ? `${dice.count}×W${dice.sides}: ${rolls.join(' + ')} = **${sum}**` : `W${dice.sides}: **${sum}**`}`] };
+    },
+  },
+  {
+    name: 'muenze',
+    group: 'Spaß',
+    description: 'Wirft eine Münze für alle sichtbar',
+    options: [],
+    run: ({ invoker }) => ({ public: [`🪙 **@${invoker.username}** wirft eine Münze: **${crypto.randomInt(2) ? 'Kopf' : 'Zahl'}**!`] }),
+  },
+  {
+    name: 'wahl',
+    group: 'Spaß',
+    description: 'Der Helper entscheidet – Möglichkeiten mit | oder Komma trennen',
+    options: [option('optionen', 'z. B. Pizza | Burger | Sushi', true)],
+    run: ({ options }) => {
+      const choices = options.optionen.split(options.optionen.includes('|') ? '|' : ',').map((x) => x.trim()).filter(Boolean);
+      if (choices.length < 2) return { ephemeral: ['Gib mindestens zwei Möglichkeiten an, z. B. `/wahl Pizza | Burger`.'] };
+      return { public: [`🎯 Aus ${choices.map((c) => `„${c}“`).join(', ')} wähle ich: **${choices[crypto.randomInt(choices.length)]}**`] };
+    },
+  },
+  {
+    name: 'orakel',
+    group: 'Spaß',
+    description: 'Stell dem Orakel eine Ja-Nein-Frage',
+    options: [option('frage', 'Deine Frage', true)],
+    run: ({ options }) => ({ public: [`🔮 „${options.frage}“\n**${ORACLE[crypto.randomInt(ORACLE.length)]}**`] }),
+  },
+  {
+    name: 'umfrage',
+    group: 'Spaß',
+    description: 'Startet schnell eine Umfrage: Frage | Antwort | Antwort …',
+    options: [option('frage', 'z. B. Wann zocken wir? | Freitag | Samstag', true)],
+    run: ({ options }) => {
+      const [question, ...answers] = options.frage.split('|').map((x) => x.trim());
+      const unique = [...new Set(answers.filter(Boolean).map((a) => str(a, 80)))];
+      if (!question || unique.length < 2) return { ephemeral: ['So geht\'s: `/umfrage Wann zocken wir? | Freitag | Samstag` (mindestens 2 Antworten).'] };
+      if (unique.length > MAX_POLL_OPTIONS * 2) return { ephemeral: [`Maximal ${MAX_POLL_OPTIONS * 2} Antworten.`] };
+      return { own: [{ poll: { question: str(question, 200), multi: false, closed: false, options: unique.map((text) => ({ id: id(), text, votes: [] })) } }] };
+    },
+  },
 ];
 
 io.use((socket, next) => {
@@ -1912,6 +2596,9 @@ io.on('connection', (socket) => {
   const userId = socket.data.userId;
   const me = () => db.users[userId];
   const sendTimes = [];
+  // The address this person uses Nexora under, for links the helper hands out.
+  const headers = socket.handshake.headers;
+  const origin = `${String(headers['x-forwarded-proto'] || '').split(',')[0].trim() || (socket.handshake.secure ? 'https' : 'http')}://${headers['x-forwarded-host'] || headers.host || 'localhost'}`;
 
   socket.join(`user:${userId}`);
   for (const hub of Object.values(db.hubs)) {
@@ -1919,6 +2606,8 @@ io.on('connection', (socket) => {
   }
   online.set(userId, (online.get(userId) || 0) + 1);
   emitPresence(me());
+  // Reminders that came due while @nexora was away (after the bootstrap has arrived).
+  if (isOwner(me())) setTimeout(() => deliverReminders(userId), 3000);
 
   // Wrap handlers so a thrown error becomes an ack error instead of crashing.
   const on = (event, handler) => {
@@ -1950,6 +2639,9 @@ io.on('connection', (socket) => {
       version: VERSION,
       helperCommands: isOwner(me()) ? HELPER_COMMANDS.map(helperCommandView) : undefined,
       announcement: db.announcement,
+      season: season(),
+      halloweenOver: halloweenOver(),
+      friends: friendsView(userId),
       ghostEvent: ghostEvent(),
       shop: shopView(),
       me: publicUser(me()),
@@ -1981,6 +2673,7 @@ io.on('connection', (socket) => {
     const wanted = str(code, 64).replace(/^.*[/=]/, '').toUpperCase();
     const hub = Object.values(db.hubs).find((h) => h.inviteCode === wanted);
     if (!hub) return { error: 'Einladungscode ungültig.' };
+    if (hub.bans?.[userId] && !hub.members.includes(userId)) return { error: 'Du bist aus diesem Hub gesperrt.' };
     if (!hub.members.includes(userId)) {
       hub.members.push(userId);
       save();
@@ -2001,7 +2694,7 @@ io.on('connection', (socket) => {
 
   on('hub:update', ({ hubId, name, icon }) => {
     const hub = db.hubs[hubId];
-    if (!hub || !canManage(hub, userId)) return { error: 'Nur der Besitzer kann den Hub bearbeiten.' };
+    if (!hub || !can(hub, userId, 'manageHub')) return { error: 'Dafür brauchst du das Recht „Hub verwalten“.' };
     const hubName = str(name, 40);
     if (hubName.length < 2) return { error: 'Der Hub-Name braucht mindestens 2 Zeichen.' };
     hub.name = hubName;
@@ -2013,7 +2706,7 @@ io.on('connection', (socket) => {
 
   on('hub:regenerateInvite', ({ hubId }) => {
     const hub = db.hubs[hubId];
-    if (!hub || !canManage(hub, userId)) return { error: 'Nur der Besitzer kann das.' };
+    if (!hub || !can(hub, userId, 'manageHub')) return { error: 'Dafür brauchst du das Recht „Hub verwalten“.' };
     hub.inviteCode = inviteCode();
     save();
     io.to(`hub:${hub.id}`).emit('hub:update', hubView(hub));
@@ -2037,7 +2730,7 @@ io.on('connection', (socket) => {
 
   on('channel:create', ({ hubId, name, topic, kind }) => {
     const hub = db.hubs[hubId];
-    if (!hub || !canManage(hub, userId)) return { error: 'Nur der Besitzer kann Kanäle erstellen.' };
+    if (!hub || !can(hub, userId, 'manageChannels')) return { error: 'Dafür brauchst du das Recht „Kanäle verwalten“.' };
     const channelKind = kind === 'voice' ? 'voice' : 'text';
     const channelName = channelKind === 'voice' ? voiceChannelName(name) : textChannelName(name);
     if (!channelName) return { error: 'Ungültiger Kanalname.' };
@@ -2049,14 +2742,19 @@ io.on('connection', (socket) => {
     return { channel };
   });
 
-  on('channel:update', ({ channelId, name, topic }) => {
+  on('channel:update', ({ channelId, name, topic, slowmode }) => {
     const hub = hubForChannel(channelId);
-    if (!hub || !canManage(hub, userId)) return { error: 'Nur der Besitzer kann Kanäle bearbeiten.' };
+    if (!hub || !can(hub, userId, 'manageChannels')) return { error: 'Dafür brauchst du das Recht „Kanäle verwalten“.' };
     const channel = hub.channels.find((c) => c.id === channelId);
     const channelName = channel.kind === 'voice' ? voiceChannelName(name) : textChannelName(name);
     if (!channelName) return { error: 'Ungültiger Kanalname.' };
+    if (slowmode !== undefined && !SLOWMODE_STEPS.includes(slowmode)) return { error: 'Ungültiger Langsam-Modus.' };
     channel.name = channelName;
     channel.topic = str(topic, 120);
+    if (slowmode !== undefined && channel.kind !== 'voice') {
+      if (slowmode) channel.slowmode = slowmode;
+      else delete channel.slowmode;
+    }
     save();
     io.to(`hub:${hub.id}`).emit('hub:update', hubView(hub));
     return {};
@@ -2064,7 +2762,7 @@ io.on('connection', (socket) => {
 
   on('channel:delete', ({ channelId }) => {
     const hub = hubForChannel(channelId);
-    if (!hub || !canManage(hub, userId)) return { error: 'Nur der Besitzer kann Kanäle löschen.' };
+    if (!hub || !can(hub, userId, 'manageChannels')) return { error: 'Dafür brauchst du das Recht „Kanäle verwalten“.' };
     const channel = hub.channels.find((c) => c.id === channelId);
     if (channel.kind !== 'voice' && hub.channels.filter((c) => c.kind !== 'voice').length <= 1) {
       return { error: 'Ein Hub braucht mindestens einen Textkanal.' };
@@ -2080,7 +2778,8 @@ io.on('connection', (socket) => {
 
   on('messages:fetch', ({ channelId, before }) => {
     if (!channelAccess(userId, channelId) || isVoice(channelId)) return { error: 'Kein Zugriff.' };
-    const all = db.messages[channelId] || [];
+    // Thread replies live in their thread, not in the channel.
+    const all = (db.messages[channelId] || []).filter((m) => !m.threadId);
     let end = all.length;
     if (before) {
       const idx = all.findIndex((m) => m.id === before);
@@ -2098,7 +2797,21 @@ io.on('connection', (socket) => {
     return false;
   }
 
-  on('message:send', ({ channelId, content, replyTo, attachments }) => {
+  // Hub rules that stop someone from writing: a timeout and the slow mode of the channel.
+  function hubWriteError(access, channelId) {
+    if (access.type !== 'hub') return null;
+    const timeout = hubTimeoutError(access.hub, userId);
+    if (timeout) return timeout;
+    const slow = access.hub.channels.find((c) => c.id === channelId)?.slowmode;
+    if (!slow || can(access.hub, userId, 'manageMessages')) return null;
+    const key = `${channelId}:${userId}`;
+    const wait = ((slowTimes.get(key) || 0) + slow * 1000 - Date.now()) / 1000;
+    if (wait > 0) return `Langsam-Modus: Du kannst in ${Math.ceil(wait)} Sekunden wieder schreiben.`;
+    slowTimes.set(key, Date.now());
+    return null;
+  }
+
+  on('message:send', ({ channelId, content, replyTo, attachments, threadId }) => {
     const access = channelAccess(userId, channelId);
     if (!access || isVoice(channelId)) return { error: 'Kein Zugriff.' };
     const text = typeof content === 'string' ? content.trim() : '';
@@ -2113,13 +2826,20 @@ io.on('connection', (socket) => {
     if (!text && !pending.length) return { error: 'Leere Nachricht.' };
     const muted = muteError(me());
     if (muted) return { error: muted };
+    const root = threadId ? (db.messages[channelId] || []).find((m) => m.id === threadId && !m.threadId) : null;
+    if (threadId && !root) return { error: 'Der Thread existiert nicht mehr.' };
     if (rateLimited()) return { error: 'Langsam! Du sendest zu schnell.' };
+    const blocked = hubWriteError(access, channelId);
+    if (blocked) return { error: blocked };
 
     for (const fileId of fileIds) pendingFiles.delete(fileId);
     const reply = replyTo && (db.messages[channelId] || []).find((m) => m.id === replyTo);
     const fields = { content: text, replyTo: reply ? reply.id : null };
     if (pending.length) fields.attachments = pending.map((p) => p.attachment);
-    return { message: postMessage(access, channelId, userId, fields) };
+    if (root) fields.threadId = root.id;
+    const message = postMessage(access, channelId, userId, fields);
+    if (root) refreshThread(access, channelId, root);
+    return { message };
   });
 
   on('poll:create', ({ channelId, question, options, multi }) => {
@@ -2133,6 +2853,8 @@ io.on('connection', (socket) => {
     const muted = muteError(me());
     if (muted) return { error: muted };
     if (rateLimited()) return { error: 'Langsam! Du sendest zu schnell.' };
+    const blocked = hubWriteError(access, channelId);
+    if (blocked) return { error: blocked };
     const poll = {
       question: q,
       multi: Boolean(multi),
@@ -2165,12 +2887,9 @@ io.on('connection', (socket) => {
   on('message:delete', ({ channelId, messageId }) => {
     const { access, message } = findMessage(channelId, messageId);
     if (!message) return { error: 'Nachricht nicht gefunden.' };
-    const isHubOwner = access.type === 'hub' && canManage(access.hub, userId);
-    if (message.authorId !== userId && !isHubOwner) return { error: 'Nicht erlaubt.' };
-    db.messages[channelId] = db.messages[channelId].filter((m) => m.id !== messageId);
-    discardFiles([message]);
-    save();
-    emitToChannel(access, 'message:remove', { channelId, messageId });
+    const moderator = access.type === 'hub' && can(access.hub, userId, 'manageMessages');
+    if (message.authorId !== userId && !moderator) return { error: 'Nicht erlaubt.' };
+    removeMessages(access, channelId, [message]);
     return {};
   });
 
@@ -2212,8 +2931,8 @@ io.on('connection', (socket) => {
   on('poll:close', ({ channelId, messageId }) => {
     const { access, message } = findMessage(channelId, messageId);
     if (!message?.poll) return { error: 'Umfrage nicht gefunden.' };
-    const isHubOwner = access.type === 'hub' && canManage(access.hub, userId);
-    if (message.authorId !== userId && !isHubOwner) return { error: 'Nur wer die Umfrage gestartet hat, kann sie beenden.' };
+    const moderator = access.type === 'hub' && can(access.hub, userId, 'manageMessages');
+    if (message.authorId !== userId && !moderator) return { error: 'Nur wer die Umfrage gestartet hat, kann sie beenden.' };
     message.poll.closed = true;
     save();
     emitToChannel(access, 'message:update', message);
@@ -2342,6 +3061,235 @@ io.on('connection', (socket) => {
     entry.muted = Boolean(muted);
     entry.deafened = Boolean(deafened);
     emitVoiceState(socket.data.voice);
+    return {};
+  });
+
+  // ----- Pins, threads & search (V0.9.0) -----
+
+  // In hubs pinning needs "Nachrichten verwalten"; in a DM both people may pin.
+  on('message:pin', ({ channelId, messageId, pinned }) => {
+    const { access, message } = findMessage(channelId, messageId);
+    if (!message || message.threadId) return { error: 'Nachricht nicht gefunden.' };
+    if (access.type === 'hub' && !can(access.hub, userId, 'manageMessages')) return { error: 'Dafür brauchst du das Recht „Nachrichten verwalten“.' };
+    if (pinned) {
+      if (message.pinned) return {};
+      const count = (db.messages[channelId] || []).filter((m) => m.pinned).length;
+      if (count >= MAX_PINS) return { error: `Maximal ${MAX_PINS} angepinnte Nachrichten pro Kanal.` };
+      message.pinned = { by: userId, at: Date.now() };
+    } else delete message.pinned;
+    save();
+    emitToChannel(access, 'message:update', message);
+    return {};
+  });
+
+  on('pins:list', ({ channelId }) => {
+    if (!channelAccess(userId, channelId) || isVoice(channelId)) return { error: 'Kein Zugriff.' };
+    const pinned = (db.messages[channelId] || []).filter((m) => m.pinned).sort((a, b) => b.pinned.at - a.pinned.at);
+    return { messages: messagesFor(pinned, userId) };
+  });
+
+  on('thread:fetch', ({ channelId, rootId }) => {
+    if (!channelAccess(userId, channelId) || isVoice(channelId)) return { error: 'Kein Zugriff.' };
+    const list = db.messages[channelId] || [];
+    const root = list.find((m) => m.id === rootId && !m.threadId);
+    if (!root) return { error: 'Der Thread existiert nicht mehr.' };
+    const replies = list.filter((m) => m.threadId === root.id).slice(-MAX_THREAD_FETCH);
+    return { root: messagesFor([root], userId)[0] || null, messages: messagesFor(replies, userId) };
+  });
+
+  // Search in a hub (all its text channels) or a DM. Filters: von:@name, in:#kanal,
+  // hat:bild|datei|link|umfrage, angepinnt – also in English (from:, has:, pinned).
+  on('messages:search', ({ scopeId, query }) => {
+    const raw = str(query, 200);
+    const filters = { from: null, in: null, has: null, pinned: false };
+    const words = [];
+    for (const word of raw.split(/\s+/).filter(Boolean)) {
+      const m = /^(von|from|in|hat|has):(.+)$/i.exec(word);
+      if (m) {
+        const key = { von: 'from', from: 'from', in: 'in', hat: 'has', has: 'has' }[m[1].toLowerCase()];
+        filters[key] = m[2].replace(/^[@#]/, '').toLowerCase();
+      } else if (/^(angepinnt|pinned)$/i.test(word)) filters.pinned = true;
+      else words.push(word.toLowerCase());
+    }
+    const text = words.join(' ');
+    if (!text && !filters.from && !filters.has && !filters.pinned && !filters.in) return { results: [], total: 0 };
+    let channels;
+    const hub = own(db.hubs, scopeId);
+    if (hub) {
+      if (!hub.members.includes(userId)) return { error: 'Kein Zugriff.' };
+      channels = hub.channels.filter((c) => c.kind !== 'voice' && (!filters.in || c.name.toLowerCase() === filters.in));
+    } else {
+      const dm = own(db.dms, scopeId);
+      if (!dm || !dmVisible(dm, userId)) return { error: 'Kein Zugriff.' };
+      channels = [{ id: dm.id, name: '' }];
+    }
+    const author = filters.from && Object.values(db.users).find((u) => u.username.toLowerCase() === filters.from);
+    if (filters.from && !author) return { results: [], total: 0 };
+    const HAS = {
+      bild: (m) => m.attachments?.some((a) => a.image), image: (m) => m.attachments?.some((a) => a.image),
+      datei: (m) => m.attachments?.some((a) => !a.image), file: (m) => m.attachments?.some((a) => !a.image),
+      link: (m) => /https?:\/\//.test(m.content || ''),
+      umfrage: (m) => Boolean(m.poll), poll: (m) => Boolean(m.poll),
+    };
+    if (filters.has && !HAS[filters.has]) return { error: 'Unbekannter Filter: hat:bild, hat:datei, hat:link oder hat:umfrage.' };
+    const found = [];
+    for (const c of channels) {
+      for (const m of messagesFor(db.messages[c.id] || [], userId)) {
+        if (author && m.authorId !== author.id) continue;
+        if (filters.pinned && !m.pinned) continue;
+        if (filters.has && !HAS[filters.has](m)) continue;
+        if (text) {
+          const hay = [m.content, m.poll?.question, ...(m.poll?.options || []).map((o) => o.text), ...(m.attachments || []).map((a) => a.name)].join('\n').toLowerCase();
+          if (!hay.includes(text)) continue;
+        }
+        found.push(m);
+      }
+    }
+    found.sort((a, b) => b.createdAt - a.createdAt);
+    return { results: found.slice(0, SEARCH_RESULTS), total: found.length };
+  });
+
+  // ----- Friends (V0.9.0) -----
+
+  on('friend:request', ({ username, userId: targetId }) => {
+    const target = targetId ? own(db.users, targetId) : findUserByName(str(username, 32).replace(/^@/, ''));
+    return requestFriend(me(), target);
+  });
+
+  on('friend:accept', ({ userId: otherId }) => acceptFriend(me(), own(db.users, otherId)));
+
+  // Declines a request, takes one back or ends a friendship.
+  on('friend:remove', ({ userId: otherId }) => {
+    const other = own(db.users, otherId);
+    if (!other) return { error: 'Benutzer nicht gefunden.' };
+    unlinkFriends(me(), other);
+    save();
+    emitFriends(userId, other.id);
+    return {};
+  });
+
+  // ----- Roles & hub moderation (V0.9.0) -----
+
+  const hubOf = (hubId) => {
+    const hub = own(db.hubs, hubId);
+    return hub && hub.members.includes(userId) ? hub : null;
+  };
+
+  function cleanRole(input, hub, existing) {
+    const name = str(input?.name, 32);
+    if (!name) return { error: 'Die Rolle braucht einen Namen.' };
+    if (hubRoles(hub).some((r) => r.name.toLowerCase() === name.toLowerCase() && r.id !== existing?.id)) return { error: `Die Rolle „${name}“ gibt es schon.` };
+    const color = input?.color ? String(input.color) : '';
+    if (color && !/^#[0-9a-fA-F]{6}$/.test(color)) return { error: 'Ungültige Farbe.' };
+    const perms = [...new Set(Array.isArray(input?.perms) ? input.perms : [])].filter((p) => PERMS.includes(p));
+    // Nobody hands out rights they don't have themselves.
+    const missing = perms.find((p) => !can(hub, userId, p) && !existing?.perms.includes(p));
+    if (missing) return { error: `Das Recht „${PERM_LABEL[missing]}“ hast du selbst nicht.` };
+    return { role: { id: existing?.id || id(), name, color: color || '', perms, hoist: Boolean(input?.hoist) } };
+  }
+
+  on('role:save', ({ hubId, role }) => {
+    const hub = hubOf(hubId);
+    if (!hub || !can(hub, userId, 'manageRoles')) return { error: 'Dafür brauchst du das Recht „Rollen verwalten“.' };
+    hub.roles = hubRoles(hub);
+    const index = role?.id ? hub.roles.findIndex((r) => r.id === role.id) : -1;
+    if (role?.id && index < 0) return { error: 'Rolle nicht gefunden.' };
+    if (index >= 0 && index <= hubRank(hub, userId)) return { error: 'Du kannst nur Rollen unter deiner höchsten Rolle bearbeiten.' };
+    if (index < 0 && hub.roles.length >= MAX_ROLES) return { error: `Maximal ${MAX_ROLES} Rollen pro Hub.` };
+    const res = cleanRole(role, hub, index >= 0 ? hub.roles[index] : null);
+    if (res.error) return res;
+    if (index >= 0) hub.roles[index] = res.role;
+    else hub.roles.push(res.role);
+    save();
+    emitHub(hub);
+    return { role: res.role };
+  });
+
+  on('role:delete', ({ hubId, roleId }) => {
+    const hub = hubOf(hubId);
+    if (!hub || !can(hub, userId, 'manageRoles')) return { error: 'Dafür brauchst du das Recht „Rollen verwalten“.' };
+    const index = hubRoles(hub).findIndex((r) => r.id === roleId);
+    if (index < 0) return { error: 'Rolle nicht gefunden.' };
+    if (index <= hubRank(hub, userId)) return { error: 'Du kannst nur Rollen unter deiner höchsten Rolle löschen.' };
+    hub.roles.splice(index, 1);
+    for (const [member, ids] of Object.entries(hub.memberRoles || {})) {
+      const left = ids.filter((r) => r !== roleId);
+      if (left.length) hub.memberRoles[member] = left;
+      else delete hub.memberRoles[member];
+    }
+    save();
+    emitHub(hub);
+    return {};
+  });
+
+  // Moves a role one place up (-1) or down (+1); both places must be below one's own.
+  on('role:move', ({ hubId, roleId, dir }) => {
+    const hub = hubOf(hubId);
+    if (!hub || !can(hub, userId, 'manageRoles')) return { error: 'Dafür brauchst du das Recht „Rollen verwalten“.' };
+    const roles = hubRoles(hub);
+    const index = roles.findIndex((r) => r.id === roleId);
+    const to = index + (dir < 0 ? -1 : 1);
+    if (index < 0 || to < 0 || to >= roles.length) return {};
+    if (Math.min(index, to) <= hubRank(hub, userId)) return { error: 'Du kannst Rollen nicht über deine eigene schieben.' };
+    [roles[index], roles[to]] = [roles[to], roles[index]];
+    for (const [member, ids] of Object.entries(hub.memberRoles || {})) hub.memberRoles[member] = roles.filter((r) => ids.includes(r.id)).map((r) => r.id);
+    save();
+    emitHub(hub);
+    return {};
+  });
+
+  on('role:assign', ({ hubId, userId: targetId, roleId, on: give }) => {
+    const hub = hubOf(hubId);
+    if (!hub || !can(hub, userId, 'manageRoles')) return { error: 'Dafür brauchst du das Recht „Rollen verwalten“.' };
+    const role = hubRoles(hub).find((r) => r.id === roleId);
+    return setMemberRole(hub, userId, own(db.users, targetId), role, Boolean(give));
+  });
+
+  on('hub:kick', ({ hubId, userId: targetId }) => {
+    const hub = hubOf(hubId);
+    if (!hub || !can(hub, userId, 'kick')) return { error: 'Dafür brauchst du das Recht „Mitglieder rauswerfen“.' };
+    const { target, error } = hubTarget(hub, userId, own(db.users, targetId));
+    if (error) return { error };
+    removeFromHub(hub, target.id);
+    return {};
+  });
+
+  on('hub:ban', ({ hubId, userId: targetId, reason }) => {
+    const hub = hubOf(hubId);
+    if (!hub || !can(hub, userId, 'ban')) return { error: 'Dafür brauchst du das Recht „Mitglieder sperren“.' };
+    const { target, error } = hubTarget(hub, userId, own(db.users, targetId), { member: false });
+    if (error) return { error };
+    hubBan(hub, target, userId, reason);
+    return {};
+  });
+
+  on('hub:unban', ({ hubId, userId: targetId }) => {
+    const hub = hubOf(hubId);
+    if (!hub || !can(hub, userId, 'ban')) return { error: 'Dafür brauchst du das Recht „Mitglieder sperren“.' };
+    if (!hub.bans?.[targetId]) return { error: 'Diese Person ist hier nicht gesperrt.' };
+    delete hub.bans[targetId];
+    save();
+    return {};
+  });
+
+  on('hub:bans', ({ hubId }) => {
+    const hub = hubOf(hubId);
+    if (!hub || !can(hub, userId, 'ban')) return { error: 'Dafür brauchst du das Recht „Mitglieder sperren“.' };
+    return {
+      bans: Object.entries(hub.bans || {})
+        .filter(([uid]) => db.users[uid])
+        .map(([uid, b]) => ({ user: publicUser(db.users[uid]), reason: b.reason, at: b.at, by: b.by && db.users[b.by] ? db.users[b.by].username : null })),
+    };
+  });
+
+  on('hub:timeout', ({ hubId, userId: targetId, minutes }) => {
+    const hub = hubOf(hubId);
+    if (!hub || !can(hub, userId, 'kick')) return { error: 'Dafür brauchst du das Recht „Mitglieder rauswerfen“.' };
+    const { target, error } = hubTarget(hub, userId, own(db.users, targetId));
+    if (error) return { error };
+    const value = Number(minutes);
+    if (!Number.isInteger(value) || value < 0 || value > MAX_MUTE) return { error: 'Ungültige Dauer.' };
+    hubTimeout(hub, target, value);
     return {};
   });
 
@@ -2476,7 +3424,7 @@ io.on('connection', (socket) => {
 
   on('bot:hub:add', ({ hubId, bot: wanted }) => {
     const hub = own(db.hubs, hubId);
-    if (!hub || !canManage(hub, userId)) return { error: 'Nur wer den Hub verwaltet, kann Bots hinzufügen.' };
+    if (!hub || !can(hub, userId, 'manageHub')) return { error: 'Nur wer den Hub verwaltet, kann Bots hinzufügen.' };
     const key = str(wanted, 32).replace(/^@/, '');
     const bot = own(db.bots, key) || own(db.bots, findUserByName(key)?.id);
     if (!bot || (bot.ownerId !== userId && !bot.public)) return { error: 'Bot nicht gefunden (oder er ist nicht öffentlich).' };
@@ -2496,7 +3444,7 @@ io.on('connection', (socket) => {
     const hub = own(db.hubs, hubId);
     const bot = own(db.bots, botId);
     if (!hub || !bot || !hub.members.includes(bot.id)) return { error: 'Bot nicht gefunden.' };
-    if (!canManage(hub, userId) && bot.ownerId !== userId) return { error: 'Nicht erlaubt.' };
+    if (!can(hub, userId, 'manageHub') && bot.ownerId !== userId) return { error: 'Nicht erlaubt.' };
     hub.members = hub.members.filter((m) => m !== bot.id);
     save();
     io.to(`hub:${hub.id}`).emit('hub:update', hubView(hub));
@@ -2511,15 +3459,17 @@ io.on('connection', (socket) => {
     const { options, missing } = parseArgs(command, input);
     const reply = (ephemeral) => ({ botId: HELPER_ID, command: command.name, ephemeral });
     if (missing) return reply([`Es fehlt „${missing.name}“. So geht's: \`${commandUsage(command)}\``]);
-    if (command.confirm?.(options)) {
-      helperPending.set(userId, { name: command.name, options, channelId, expires: Date.now() + CONFIRM_MS });
+    if (command.confirm?.(options, { access, invoker: me() })) {
+      helperPending.set(userId, { name: command.name, options, channelId, origin, expires: Date.now() + CONFIRM_MS });
       return reply([`⚠️ **Bestätigung nötig:** \`/${command.name}${input ? ` ${input}` : ''}\` lässt sich nicht einfach rückgängig machen. Tippe \`/ja\` innerhalb von ${CONFIRM_MS / 1000} Sekunden oder \`/abbrechen\`.`]);
     }
-    const result = command.run({ invoker: me(), access, channelId, options });
+    const result = command.run({ invoker: me(), access, channelId, options, origin });
     const target = result.access || access;
     const targetChannel = result.channelId || channelId;
     const interaction = { userId, command: result.ran || command.name };
     (result.public || []).forEach((content, i) => postMessage(target, targetChannel, HELPER_ID, { content, interaction: i ? null : interaction }));
+    // Messages written as @nexora (e.g. a poll from /umfrage).
+    (result.own || []).forEach((fields) => postMessage(target, targetChannel, userId, fields));
     return reply(result.ephemeral || []);
   }
 
@@ -2735,20 +3685,7 @@ io.on('connection', (socket) => {
   });
 
   // Makes someone official (team) or takes it away. Accounts from NEXORA_OFFICIAL stay.
-  onOwner('owner:setOfficial', ({ username, official }) => {
-    const target = findUserByName(str(username, 32).replace(/^@/, ''));
-    if (!target || target.bot) return { error: 'Benutzer nicht gefunden.' };
-    const name = target.username.toLowerCase();
-    if (OFFICIAL.has(name)) return { error: 'Dieser Account ist fest offiziell (NEXORA_OFFICIAL).' };
-    if (official && target.banned) return { error: 'Gesperrte Accounts können nicht ins Team.' };
-    if (!Array.isArray(db.team)) db.team = [];
-    db.team = db.team.filter((n) => n !== name);
-    if (official) db.team.push(name);
-    audit(userId, official ? 'teamAdd' : 'teamRemove', `@${target.username}`);
-    broadcastToVisible(target.id, 'user:update', publicUser(target));
-    io.to(`user:${target.id}`).emit('user:update', publicUser(target));
-    return { user: publicUser(target) };
-  });
+  onOwner('owner:setOfficial', ({ username, official }) => setOfficialFor(findUserByName(str(username, 32).replace(/^@/, '')), official, userId));
 
   onOwner('owner:maintenance', ({ enabled, text }) => {
     setMaintenance(enabled, text, userId);
@@ -2799,6 +3736,8 @@ io.on('connection', (socket) => {
   on('halloween:ghost', ({ golden }) => {
     const user = me();
     const now = Date.now();
+    // After the Halloween-Finale nothing counts any more.
+    if (halloweenOver()) return { ghosts: user.ghosts || 0, ghostsCaught: user.ghostsCaught || 0, over: true };
     if (now - lastGhost >= GHOST_COOLDOWN) {
       lastGhost = now;
       const value = golden ? 3 : 1;
@@ -2874,6 +3813,9 @@ async function main() {
   ensureHelper();
   grantExclusives();
   applyRelease();
+  finishHalloween();
+  setInterval(finishHalloween, 30_000);
+  setInterval(deliverReminders, 15_000);
   pruneMessages();
   setInterval(pruneMessages, 60 * 60 * 1000);
   await botRuntime.ready;

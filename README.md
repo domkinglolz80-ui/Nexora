@@ -8,7 +8,13 @@ Nexora ist eine Echtzeit-Chat-Plattform mit eigenem Look: dunkles Glas-Design mi
 
 - **Accounts** – Registrieren und Einloggen (Passwörter werden mit scrypt gehasht); bis zu 10 Accounts pro Gerät, Wechsel per Klick ohne Passwort
 - **Hubs** – eigene Hubs erstellen, per Einladungscode oder -link beitreten, verlassen, umbenennen, löschen
-- **Kanäle** – Textkanäle mit Thema erstellen, bearbeiten, löschen (Besitzer)
+- **Kanäle** – Textkanäle mit Thema erstellen, bearbeiten, löschen; 🐢 **Langsam-Modus** pro Kanal (5 Sekunden bis 10 Minuten)
+- **Rollen & Rechte** – eigene Rollen pro Hub mit Farbe, Rangfolge und Rechten (Admin, Hub verwalten, Kanäle, Rollen, Nachrichten, Rauswerfen, Sperren); Rollen können in der Mitgliederliste eine eigene Gruppe bekommen. Man kann nur Rollen und Mitglieder unter der eigenen höchsten Rolle bearbeiten
+- **Hub-Moderation** – auf der Profilkarte im Hub: Rollen geben, Auszeit, Rauswerfen, Sperren (mit Liste der Gesperrten in den Hub-Einstellungen)
+- **Angepinnte Nachrichten** – bis zu 50 pro Kanal, Liste über das 📌 oben im Chat
+- **Threads** – Antworten zu einer Nachricht in einem eigenen Strang; die Nachricht zeigt, wie viele Antworten es gibt
+- **Suche** – Nachrichten im ganzen Hub oder in einer DM finden, mit Filtern `von:@name`, `in:#kanal`, `hat:bild|datei|link|umfrage` und `angepinnt` (englisch: `from:`, `has:`, `pinned`)
+- **Freunde** – Freundschaftsanfragen per Name oder Profil, Freunde-Seite mit Online / Alle / Anfragen / Hinzufügen
 - **Nachrichten in Echtzeit** – Antworten, Bearbeiten (auch mit ↑), Löschen, Emoji-Reaktionen
 - **Dateien & Bilder** – per Büroklammer, Drag & Drop oder Einfügen teilen; Bilder mit Vorschau und Großansicht
 - **Umfragen** – bis zu 10 Antworten, Einfach- oder Mehrfachauswahl, Ergebnisse live, beendbar
@@ -105,6 +111,8 @@ Und diese zur Halloween Edition:
 
 Der Rang zählt **alle jemals gefangenen Geister** – auch die, die du im Laden ausgegeben hast. Am Handy vibriert es beim Fangen kurz, bei goldenen Geistern länger.
 
+**Halloween-Finale** (ab V0.9.0 Beta) – am **31. Oktober 2026** ist den ganzen Tag jeder zweite Geist golden (`GOLDEN_EVENT`). Um Mitternacht (`HALLOWEEN_END`, 1. November 00:00 deutsche Zeit) friert der Server die Bestenliste ein, gibt den ersten drei einen **Pokal** fürs Profil (🥇🥈🥉 „Platz 1 der Geisterjagd 2026“), setzt eine Ankündigung mit den Gewinnern, der Helper postet den Endstand in `#halloween` – und alle Geräte laden in den **normalen Look** ohne Halloween-Dekoration. Gefangene Geister zählen danach nicht mehr; gekaufte Dekoration bleibt für immer. `@nexora` kann den Look mit `/saison` jederzeit selbst wählen.
+
 **Geister-Bestenliste** (ab V0.8.0 Beta) – unten im Geister-Laden stehen die 10 besten Geisterjäger:innen (gezählt werden alle jemals gefangenen Geister), der eigene Eintrag ist hervorgehoben; wer nicht in den Top 10 ist, sieht seinen Platz. `@nexora` bekommt sie auch mit `/bestenliste`.
 
 **Goldene Geisternacht** (ab V0.7.0 Beta) – ein Event, bei dem **jeder zweite Geist golden** ist statt jeder achte. Solange es läuft, steht oben im Chat ein goldenes Banner mit der Restzeit (ausblendbar). Das erste Event läuft am **23. Oktober 2026 bis Mitternacht** (deutsche Zeit, `GOLDEN_EVENT` in `server.js`). `@nexora` kann es jederzeit mit dem Helper steuern: `/event an [stunden]` startet oder verlängert es, `/event aus` beendet es, `/event` zeigt den Stand. Das Banner erscheint und verschwindet bei allen sofort.
@@ -127,7 +135,7 @@ Der Server prüft jeden Kauf (Preis, Kontostand, schon gekauft) und lässt gekau
 
 **Süßigkeitenregen** – wer „Süßes oder Saures“, „Trick or treat“ oder „Happy Halloween“ in den Chat schreibt, lässt bei allen, die den Kanal offen haben, Süßigkeiten regnen.
 
-Die Effekte lassen sich pro Gerät in den Profil-Einstellungen abschalten, bei „Bewegung reduzieren“ im System sind alle Animationen aus. Das saisonale Design steckt in `public/halloween.css` und `public/halloween.js` (plus Mond, Fledermäuse und Login-Texte in `public/index.html`). Nach Halloween reicht es, diese wieder herauszunehmen – die Accessoires sind fester Teil der Profile und bleiben erhalten.
+Die Effekte lassen sich pro Gerät in den Profil-Einstellungen abschalten, bei „Bewegung reduzieren“ im System sind alle Animationen aus. Das saisonale Design steckt in `public/halloween.css` und `public/halloween.js` (plus Mond, Fledermäuse und Login-Texte in `public/index.html`). Ab V0.9.0 nimmt der Server sie nach Halloween von selbst heraus (die Seite wird ohne Mond, Fledermäuse, Kürbisse und Halloween-Texte ausgeliefert) – die Accessoires sind fester Teil der Profile und bleiben erhalten.
 
 ## Sprachen
 
@@ -198,12 +206,23 @@ Der **Nexora Helper** (`@NexoraHelper`) ist der offizielle Bot von Nexora, mit �
 | `/stumm <nutzer> <dauer> [grund]`     | schaltet die Person auf ganz Nexora stumm: keine Nachrichten, Umfragen oder Bot-Befehle. Dauer: `30`, `30m`, `2h`, `1d` (max. 7 Tage) |
 | `/entstummen <nutzer>`                | hebt die Stummschaltung auf                                          |
 | `/kick <nutzer> [grund]`              | wirft die Person aus dem aktuellen Hub (nicht den Besitzer)          |
-| `/verwarnen <nutzer> <grund>`         | öffentliche Verwarnung mit Erwähnung                                 |
+| `/verwarnen <nutzer> <grund>`         | öffentliche Verwarnung mit Erwähnung; die Verwarnungen werden gezählt (`/info`) |
 | `/umbenennen <nutzer> <name>`         | ändert den Anzeigenamen, z. B. bei unpassenden Namen                 |
 | `/abmelden <nutzer>` 🔒               | meldet die Person auf allen Geräten ab                               |
+| **Hub** (im Hub, in dem du tippst)    |                                                                      |
+| `/hubinfo`                            | alles über den Hub: Besitzer, Mitglieder, Kanäle, Nachrichten, Pins, Rollen, Sperren |
+| `/rollen`                             | die Rollen des Hubs mit Rechten und Mitgliederzahl                   |
+| `/rolle <geben\|nehmen> <nutzer> <rolle>` | gibt jemandem eine Rolle oder nimmt sie weg                      |
+| `/auszeit <nutzer> <dauer\|aus> [grund]` | die Person kann im Hub nicht schreiben (max. 7 Tage); `aus` beendet es |
+| `/hubsperre <nutzer> [grund]` 🔒      | wirft die Person raus und sperrt den Wiedereintritt                  |
+| `/hubentsperren <nutzer>`             | hebt die Hub-Sperre auf                                              |
+| `/einladung`                          | zeigt den Einladungslink des Hubs                                    |
 | **Kanal**                             |                                                                      |
 | `/sagen <text>`                       | der Helper schreibt deinen Text in den Kanal                         |
-| `/loeschen <anzahl>` 🔒               | löscht die letzten 1–100 Nachrichten im Kanal                        |
+| `/loeschen <anzahl>` 🔒               | löscht die letzten 1–100 Nachrichten im Kanal (samt ihren Threads)   |
+| `/slowmode <sekunden\|aus>`           | Langsam-Modus: 5, 10, 30, 60, 120, 300 oder 600 Sekunden             |
+| `/thema [text]`                       | setzt das Thema des Kanals, ohne Text wird es entfernt               |
+| `/pins`                               | die angepinnten Nachrichten des Kanals                               |
 | **Nexora**                            |                                                                      |
 | `/ankuendigung [text]`                | setzt das Banner für alle, ohne Text wird es entfernt                |
 | `/wartung [text]` 🔒                  | Wartungsmodus an (alle außer dem Team werden abgemeldet); `/wartung aus` beendet ihn |
@@ -214,6 +233,18 @@ Der **Nexora Helper** (`@NexoraHelper`) ist der offizielle Bot von Nexora, mit �
 | `/stats`                              | Nexora in Zahlen                                                     |
 | `/system`                             | Technik-Check: Laufzeit, Speicher, Datenbank, Verbindungen, Sessions |
 | `/protokoll [anzahl]`                 | die letzten 1–25 Einträge aus dem Protokoll                          |
+| `/rundruf <text>` 🔒                   | ein Fenster, das sofort bei allen aufgeht, die online sind           |
+| `/team [nutzer] [an\|aus]`             | zeigt das Nexora-Team, nimmt jemanden auf oder raus                  |
+| `/saison [halloween\|normal\|auto]`    | zeigt oder wechselt den Look; `auto` = Halloween bis zum Finale, danach normal |
+| **Werkzeuge**                         |                                                                      |
+| `/erinnern <wann> <text>`             | der Helper erinnert dich: `10m`, `2h`, `1d` oder eine Uhrzeit wie `18:30` (max. 30 Tage). Bist du offline, kommt die Erinnerung beim nächsten Besuch |
+| `/erinnerungen [nummer]`              | deine Erinnerungen – mit Nummer wird eine gelöscht                   |
+| **Spaß** (für alle im Kanal sichtbar) |                                                                      |
+| `/wuerfel [wurf]`                     | würfelt: `20` für einen W20, `2d6` für zwei Würfel                   |
+| `/muenze`                             | Kopf oder Zahl                                                       |
+| `/wahl <optionen>`                    | der Helper entscheidet zwischen `Pizza \| Burger \| Sushi`           |
+| `/orakel <frage>`                     | Ja-Nein-Orakel                                                       |
+| `/umfrage <frage \| antwort \| …>`     | startet sofort eine Umfrage                                          |
 | **Halloween**                         |                                                                      |
 | `/event [an\|aus] [stunden]`          | Goldene Geisternacht: ohne Angabe der Stand, `an 3` startet oder verlängert sie für 3 Stunden ab jetzt (1–72), `aus` beendet sie |
 | `/bestenliste`                        | die 10 besten Geisterjäger:innen                                     |
@@ -224,7 +255,7 @@ Der **Nexora Helper** (`@NexoraHelper`) ist der offizielle Bot von Nexora, mit �
 | `/einladen [code]` · `/ausladen [code]` | holt den Helper sichtbar in einen Hub oder wieder heraus           |
 | `/status <status>`                    | `online`, `abwesend`, `nichtstoeren` oder `unsichtbar` (englisch geht auch: `idle`, `dnd`, `invisible`) |
 
-`<nutzer>` ist der Benutzername, mit oder ohne `@`. Sperren, Stummschaltungen, Verwarnungen, Kicks, Geister-Geschenke und `/sagen` schreibt der Helper sichtbar in den Kanal, alles andere sieht nur `@nexora`.
+`<nutzer>` ist der Benutzername, mit oder ohne `@`. Sperren, Stummschaltungen, Verwarnungen, Kicks, Auszeiten, Hub-Sperren, Geister-Geschenke, Spaß-Befehle und `/sagen` schreibt der Helper sichtbar in den Kanal, alles andere sieht nur `@nexora`.
 
 ## Bots & Slash-Befehle
 
@@ -385,6 +416,7 @@ public/index.html  Oberfläche
 public/i18n.js     Übersetzungen (Deutsch → Englisch), auch für Server-Meldungen
 public/app.css     Design (Ember-Theme)
 public/app.js      Client-Logik
+public/social.js   Rollen, Moderation, Pins, Threads, Suche und Freunde (ab V0.9.0)
 public/bots.js     Bots verwalten, Befehle und Skripte bearbeiten
 public/admin.js    Admin-Panel
 desktop/           Desktop-App (Electron): Fenster, Verbindungsseite, Installer-Einstellungen
