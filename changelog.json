@@ -1,5 +1,33 @@
 [
   {
+    "version": "V0.12.0 Beta",
+    "date": "2026-10-25",
+    "title": "Profilbilder, Banner & flüssiger auf dem iPhone",
+    "titleEn": "Profile pictures, banners & smoother on iPhone",
+    "changes": [
+      {
+        "icon": "🖼️",
+        "text": "**Eigenes Profilbild und eigener Banner** – in den Profil-Einstellungen einfach auf das Bild oder den Banner tippen. PNG, JPG, GIF und WebP bis 8 MB",
+        "textEn": "**Your own profile picture and banner** – just tap the picture or the banner in the profile settings. PNG, JPG, GIF and WebP up to 8 MB"
+      },
+      {
+        "icon": "✨",
+        "text": "**Animierte Profilbilder und Banner**: GIFs und animierte WebPs bleiben animiert – im Chat, in der Mitgliederliste und auf der Profilkarte",
+        "textEn": "**Animated profile pictures and banners**: GIFs and animated WebPs keep moving – in the chat, the member list and on the profile card"
+      },
+      {
+        "icon": "⚡",
+        "text": "**Deutlich flüssiger auf dem iPhone**: keine ruckelnden Unschärfe-Effekte mehr beim Scrollen und Öffnen von Menüs",
+        "textEn": "**Much smoother on iPhone**: no more stuttering blur effects while scrolling and opening menus"
+      },
+      {
+        "icon": "📱",
+        "text": "**Aufgeräumter am Handy**: Profile öffnen sich als Blatt von unten, lange Ankündigungen nehmen nur noch zwei Zeilen ein – antippen zeigt alles",
+        "textEn": "**Cleaner on phones**: profiles open as a sheet from the bottom, long announcements take only two lines – tap to see all of it"
+      }
+    ]
+  },
+  {
     "version": "V0.11.0 Beta",
     "date": "2026-10-24",
     "title": "Sicherheits-Update: E-Mail-Adresse",

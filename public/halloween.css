@@ -36,6 +36,8 @@ body { background: radial-gradient(ellipse at 50% 120%, #1c0d2a 0%, var(--bg) 60
 .b1 { background: #ff5e00; opacity: 0.32; }
 .b2 { background: #6a1fb8; opacity: 0.45; }
 .b3 { background: #2f7a12; opacity: 0.18; }
+.b2 { --blob: #6a1fb8; }
+.b3 { --blob: #2f7a12; }
 .grid { opacity: 0.4; }
 
 .hw-moon {

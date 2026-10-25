@@ -2561,3 +2561,77 @@ button, a, input, textarea, select, label, .nav-item, .msg { touch-action: manip
 .recover-head .sub { margin: 0; }
 .recover-ico { width: 48px; height: 48px; flex-shrink: 0; display: grid; place-items: center; border-radius: 14px; font-size: 24px; background: var(--grad); box-shadow: var(--glow); }
 .recover-code { font-family: var(--mono) !important; letter-spacing: 0.06em; text-transform: uppercase; }
+
+/* =========================================================================
+   V0.12.0 — profile pictures & banners (also animated), smoother on iPhones
+   ========================================================================= */
+.avatar.has-img { background: var(--panel-2); }
+.avatar-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: inherit; pointer-events: none; user-select: none; }
+.profile-banner.has-img { position: relative; height: 110px; overflow: hidden; background: #000; }
+.profile-banner.has-img img { display: block; width: 100%; height: 100%; object-fit: cover; }
+
+/* Editor in the profile settings: tap the banner or the picture to change it. */
+.media-edit { position: relative; margin-bottom: 16px; }
+.media-banner {
+  position: relative; display: block; width: 100%; height: 110px; overflow: hidden;
+  border-radius: 16px; border: 1px dashed var(--line-strong);
+  background: radial-gradient(circle at 30% 0%, var(--c), transparent 75%), linear-gradient(135deg, color-mix(in srgb, var(--c) 60%, #000), #1a0f08);
+}
+.media-banner img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.media-hint {
+  position: absolute; top: 10px; right: 10px; display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 10px; border-radius: 999px; background: rgba(0, 0, 0, 0.6); color: #fff; font-size: 12px; font-weight: 600;
+}
+.media-hint svg, .media-avatar i svg { width: 13px; height: 13px; }
+.media-avatar {
+  position: absolute; left: 16px; top: 62px; width: 84px; height: 84px; overflow: hidden;
+  display: grid; place-items: center; border-radius: 34%; border: 5px solid var(--panel-solid);
+  background: linear-gradient(135deg, var(--c), color-mix(in srgb, var(--c) 45%, #1a0b02));
+  color: #1a0b02; font: 700 34px var(--display); text-transform: uppercase;
+}
+.media-avatar img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.media-avatar i { position: absolute; right: 5px; bottom: 5px; width: 24px; height: 24px; display: grid; place-items: center; border-radius: 50%; background: rgba(0, 0, 0, 0.65); color: #fff; }
+.media-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; min-height: 44px; padding: 10px 0 0 112px; }
+.media-banner.busy, .media-avatar.busy { animation: media-busy 1s ease-in-out infinite alternate; }
+@keyframes media-busy { to { opacity: 0.45; } }
+
+/* The announcement takes at most two lines on phones; a tap shows all of it. */
+@media (max-width: 760px) {
+  .announce-bar { padding: 6px 6px 6px 12px; gap: 8px; }
+  .announce-bar > svg { width: 18px; height: 18px; }
+  .announce-text { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; font-size: 13px; line-height: 1.4; cursor: pointer; }
+  .announce-text b { margin-right: 6px; }
+  .announce-bar.open .announce-text { display: block; -webkit-line-clamp: unset; }
+
+  /* Profiles open as a sheet from the bottom, like in native apps. */
+  .popover.profile-pop {
+    left: 0 !important; right: 0; top: auto !important; bottom: 0; width: 100%;
+    max-height: 85dvh; overflow-y: auto; overscroll-behavior: contain;
+    border-radius: 22px 22px 0 0; border-bottom: 0;
+    padding-bottom: env(safe-area-inset-bottom);
+    box-shadow: 0 0 0 100vmax rgba(0, 0, 0, 0.5);
+    animation: sheet-up 0.24s cubic-bezier(.2, .8, .2, 1);
+  }
+  .popover.profile-pop .profile-banner.has-img { height: 130px; }
+}
+@keyframes sheet-up { from { transform: translateY(100%); } }
+
+/* Phones and tablets: Safari has to redo a blur on every frame while something moves
+   behind it – that is what made scrolling and the menus stutter. Panels are solid there,
+   the glow in the background stands still and costs nothing. */
+@media (hover: none) and (pointer: coarse) {
+  :root .glass {
+    backdrop-filter: none; -webkit-backdrop-filter: none;
+    background: color-mix(in srgb, var(--panel-solid) 94%, transparent);
+  }
+  :root .blob { filter: none; animation: none; background: radial-gradient(closest-side, var(--blob, #ff5e00), transparent); }
+  .b1 { --blob: #ff5e00; }
+  .b2 { --blob: #ff9a1f; }
+  .b3 { --blob: #b8320a; }
+  .grid { display: none; }
+  .backdrop .hw-fog { filter: none; animation: none; }
+  .backdrop .hw-bat { display: none; }
+  .modal-backdrop, .broadcast { backdrop-filter: none; -webkit-backdrop-filter: none; }
+  /* The glow of online dots repaints every frame; the ring around them is enough. */
+  .dot.online { animation: none; }
+}

@@ -319,6 +319,14 @@ In jeder Direktnachricht sitzt oben das **Telefon-Symbol**. Ein Klick startet de
 - Dateien sind über ihren zufälligen, nicht erratbaren Link erreichbar (wie bei Discord). Wer den Link hat, kann die Datei öffnen.
 - Hochgeladene, aber nie gesendete Dateien werden nach einer Stunde bzw. beim nächsten Start automatisch entfernt.
 
+## Profilbild & Banner 🖼️
+
+Ab **V0.12.0 Beta** kann jeder ein eigenes **Profilbild** und einen eigenen **Banner** hochladen: In den Profil-Einstellungen auf das Bild bzw. den Banner tippen, Bild auswählen, „Speichern“.
+
+- Erlaubt sind PNG, JPEG, GIF und WebP bis **8 MB**. **Animierte** GIFs, WebPs und PNGs (APNG) bleiben animiert – überall, wo das Profilbild auftaucht (Chat, Mitgliederliste, Profilkarte).
+- Ohne eigenes Bild bleibt alles wie bisher: Initialen in der Akzentfarbe bzw. die Szene des exklusiven Accessoires im Banner. Ein eigener Banner ersetzt die Szene, Accessoires sitzen weiter auf dem Profilbild.
+- Die Bilder sind normale Uploads (`files`-Collection bzw. `data/uploads`) und stehen als Datei-ID in `avatar` / `banner` am Account. Wer ein Bild ersetzt oder entfernt, löscht damit auch die alte Datei.
+
 ## Desktop-App 💻
 
 Ab **V0.2.0 Beta** gibt es Nexora als eigenes Programm. Das **Download-Symbol** (⬇) unten in der Hub-Leiste öffnet die Downloads – das passende System steht oben:
@@ -367,12 +375,13 @@ Nexora lässt sich ohne App Store als App auf das iPhone (und iPad) legen: In **
 - **Ungelesene Erwähnungen und DMs** stehen als Zahl am App-Symbol (iOS ab 16.4, Android).
 - **Ohne Internet** zeigt die App die Seite `public/offline.html` und macht weiter, sobald die Verbindung zurück ist. Dafür sorgt der Service Worker `public/sw.js` – er greift nur, wenn das Netz fehlt; Updates kommen wie gewohnt sofort.
 - Updates braucht die App nicht extra: Sie lädt immer die aktuelle Nexora-Version vom Server.
+- **Flüssig auf dem iPhone** (ab V0.12.0): Auf Touch-Geräten verzichtet Nexora auf Unschärfe-Effekte hinter den Panels und auf bewegte Hintergründe – genau die bringen Safari beim Scrollen und Öffnen von Menüs ins Stocken. Profile öffnen sich am Handy als Blatt von unten, lange Ankündigungen sind auf zwei Zeilen gekürzt (antippen zeigt alles).
 
 Eine Version für den **App Store** wäre zusätzlich möglich (natives iOS-Projekt, z. B. mit Capacitor), braucht aber einen Apple-Developer-Account (99 €/Jahr), einen Mac bzw. Mac-Build auf GitHub und Apples App-Prüfung.
 
 ## Versionen & Updates
 
-Aktuelle Version: **V0.11.0 Beta** (Desktop-App 0.11.0). Alle Änderungen stehen in [`changelog.json`](changelog.json) – der oberste Eintrag ist die laufende Version.
+Aktuelle Version: **V0.12.0 Beta** (Desktop-App 0.11.0). Alle Änderungen stehen in [`changelog.json`](changelog.json) – der oberste Eintrag ist die laufende Version.
 
 - Nach dem Login (und nach jedem Update) zeigt Nexora einmal das Fenster **„Was ist neu?“**. Über die Versionsanzeige unten in der Hub-Leiste lässt es sich jederzeit wieder öffnen.
 - Geht eine neue Version live, während jemand Nexora offen hat, lädt die Seite automatisch neu. Tippt die Person gerade etwas, erscheint stattdessen ein „Jetzt laden“-Hinweis.

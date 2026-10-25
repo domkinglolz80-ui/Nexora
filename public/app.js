@@ -658,11 +658,24 @@ function verified(user) {
   return user.owner ? `${check}<span class="founder-tag" title="${t('Gründer von Nexora')}">👑 ${t('GRÜNDER')}</span>` : check;
 }
 
+// Profile pictures and banners are normal uploads; GIFs and animated WebP/PNG keep playing.
+const imageUrl = (fileId) => `/files/${encodeURIComponent(fileId)}/bild`;
+
 function avatar(user, { dot = false, size } = {}) {
   const s = size ? `--size:${size}px;` : '';
   const d = dot ? statusDot(statusOf(user.id)) : '';
   const acc = accessoryHtml(user.accessory);
-  return `<div class="avatar${acc ? ' has-acc' : ''}${size && size < 30 ? ' tiny' : ''}" style="--c:${esc(user.color)};${s}" data-user="${esc(user.id)}">${esc(initials(user.displayName))}${acc}${d}</div>`;
+  const face = user.avatar
+    ? `<img class="avatar-img" src="${imageUrl(user.avatar)}" alt="" loading="lazy" decoding="async" draggable="false" />`
+    : esc(initials(user.displayName));
+  return `<div class="avatar${acc ? ' has-acc' : ''}${user.avatar ? ' has-img' : ''}${size && size < 30 ? ' tiny' : ''}" style="--c:${esc(user.color)};${s}" data-user="${esc(user.id)}">${face}${acc}${d}</div>`;
+}
+
+// An own banner wins; otherwise the scene of an exclusive accessory or the accent colour.
+function bannerHtml(user, ex, style = '') {
+  const attr = style ? ` style="${style}"` : '';
+  if (user.banner) return `<div class="profile-banner has-img"${attr}><img src="${imageUrl(user.banner)}" alt="" decoding="async" draggable="false" /></div>`;
+  return `<div class="profile-banner"${attr}>${ex ? ex.scene : ''}</div>`;
 }
 
 const timeFmt = new Intl.DateTimeFormat(LOCALE, { hour: '2-digit', minute: '2-digit' });
@@ -1612,7 +1625,7 @@ function renderMembers() {
   const dm = currentDm();
   if (dm) {
     const p = dmPartner(dm);
-    panel.innerHTML = `<div class="profile-banner" style="--c:${esc(p.color)};border-radius:14px"></div>
+    panel.innerHTML = `${bannerHtml(p, null, `--c:${esc(p.color)};border-radius:14px`)}
       <div class="profile-body" style="padding:0 6px">
         ${avatar(p, { dot: true })}
         <h4>${esc(p.displayName)}${verified(p)}</h4>
@@ -1677,6 +1690,9 @@ function renderAnnouncement() {
   const bar = h(`<div class="announce-bar" id="announce-bar">${ICONS.megaphone}
     <div class="announce-text"><b>Nexora</b><span>${formatMessage(a.text)}</span></div>
     <button class="icon-btn" title="${t('Ausblenden')}">${ICONS.x}</button></div>`);
+  bar.querySelector('.announce-text').onclick = (e) => {
+    if (!e.target.closest('a')) bar.classList.toggle('open');
+  };
   bar.querySelector('button').onclick = () => {
     store('dismissedAnnouncement', a.id);
     bar.remove();
@@ -2599,8 +2615,8 @@ function showProfile(userId, anchor) {
   if (u.bot) return showBotProfile(u, anchor);
   const ex = exclusiveOf(u);
   const hub = currentHub()?.members.includes(u.id) ? currentHub() : null;
-  const pop = h(`<div class="popover${exClass(u)}" style="--c:${esc(u.color)}">
-    <div class="profile-banner">${ex ? ex.scene : ''}</div>
+  const pop = h(`<div class="popover profile-pop${exClass(u)}" style="--c:${esc(u.color)}">
+    ${bannerHtml(u, ex)}
     <div class="profile-body">
       ${avatar(u, { dot: true })}
       <h4>${esc(u.displayName)}${verified(u)}</h4>
@@ -2626,8 +2642,8 @@ function showBotProfile(u, anchor) {
   const commands = (u.system ? state.helperCommands || [] : u.commands || []).map((c) => `<li><code>/${esc(c.name)}</code><span>${esc(c.description ? tServer(c.description) : '')}</span></li>`).join('');
   const mine = u.ownerId === state.me.id;
   const ex = exclusiveOf(u);
-  const pop = h(`<div class="popover${exClass(u)}" style="--c:${esc(u.color)}">
-    <div class="profile-banner">${ex ? ex.scene : ''}</div>
+  const pop = h(`<div class="popover profile-pop${exClass(u)}" style="--c:${esc(u.color)}">
+    ${bannerHtml(u, ex)}
     <div class="profile-body">
       ${avatar(u, { dot: true })}
       <h4>${esc(u.displayName)}${verified(u)}</h4>
@@ -3121,6 +3137,90 @@ function openNewDm() {
   });
 }
 
+// Uploads one image for the profile and returns its file id.
+async function uploadImage(file) {
+  if (!/^image\/(png|jpeg|gif|webp)$/.test(file.type)) throw new Error(t('Als Profilbild und Banner gehen nur Bilder (PNG, JPG, GIF, WebP).'));
+  if (file.size > myLimit(MAX_FILE)) throw new Error(t('„{name}“ ist zu groß (max. {n} MB).', { name: file.name, n: myLimit(MAX_FILE) / 1024 / 1024 }));
+  const res = await fetch(`/api/upload?name=${encodeURIComponent(file.name || 'bild')}`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${state.token}`, 'Content-Type': file.type },
+    body: file,
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data.attachment) throw new Error(data.error ? tServer(data.error) : t('Upload fehlgeschlagen.'));
+  return data.attachment.id;
+}
+
+// Preview of banner and profile picture in the profile settings. A tap picks a new image,
+// which is uploaded right away; result() gives what profile:update needs (undefined = unchanged).
+function mediaPicker(box, fileInput, me) {
+  const shown = { avatar: me.avatar ? imageUrl(me.avatar) : '', banner: me.banner ? imageUrl(me.banner) : '' };
+  const chosen = {}; // field -> Promise of the new file id, or '' to remove
+  const busy = {};
+  let target = null;
+  let color = me.color;
+  const render = () => {
+    box.style.setProperty('--c', color);
+    box.innerHTML = `
+      <button type="button" class="media-banner${busy.banner ? ' busy' : ''}" data-pick="banner" aria-label="${t('Banner ändern')}">
+        ${shown.banner ? `<img src="${esc(shown.banner)}" alt="" />` : ''}<span class="media-hint">${ICONS.edit}${t('Banner ändern')}</span></button>
+      <button type="button" class="media-avatar${busy.avatar ? ' busy' : ''}" data-pick="avatar" aria-label="${t('Profilbild ändern')}">
+        ${shown.avatar ? `<img src="${esc(shown.avatar)}" alt="" />` : `<span>${esc(initials(me.displayName))}</span>`}<i>${ICONS.edit}</i></button>
+      <div class="media-actions">
+        ${shown.avatar ? `<button type="button" class="btn small" data-clear="avatar">${ICONS.trash} ${t('Profilbild entfernen')}</button>` : ''}
+        ${shown.banner ? `<button type="button" class="btn small" data-clear="banner">${ICONS.trash} ${t('Banner entfernen')}</button>` : ''}
+      </div>`;
+  };
+  box.addEventListener('click', (e) => {
+    const pick = e.target.closest('[data-pick]');
+    const clear = e.target.closest('[data-clear]');
+    if (pick) {
+      target = pick.dataset.pick;
+      fileInput.value = '';
+      fileInput.click();
+    } else if (clear) {
+      const field = clear.dataset.clear;
+      if (shown[field].startsWith('blob:')) URL.revokeObjectURL(shown[field]);
+      shown[field] = '';
+      chosen[field] = Promise.resolve('');
+      render();
+    }
+  });
+  fileInput.addEventListener('change', () => {
+    const file = fileInput.files[0];
+    const field = target;
+    if (!file || !field) return;
+    if (shown[field].startsWith('blob:')) URL.revokeObjectURL(shown[field]);
+    shown[field] = URL.createObjectURL(file);
+    busy[field] = true;
+    const upload = uploadImage(file).finally(() => {
+      busy[field] = false;
+      if (chosen[field] === upload) render();
+    });
+    upload.catch((err) => {
+      if (chosen[field] !== upload) return;
+      toast(err.message, 'error');
+      shown[field] = me[field] ? imageUrl(me[field]) : '';
+      delete chosen[field];
+      render();
+    });
+    chosen[field] = upload;
+    render();
+  });
+  render();
+  return {
+    setColor(c) {
+      color = c;
+      box.style.setProperty('--c', c);
+    },
+    async result() {
+      const out = {};
+      for (const [field, value] of Object.entries(chosen)) out[field] = await value;
+      return out;
+    },
+  };
+}
+
 function openSettings() {
   closePopover();
   const me = state.me;
@@ -3130,6 +3230,9 @@ function openSettings() {
     <form>
       <label class="field"><span>${t('Anzeigename')}</span><input name="displayName" maxlength="32" required /></label>
       <label class="field"><span>${t('Über mich')} <em>${t('(optional)')}</em></span><textarea name="bio" maxlength="190" rows="3" placeholder="${t('Erzähl was über dich')}"></textarea></label>
+      <div class="field"><span>${t('Profilbild & Banner')} <em>${t('(GIFs bleiben animiert)')}</em></span></div>
+      <div class="media-edit"></div>
+      <input type="file" name="media" accept="image/png,image/jpeg,image/gif,image/webp" hidden />
       <div class="field"><span>${t('Akzentfarbe')}</span></div>
       <div class="color-row">${ACCENTS.map((c) => `<button type="button" class="swatch ${c === me.color ? 'sel' : ''}" style="--c:${c}" data-c="${c}"></button>`).join('')}
         <input type="color" value="${esc(me.color)}" title="${t('Eigene Farbe')}" /></div>
@@ -3156,6 +3259,7 @@ function openSettings() {
   let color = me.color;
   let status = me.status;
   const accessory = accessoryPicker(modal.querySelector('.acc-row'), me);
+  const media = mediaPicker(modal.querySelector('.media-edit'), form.media, me);
   modal.querySelector('[data-act=shop]').onclick = () => { close(); openShop(); };
   form.spooky.checked = store('spooky') !== false;
   form.spooky.addEventListener('change', () => {
@@ -3168,10 +3272,12 @@ function openSettings() {
     if (!s) return;
     color = s.dataset.c;
     picker.value = color;
+    media.setColor(color);
     modal.querySelectorAll('.swatch').forEach((x) => x.classList.toggle('sel', x === s));
   });
   picker.addEventListener('input', () => {
     color = picker.value;
+    media.setColor(color);
     modal.querySelectorAll('.swatch').forEach((x) => x.classList.remove('sel'));
   });
   modal.querySelector('.status-row').addEventListener('click', (e) => {
@@ -3206,7 +3312,8 @@ function openSettings() {
   form.onsubmit = (e) => {
     e.preventDefault();
     submitting(form, async () => {
-      const { user } = await req('profile:update', { displayName: form.displayName.value, bio: form.bio.value, color, status, accessory: accessory() });
+      const images = await media.result();
+      const { user } = await req('profile:update', { displayName: form.displayName.value, bio: form.bio.value, color, status, accessory: accessory(), ...images });
       state.me = user;
       state.users.set(user.id, user);
       renderMe();

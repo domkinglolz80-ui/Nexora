@@ -73,9 +73,9 @@ const SEARCH_RESULTS = 25;
 // Done once when this version starts for the first time (db.release remembers it):
 // end the maintenance and put up the announcement for the release.
 const RELEASE = {
-  version: 'V0.11.0 Beta',
+  version: 'V0.12.0 Beta',
   endMaintenance: false,
-  announcement: '🔐 **Sicherheits-Update V0.11.0:** Neue Accounts brauchen jetzt eine E-Mail-Adresse – auch beim Login. Schon vorhandene Accounts können sie freiwillig in den Profil-Einstellungen unter „✉️ E-Mail-Adresse hinzufügen“ hinterlegen.',
+  announcement: '🖼️ **Neu in V0.12.0:** Eigene Profilbilder und Banner – auch animiert als GIF! Einfach in den Profil-Einstellungen auf Bild oder Banner tippen. Dazu läuft Nexora auf dem iPhone jetzt deutlich flüssiger.',
 }
 const STARTED_AT = Date.now();
 // The newest changelog entry is the running version; clients compare it to reload on updates.
@@ -330,6 +330,10 @@ async function sweepOrphanFiles() {
   for (const list of Object.values(db.messages)) {
     for (const m of list) for (const a of m.attachments || []) used.add(a.id);
   }
+  for (const u of Object.values(db.users)) {
+    if (u.avatar) used.add(u.avatar);
+    if (u.banner) used.add(u.banner);
+  }
   const orphans = (await fileStore.ids()).filter((fileId) => !used.has(fileId));
   for (const fileId of orphans) await fileStore.remove(fileId);
   if (orphans.length) console.log(`[nexora] ${orphans.length} verwaiste Datei(en) entfernt`);
@@ -525,6 +529,8 @@ function publicUser(u) {
     color: u.color,
     status: u.status,
     bio: u.bio || '',
+    avatar: u.avatar || undefined, // file id of the profile picture (GIF/WebP/APNG stay animated)
+    banner: u.banner || undefined,
     accessory: (u.accessory && accessoryOf(u.accessory, u)) || '',
     ghosts: u.ghosts || 0,
     ghostsCaught: u.ghostsCaught || 0,
@@ -3105,8 +3111,16 @@ io.on('connection', (socket) => {
     return { email: next };
   });
 
-  on('profile:update', ({ displayName, status, color, bio, accessory }) => {
+  on('profile:update', ({ displayName, status, color, bio, accessory, avatar, banner }) => {
     const user = me();
+    const images = { avatar, banner };
+    for (const [field, value] of Object.entries(images)) {
+      if (value === undefined || value === '' || value === user[field]) continue;
+      const pending = typeof value === 'string' && pendingFiles.get(value);
+      if (!pending || pending.uploaderId !== userId) return { error: 'Das Bild ist abgelaufen. Lade es nochmal hoch.' };
+      if (!pending.attachment.image) return { error: 'Als Profilbild und Banner gehen nur Bilder (PNG, JPG, GIF, WebP).' };
+    }
+    if (avatar && avatar === banner) return { error: 'Profilbild und Banner brauchen jeweils ein eigenes Bild.' };
     if (displayName !== undefined) {
       const name = str(displayName, 32);
       if (name.length < 1) return { error: 'Anzeigename darf nicht leer sein.' };
@@ -3125,6 +3139,15 @@ io.on('connection', (socket) => {
       const acc = accessoryOf(accessory, user);
       if (acc === undefined) return { error: 'Dieses Accessoire kannst du nicht tragen.' };
       user.accessory = acc;
+    }
+    for (const [field, value] of Object.entries(images)) {
+      if (value === undefined || value === user[field]) continue;
+      const old = user[field];
+      if (value) {
+        pendingFiles.delete(value);
+        user[field] = value;
+      } else delete user[field];
+      if (old) fileStore.remove(old).catch((err) => console.error('[nexora] Altes Profilbild konnte nicht gelöscht werden:', err.message));
     }
     save();
     broadcastToVisible(userId, 'user:update', publicUser(user));
